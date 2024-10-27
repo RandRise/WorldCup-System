@@ -12,4 +12,13 @@ namespace Core.DTOs.Users
         public required string Name { get; set; }
 
     }
+    public class CreateUserDto
+    {
+        public required string Name { get; set; }
+    }
+    public class RemoveUserDto
+    {
+        public required int Id { get; set; }
+
+    }
 }

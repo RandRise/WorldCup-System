@@ -1,5 +1,6 @@
 ﻿using Data.Context;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Data.Repos
 {
@@ -28,9 +29,21 @@ namespace Data.Repos
         {
             return _dbSet;
         }
+
+        public Task<T> GetByIdAsync(int id)
+        {
+            throw new NotImplementedException();
+        }
+
         public void Update(T entity)
         {
+            _dbSet.Attach(entity);
             _dbSet.Update(entity);
+        }
+
+        public IQueryable<T> Find(Expression<Func<T, bool>> predicate)
+        {
+            return _dbSet.Where(predicate);
         }
     }
 }
