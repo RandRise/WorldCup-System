@@ -1,4 +1,6 @@
-﻿using Data.Repos;
+﻿using Core.DTOs.Users;
+using Core.Services.Users;
+using Data.Repos;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WorldCup_System.Controllers
@@ -7,15 +9,15 @@ namespace WorldCup_System.Controllers
     [Route("[controller]/[action]")]
     public class UserController : Controller
     {
-        private readonly IRepositoryManager _repository;
-        public UserController(IRepositoryManager repository) 
+       private readonly IUserService _userService;
+        public UserController(IUserService userService) 
         { 
-            _repository = repository;
+            _userService = userService;
         }
         [HttpGet]
-        public  IQueryable GetAllUsers()
+        public  List<UserDTO> GetAllUsers()
         {
-            var users =  _repository.User.GetAllAsync();
+            var users = _userService.GetAllUsers();
             return users;
         }
 

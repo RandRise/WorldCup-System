@@ -28,15 +28,9 @@ namespace Data.Repos
         {
             return _dbSet;
         }
-
-        public Task<T> GetByIdAsync(int id)
-        {
-            throw new NotImplementedException();
-        }
-
         public void Update(T entity)
         {
-            throw new NotImplementedException();
+            _dbSet.Update(entity);
         }
     }
 }

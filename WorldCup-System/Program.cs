@@ -1,4 +1,4 @@
-using Data;
+using Core.Services.Users;
 using Data.Context;
 using Data.Repos;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +12,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IRepositoryManager, RepositoryManager>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddDbContext<ApplicationDbContext>(option =>
 {
     option.UseNpgsql(builder.Configuration["ConnectionStrings:DefaultConnection"]);
