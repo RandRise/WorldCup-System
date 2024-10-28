@@ -31,6 +31,11 @@ namespace WorldCup_System.Controllers
         {
             await _userService.RemoveUser(removeUserDto);
         }
+        [HttpPost]
+        public async Task UpdateUser([FromBody]UpdateUserDto updateUserDto)
+        {
+            await _userService.UpdateUser(updateUserDto);
+        }
 
     }
 }

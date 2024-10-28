@@ -1,10 +1,5 @@
 ﻿using Core.DTOs.Users;
 using Data.Repos;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Core.Services.Users
 {
@@ -42,6 +37,17 @@ namespace Core.Services.Users
                 _repository.User.Delete(user);
             await _repository.SaveAsync();
 
+        }
+
+        public async Task UpdateUser(UpdateUserDto updateUserDto)
+        {
+            var user = _repository.User.Find(e => e.Id == updateUserDto.Id).FirstOrDefault();
+            if (user != null)
+            {
+                user.Name = updateUserDto.Name;
+                _repository.User.Update(user);
+                await _repository.SaveAsync();
+            }
         }
     }
 }

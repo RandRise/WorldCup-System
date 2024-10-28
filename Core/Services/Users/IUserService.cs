@@ -7,5 +7,6 @@ namespace Core.Services.Users
         public List<UserDTO> GetAllUsers();
         Task CreateNewUser(CreateUserDto userDTO);
         Task RemoveUser(RemoveUserDto removeUserDto);
+        Task UpdateUser(UpdateUserDto updateUserDto);
     }
 }
