@@ -1,7 +1,5 @@
 ﻿using Core.DTOs.Users;
 using Core.Services.Users;
-using Data.Entities;
-using Data.Repos;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WorldCup_System.Controllers
@@ -36,6 +34,7 @@ namespace WorldCup_System.Controllers
         {
             await _userService.UpdateUser(updateUserDto);
         }
+        
 
     }
 }

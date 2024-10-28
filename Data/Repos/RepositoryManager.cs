@@ -12,6 +12,7 @@ namespace Data.Repos
     {
         private readonly ApplicationDbContext _context;
         private IRepository<User>? _userRepository;
+        private IRepository<Country>? _countryRepository;
         public RepositoryManager(ApplicationDbContext context)
         {
             _context = context;
@@ -27,6 +28,18 @@ namespace Data.Repos
 
 
         }
+
+        public IRepository<Country> Country
+        {
+            get
+            {
+                if (_countryRepository == null)
+                    _countryRepository = new Repository<Country>(_context);
+                return _countryRepository;
+            }
+
+        }
+
         public async Task SaveAsync()
         {
             await _context.SaveChangesAsync();

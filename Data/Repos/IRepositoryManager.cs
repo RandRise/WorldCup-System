@@ -10,6 +10,7 @@ namespace Data.Repos
     public interface IRepositoryManager
     {
         IRepository<User> User { get; }
+        IRepository<Country> Country { get; }
         Task SaveAsync();
     }
 }

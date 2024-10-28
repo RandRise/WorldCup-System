@@ -8,8 +8,8 @@
 
         public string? Flag { get; set; }
 
-        public required ICollection<City> Cities { get; set; }
-        public required Team Team { get; set; }
+        public  ICollection<City> Cities { get; set; }
+        public  Team Team { get; set; }
 
     }
 }

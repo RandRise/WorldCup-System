@@ -1,3 +1,4 @@
+using Core.Services.Countries;
 using Core.Services.Users;
 using Data.Context;
 using Data.Repos;
@@ -13,6 +14,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IRepositoryManager, RepositoryManager>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ICountryService, CountryService>();
 builder.Services.AddDbContext<ApplicationDbContext>(option =>
 {
     option.UseNpgsql(builder.Configuration["ConnectionStrings:DefaultConnection"]);
@@ -20,13 +22,18 @@ builder.Services.AddDbContext<ApplicationDbContext>(option =>
 
 
 var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+using (var scope = app.Services.CreateScope())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    var countryService = scope.ServiceProvider.GetRequiredService<ICountryService>();
+    await countryService.LoadCountriesFromExcel("C:\\Users\\Rand-\\Documents\\WorldCup-System\\WorldCup-System\\Core\\all_countries.csv");
 }
+
+    // Configure the HTTP request pipeline.
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI();
+    }
 
 app.UseHttpsRedirection();
 
