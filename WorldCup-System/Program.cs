@@ -22,11 +22,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(option =>
 
 
 var app = builder.Build();
-using (var scope = app.Services.CreateScope())
-{
-    var countryService = scope.ServiceProvider.GetRequiredService<ICountryService>();
-    await countryService.LoadCountriesFromExcel("C:\\Users\\Rand-\\Documents\\WorldCup-System\\WorldCup-System\\Core\\all_countries.csv");
-}
+
 
     // Configure the HTTP request pipeline.
     if (app.Environment.IsDevelopment())

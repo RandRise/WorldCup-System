@@ -1,12 +1,16 @@
 ﻿using Core.DTOs.Countries;
 using Data.Entities;
 using Data.Repos;
+using Microsoft.AspNetCore.Http;
 using OfficeOpenXml;
+using System.Text;
 
 namespace Core.Services.Countries
 {
     public class CountryService : ICountryService
     {
+        private readonly string[] _permittedExtensions = { ".csv" };
+        private const long _maxFileSize = 2 * 1024 * 1024; // 2 MB
         private readonly IRepositoryManager _repository;
         public CountryService(IRepositoryManager repository)
         {
@@ -33,34 +37,47 @@ namespace Core.Services.Countries
             return countryDto;
         }
 
-        public async Task LoadCountriesFromExcel(string filePath)
-        {
-            var countriesList = new List<CountryDTO>();
+        public async Task LoadCountriesFromExcel(IFormFile file)
 
-            using (var reader = new StreamReader(filePath))
+        {
+
+            if (file == null || file.Length == 0)
+            {
+                throw new Exception("File is empty.");
+            }
+
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (string.IsNullOrEmpty(ext) || !_permittedExtensions.Contains(ext))
+            {
+                throw new Exception("Unsupported file type.");
+            }
+
+            if (file.Length > _maxFileSize)
+            {
+                throw new Exception("File size exceeds limit.");
+            }
+
+            using (var reader = new StreamReader(file.OpenReadStream(), Encoding.UTF8))
             {
                 await reader.ReadLineAsync();
 
                 string line;
                 while ((line = await reader.ReadLineAsync()) != null)
                 {
-                    var values = line.Split(','); 
+                    var values = line.Split(',');
 
                     if (values.Length > 0 && !string.IsNullOrWhiteSpace(values[1]))
                     {
-                        var countryDto = new CountryDTO
-                        {
-                            Name = values[1].Trim()
-                        };
-                        countriesList.Add(countryDto);
+                        var countries = _repository.Country.Find(e => e.Name == values[1].Trim());
+                        if (countries == null || countries.FirstOrDefault() == null)
+                            _repository.Country.Create(new Country { Name= values[1].Trim() });
                     }
+
                 }
+                await _repository.SaveAsync();
             }
 
-            foreach (var country in countriesList)
-            {
-                await AddCountries(country);
-            }
+
         }
     }
 }
