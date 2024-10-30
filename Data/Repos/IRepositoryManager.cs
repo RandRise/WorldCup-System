@@ -11,6 +11,7 @@ namespace Data.Repos
     {
         IRepository<User> User { get; }
         IRepository<Country> Country { get; }
+        IRepository <City> City { get; }
         Task SaveAsync();
     }
 }

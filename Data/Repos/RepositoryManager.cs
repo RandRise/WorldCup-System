@@ -1,11 +1,5 @@
 ﻿using Data.Context;
 using Data.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace Data.Repos
 {
     public class RepositoryManager : IRepositoryManager
@@ -13,6 +7,7 @@ namespace Data.Repos
         private readonly ApplicationDbContext _context;
         private IRepository<User>? _userRepository;
         private IRepository<Country>? _countryRepository;
+        private IRepository<City>? _cityRepository;
         public RepositoryManager(ApplicationDbContext context)
         {
             _context = context;
@@ -38,6 +33,16 @@ namespace Data.Repos
                 return _countryRepository;
             }
 
+        }
+
+        public IRepository<City> City
+        {
+            get
+            {
+                if (_cityRepository == null)
+                    _cityRepository = new Repository<City>(_context);
+                return _cityRepository;
+            }
         }
 
         public async Task SaveAsync()

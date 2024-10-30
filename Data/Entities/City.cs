@@ -8,7 +8,7 @@
 
         public int CountryId { get; set; }
 
-        public required Country Country { get; set; }
+        public  Country Country { get; set; }
 
         public ICollection<Stadium> Stadiums { get; set; } = [];
 
