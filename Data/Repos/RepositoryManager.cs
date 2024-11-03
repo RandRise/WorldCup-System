@@ -8,6 +8,7 @@ namespace Data.Repos
         private IRepository<User>? _userRepository;
         private IRepository<Country>? _countryRepository;
         private IRepository<City>? _cityRepository;
+        private IRepository<Stadium> _stadiumRepository;
         public RepositoryManager(ApplicationDbContext context)
         {
             _context = context;
@@ -44,7 +45,15 @@ namespace Data.Repos
                 return _cityRepository;
             }
         }
-
+        public IRepository<Stadium> Stadium
+        {
+            get
+            {
+                if (_stadiumRepository == null)
+                    _stadiumRepository = new Repository<Stadium>(_context);
+                return _stadiumRepository;
+            }
+        }
         public async Task SaveAsync()
         {
             await _context.SaveChangesAsync();
