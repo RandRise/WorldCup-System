@@ -9,6 +9,7 @@ namespace Data.Repos
         private IRepository<Country>? _countryRepository;
         private IRepository<City>? _cityRepository;
         private IRepository<Stadium> _stadiumRepository;
+        private IRepository<WorldCup> _worldCupRepository;
         public RepositoryManager(ApplicationDbContext context)
         {
             _context = context;
@@ -52,6 +53,15 @@ namespace Data.Repos
                 if (_stadiumRepository == null)
                     _stadiumRepository = new Repository<Stadium>(_context);
                 return _stadiumRepository;
+            }
+        }
+        public IRepository<WorldCup> WorldCup
+        {
+            get
+            {
+                if (_worldCupRepository == null)
+                    _worldCupRepository = new Repository<WorldCup>(_context);
+                return _worldCupRepository;
             }
         }
         public async Task SaveAsync()

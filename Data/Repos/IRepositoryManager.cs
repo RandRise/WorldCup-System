@@ -13,6 +13,7 @@ namespace Data.Repos
         IRepository<Country> Country { get; }
         IRepository<City> City { get; }
         IRepository<Stadium> Stadium { get; }
+        IRepository<WorldCup> WorldCup { get; }
         Task SaveAsync();
     }
 }

@@ -11,6 +11,6 @@ namespace Data.Entities
         public int Id { get; set; }
         public DateTime Year { get; set; }
 
-        public required ICollection<Group> Groups { get; set; }
+        public  ICollection<Group> Groups { get; set; }
     }
 }
