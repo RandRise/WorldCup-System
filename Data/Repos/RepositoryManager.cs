@@ -10,6 +10,7 @@ namespace Data.Repos
         private IRepository<City>? _cityRepository;
         private IRepository<Stadium> _stadiumRepository;
         private IRepository<WorldCup> _worldCupRepository;
+        private IRepository<Group> _groupRepository;
         public RepositoryManager(ApplicationDbContext context)
         {
             _context = context;
@@ -64,6 +65,17 @@ namespace Data.Repos
                 return _worldCupRepository;
             }
         }
+
+        public IRepository<Group> Group
+        {
+            get
+            {
+                if (_groupRepository == null)
+                    _groupRepository = new Repository<Group>(_context);
+                return _groupRepository;
+            }
+        }
+
         public async Task SaveAsync()
         {
             await _context.SaveChangesAsync();

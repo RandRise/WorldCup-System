@@ -1,5 +1,6 @@
 using Core.Services.Cities;
 using Core.Services.Countries;
+using Core.Services.Groups;
 using Core.Services.Stadiums;
 using Core.Services.Users;
 using Core.Services.WorldCups;
@@ -21,6 +22,7 @@ builder.Services.AddScoped<ICountryService, CountryService>();
 builder.Services.AddScoped<ICityService, CityService>();
 builder.Services.AddScoped<IStadiumService, StadiumService>();
 builder.Services.AddScoped<IWorldCupService, WorldCupService>();
+builder.Services.AddScoped<IGroupService, GroupService>();
 builder.Services.AddDbContext<ApplicationDbContext>(option =>
 {
     option.UseNpgsql(builder.Configuration["ConnectionStrings:DefaultConnection"]);

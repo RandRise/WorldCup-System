@@ -14,6 +14,7 @@ namespace Data.Repos
         IRepository<City> City { get; }
         IRepository<Stadium> Stadium { get; }
         IRepository<WorldCup> WorldCup { get; }
+        IRepository<Group> Group { get; }
         Task SaveAsync();
     }
 }
