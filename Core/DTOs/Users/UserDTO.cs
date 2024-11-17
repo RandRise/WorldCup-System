@@ -15,6 +15,8 @@ namespace Core.DTOs.Users
     public class CreateUserDto
     {
         public required string Name { get; set; }
+        public required string Email { get; set; }
+        public required string Password { get; set; }
     }
     public class RemoveUserDto
     {
@@ -25,5 +27,11 @@ namespace Core.DTOs.Users
     {
         public required int Id { get; set; }
         public required string Name { get; set; }
+
+    }
+    public class LoginModel
+    {
+        public required string? Email { get; set; }
+        public required string? Password { get; set; }
     }
 }

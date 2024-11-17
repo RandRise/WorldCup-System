@@ -8,5 +8,6 @@ namespace Core.Services.Users
         Task CreateNewUser(CreateUserDto userDTO);
         Task RemoveUser(RemoveUserDto removeUserDto);
         Task UpdateUser(UpdateUserDto updateUserDto);
+
     }
 }

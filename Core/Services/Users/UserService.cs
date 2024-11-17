@@ -1,5 +1,6 @@
 ﻿using Core.DTOs.Users;
 using Data.Repos;
+using Microsoft.AspNetCore.Identity;
 
 namespace Core.Services.Users
 {
@@ -7,10 +8,11 @@ namespace Core.Services.Users
     public class UserService : IUserService
     {
         private readonly IRepositoryManager _repository;
-        public UserService(IRepositoryManager repository)
+        private readonly UserManager<IdentityUser> _userManager;
+        public UserService(IRepositoryManager repository, UserManager<IdentityUser> userManager)
         {
             _repository = repository;
-
+            _userManager = userManager;
         }
 
         public List<UserDTO> GetAllUsers()
@@ -26,8 +28,13 @@ namespace Core.Services.Users
         }
         public async Task CreateNewUser(CreateUserDto user)
         {
-            _repository.User.Create(new Data.Entities.User { Name = user.Name });
-            await _repository.SaveAsync();
+            
+            var identityUser = new IdentityUser { UserName = user.Email, Email = user.Email };
+            var result = await _userManager.CreateAsync(identityUser, user.Password);
+            if (result.Succeeded)
+            {
+                Console.WriteLine("User Created Successfully");
+            }
         }
         public async Task RemoveUser(RemoveUserDto removeUserDto)
         {
@@ -50,4 +57,7 @@ namespace Core.Services.Users
             }
         }
     }
+
+
+
 }

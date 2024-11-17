@@ -1,9 +1,11 @@
 ﻿using Data.Entities;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Data.Context
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext : IdentityDbContext<IdentityUser>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
            : base(options)
@@ -19,13 +21,13 @@ namespace Data.Context
         public DbSet<Team> Teams { get; set; }
         public DbSet<Coach> Coachs { get; set; }
         public DbSet<Match> Matches { get; set; }
-        public DbSet <PlayerPosition> PlayerPositions { get; set; }
-        public DbSet <TeamStats> TeamStats { get; set; }
+        public DbSet<PlayerPosition> PlayerPositions { get; set; }
+        public DbSet<TeamStats> TeamStats { get; set; }
         public DbSet<Player> Players { get; set; }
         public DbSet<Card> Cards { get; set; }
         public DbSet<Goal> Goals { get; set; }
         public DbSet<Bet> Bets { get; set; }
-        public DbSet <BetResult> BetResults { get; set; }
+        public DbSet<BetResult> BetResults { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -43,7 +45,7 @@ namespace Data.Context
                 .HasForeignKey(e => e.CountryId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_City_Country");
-                
+
             });
 
             modelBuilder.Entity<Stadium>(e =>
@@ -143,7 +145,8 @@ namespace Data.Context
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Team_Team_Stats");
             });
-            modelBuilder.Entity<Player>(e => {
+            modelBuilder.Entity<Player>(e =>
+            {
                 e.ToTable("Player", player =>
                 {
                     player.HasCheckConstraint("CK_Player_Name_Length_Less_Than_64", "Length(\"Name\")<= 64");
@@ -161,7 +164,8 @@ namespace Data.Context
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Position_Player");
             });
-            modelBuilder.Entity<Card>(e => {
+            modelBuilder.Entity<Card>(e =>
+            {
                 e.ToTable("Card");
                 e.HasIndex(p => p.PlayerId);
                 e.HasOne(e => e.Player)
@@ -218,7 +222,7 @@ namespace Data.Context
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Bet_Result");
             });
-            
+
         }
     }
 }
