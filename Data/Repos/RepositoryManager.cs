@@ -11,6 +11,9 @@ namespace Data.Repos
         private IRepository<Stadium> _stadiumRepository;
         private IRepository<WorldCup> _worldCupRepository;
         private IRepository<Group> _groupRepository;
+        private IRepository<Team> _teamRepository;
+        private IRepository<Match> _matchRepository;
+
         public RepositoryManager(ApplicationDbContext context)
         {
             _context = context;
@@ -73,6 +76,24 @@ namespace Data.Repos
                 if (_groupRepository == null)
                     _groupRepository = new Repository<Group>(_context);
                 return _groupRepository;
+            }
+        }
+        public IRepository<Match> Match
+        {
+            get
+            {
+                if (_matchRepository == null)
+                    _matchRepository = new Repository<Match>(_context);
+                return _matchRepository;
+            }
+        }
+        public IRepository<Team> Team
+        {
+            get
+            {
+                if (_teamRepository == null)
+                    _teamRepository= new Repository<Team>(_context);
+                return _teamRepository;
             }
         }
 
