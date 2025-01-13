@@ -4,19 +4,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Core.DTOs.Teams
+namespace Core.DTOs.Coaches
 {
-    public class TeamDTO
+    public class CoachDTO
     {
         public int Id { get; set; }
-        public required int GroupId { get; set; }
         public required string Name { get; set; }
-
+        public required int TeamId { get; set; }
     }
-    public class AddTeamDto
+
+    public class AddCoachDto
     {
-        public required int GroupId { get; set; }
-        public required int CountryId { get; set; }
+        public required string Name { get; set; }
+        public required int TeamId { get; set; }
 
     }
 }

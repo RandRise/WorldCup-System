@@ -13,6 +13,7 @@ namespace Data.Repos
         private IRepository<Group> _groupRepository;
         private IRepository<Team> _teamRepository;
         private IRepository<Match> _matchRepository;
+        private IRepository<Coach> _coachRepository;
 
         public RepositoryManager(ApplicationDbContext context)
         {
@@ -96,7 +97,15 @@ namespace Data.Repos
                 return _teamRepository;
             }
         }
-
+        public IRepository<Coach> Coach
+        {
+            get
+            {
+                if (_coachRepository == null)
+                    _coachRepository = new Repository<Coach>(_context);
+                return _coachRepository;
+            }
+        }
         public async Task SaveAsync()
         {
             await _context.SaveChangesAsync();

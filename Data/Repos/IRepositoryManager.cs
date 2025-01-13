@@ -17,6 +17,8 @@ namespace Data.Repos
         IRepository<Group> Group { get; }
         IRepository<Team> Team { get; }
         IRepository<Match> Match { get; }
+        IRepository<Coach> Coach { get; }
+
         Task SaveAsync();
     }
 }
