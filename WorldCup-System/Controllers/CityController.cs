@@ -1,6 +1,7 @@
 ﻿using Core.DTOs.Cities;
 using Core.DTOs.Countries;
 using Core.Services.Cities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WorldCup_System.Controllers
@@ -22,6 +23,7 @@ namespace WorldCup_System.Controllers
             return cities;
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> AddCities([FromForm] UploadCityDto uploadCity)
         {

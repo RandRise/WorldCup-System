@@ -1,5 +1,5 @@
 ﻿using Core.DTOs.Users;
-using Data.Repos;
+using Data.Entities;
 using Microsoft.AspNetCore.Identity;
 
 namespace Core.Services.Users
@@ -7,53 +7,67 @@ namespace Core.Services.Users
 
     public class UserService : IUserService
     {
-        private readonly IRepositoryManager _repository;
-        private readonly UserManager<IdentityUser> _userManager;
-        public UserService(IRepositoryManager repository, UserManager<IdentityUser> userManager)
+        private readonly UserManager<User> _userManager;
+        public UserService(UserManager<User> userManager)
         {
-            _repository = repository;
             _userManager = userManager;
         }
 
         public List<UserDTO> GetAllUsers()
         {
-            var users = _repository.User.GetAllAsync();
-
-            var userDto = users.Select(e => new UserDTO
+            List<UserDTO> userDto = _userManager.Users.Select(e => new UserDTO
             {
                 Id = e.Id,
-                Name = e.Name
+                Name = e.Name,
+                Email = e.Email
             }).ToList();
             return userDto;
         }
         public async Task CreateNewUser(CreateUserDto user)
         {
             
-            var identityUser = new IdentityUser { UserName = user.Email, Email = user.Email };
-            var result = await _userManager.CreateAsync(identityUser, user.Password);
-            if (result.Succeeded)
+            var identityUser = new User
             {
-                Console.WriteLine("User Created Successfully");
+                Email = user.Email,
+                UserName = user.Email,
+                SecurityStamp = Guid.NewGuid().ToString(),
+                Name = user.Name
+            };
+            var result = await _userManager.CreateAsync(identityUser, user.Password);
+            if (!result.Succeeded)
+            {
+                string errors = string.Join("; ", result.Errors.Select(error => error.Description));
+                throw new InvalidOperationException($"User creation failed: {errors}");
             }
+
+            await _userManager.AddToRoleAsync(identityUser, "User");
         }
         public async Task RemoveUser(RemoveUserDto removeUserDto)
         {
-
-            var user = _repository.User.Find(e => e.Id == removeUserDto.Id).FirstOrDefault();
+            User? user = await _userManager.FindByIdAsync(removeUserDto.Id.ToString());
             if (user != null)
-                _repository.User.Delete(user);
-            await _repository.SaveAsync();
-
+            {
+                IdentityResult result = await _userManager.DeleteAsync(user);
+                if (!result.Succeeded)
+                {
+                    string errors = string.Join("; ", result.Errors.Select(error => error.Description));
+                    throw new InvalidOperationException($"User deletion failed: {errors}");
+                }
+            }
         }
 
         public async Task UpdateUser(UpdateUserDto updateUserDto)
         {
-            var user = _repository.User.Find(e => e.Id == updateUserDto.Id).FirstOrDefault();
+            User? user = await _userManager.FindByIdAsync(updateUserDto.Id.ToString());
             if (user != null)
             {
                 user.Name = updateUserDto.Name;
-                _repository.User.Update(user);
-                await _repository.SaveAsync();
+                IdentityResult result = await _userManager.UpdateAsync(user);
+                if (!result.Succeeded)
+                {
+                    string errors = string.Join("; ", result.Errors.Select(error => error.Description));
+                    throw new InvalidOperationException($"User update failed: {errors}");
+                }
             }
         }
     }

@@ -28,8 +28,9 @@ namespace Core.Services.Groups
             var groups = _repository.Group.GetAllAsync();
             var groupsDto = groups.Select(e => new GroupsDTO
             {
+                Id = e.Id,
                 Name = e.Name,
-                WorldCupId=e.WorldCupId,
+                WorldCupId = e.WorldCupId,
             }).ToList();
             return groupsDto;
         }

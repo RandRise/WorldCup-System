@@ -1,15 +1,13 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Identity;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Data.Entities
 {
-    public class User
+    public class User : IdentityUser<long>
     {
-        public int Id { get; set; }
         public required string Name { get; set; }
-        public ICollection<Bet> Bets { get; set; }
+        public string? RefreshToken { get; set; }
+        public ICollection<Bet> Bets { get; set; } = new List<Bet>();
+        
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Core.DTOs.WorldCups;
 using Core.Services.WorldCups;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WorldCup_System.Controllers
@@ -20,6 +21,7 @@ namespace WorldCup_System.Controllers
             return worldCups;
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> CreateNewWorldCup([FromBody] WorldCupDTO worldCupDTO)
         {

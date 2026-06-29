@@ -13,8 +13,6 @@ namespace Core.Services.Cities
         private const long _maxFileSize = 2 * 1024 * 1024; // 2 MB
         private readonly IRepositoryManager _repository;
 
-        public List<CityDTO> Cities => throw new NotImplementedException();
-
         public CityService(IRepositoryManager repository)
         {
             _repository = repository;
@@ -24,8 +22,9 @@ namespace Core.Services.Cities
             var cities = _repository.City.GetAllAsync();
             var cityDto = cities.Select(e => new CityDTO
             {
+                Id = e.Id,
                 Name = e.Name,
-
+                CountryId = e.CountryId
             }).ToList();
             return cityDto;
         }

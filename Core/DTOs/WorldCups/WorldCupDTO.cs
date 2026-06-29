@@ -8,6 +8,7 @@ namespace Core.DTOs.WorldCups
 {
     public class WorldCupDTO
     {
+        public int Id { get; set; }
         public required DateTime Year { get; set; }
     }
 }

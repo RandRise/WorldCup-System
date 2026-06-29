@@ -11,6 +11,10 @@ namespace Data.Repos
         private IRepository<Stadium> _stadiumRepository;
         private IRepository<WorldCup> _worldCupRepository;
         private IRepository<Group> _groupRepository;
+        private IRepository<Team>? _teamRepository;
+        private IRepository<Coach>? _coachRepository;
+        private IRepository<Player>? _playerRepository;
+        private IRepository<PlayerPosition>? _playerPositionRepository;
         public RepositoryManager(ApplicationDbContext context)
         {
             _context = context;
@@ -73,6 +77,46 @@ namespace Data.Repos
                 if (_groupRepository == null)
                     _groupRepository = new Repository<Group>(_context);
                 return _groupRepository;
+            }
+        }
+
+        public IRepository<Team> Team
+        {
+            get
+            {
+                if (_teamRepository == null)
+                    _teamRepository = new Repository<Team>(_context);
+                return _teamRepository;
+            }
+        }
+
+        public IRepository<Coach> Coach
+        {
+            get
+            {
+                if (_coachRepository == null)
+                    _coachRepository = new Repository<Coach>(_context);
+                return _coachRepository;
+            }
+        }
+
+        public IRepository<Player> Player
+        {
+            get
+            {
+                if (_playerRepository == null)
+                    _playerRepository = new Repository<Player>(_context);
+                return _playerRepository;
+            }
+        }
+
+        public IRepository<PlayerPosition> PlayerPosition
+        {
+            get
+            {
+                if (_playerPositionRepository == null)
+                    _playerPositionRepository = new Repository<PlayerPosition>(_context);
+                return _playerPositionRepository;
             }
         }
 

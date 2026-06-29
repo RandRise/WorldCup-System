@@ -13,5 +13,6 @@ namespace Core.Services.Stadiums
         public List<StadiumDTO> GetStadiums();
         Task AddStadium(StadiumDTO stadium);
         Task UpdateStadium(UpdateStadiumDto stadium);
+        Task LoadStadiumsFromCsv(IFormFile file);
     }
 }

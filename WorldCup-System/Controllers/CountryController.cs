@@ -1,5 +1,6 @@
 ﻿using Core.DTOs.Countries;
 using Core.Services.Countries;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WorldCup_System.Controllers
@@ -24,6 +25,7 @@ namespace WorldCup_System.Controllers
         }
 
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> AddCountries([FromForm] UploadCountryDto uploadCountry)
         {

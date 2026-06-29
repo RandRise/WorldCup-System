@@ -30,9 +30,15 @@ namespace Data.Repos
             return _dbSet;
         }
 
-        public Task<T> GetByIdAsync(int id)
+        public async Task<T> GetByIdAsync(int id)
         {
-            throw new NotImplementedException();
+            T? entity = await _dbSet.FindAsync(id);
+            if (entity is null)
+            {
+                throw new KeyNotFoundException($"Entity of type {typeof(T).Name} with id {id} was not found.");
+            }
+
+            return entity;
         }
 
         public void Update(T entity)

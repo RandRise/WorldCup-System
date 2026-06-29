@@ -5,14 +5,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Data.Context
 {
-    public class ApplicationDbContext : IdentityDbContext<IdentityUser>
+    public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<long>, long>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
            : base(options)
         {
 
         }
-        public DbSet<User> Users { get; set; }
         public DbSet<Group> Groups { get; set; }
         public DbSet<WorldCup> WorldCups { get; set; }
         public DbSet<Country> Countries { get; set; }
@@ -31,7 +30,6 @@ namespace Data.Context
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            // your customizations
 
             modelBuilder.Entity<City>(e =>
             {

@@ -1,6 +1,7 @@
 ﻿using Core.DTOs.Cities;
 using Core.DTOs.Stadiums;
 using Core.Services.Stadiums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WorldCup_System.Controllers
@@ -23,6 +24,7 @@ namespace WorldCup_System.Controllers
             return stadiums;
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> AddStadium([FromBody] StadiumDTO stadium)
         {
@@ -38,6 +40,7 @@ namespace WorldCup_System.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> UpdateStadium([FromBody] UpdateStadiumDto stadium)
         {
@@ -48,8 +51,28 @@ namespace WorldCup_System.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return ApiErrorHelper.FromException(ex);
             }
         }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost]
+        public async Task<IActionResult> ImportStadiumsFromCsv([FromForm] UploadStadiumDto uploadStadium)
+        {
+            if (uploadStadium.File == null)
+            {
+                return BadRequest(new { error = "File is required." });
+            }
+
+            try
+            {
+                await _stadiumService.LoadStadiumsFromCsv(uploadStadium.File);
+                return Ok("Stadiums imported successfully.");
+            }
+            catch (Exception ex)
+            {
+                return ApiErrorHelper.FromException(ex);
+            }
         }
     }
+}

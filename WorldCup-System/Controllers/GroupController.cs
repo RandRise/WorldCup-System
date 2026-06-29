@@ -1,5 +1,6 @@
 ﻿using Core.DTOs.Groups;
 using Core.Services.Groups;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WorldCup_System.Controllers
@@ -19,6 +20,7 @@ namespace WorldCup_System.Controllers
             var groups = _groupService.GetGroups();
             return groups;
         }
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> AddGroup([FromBody] AddGroupsDTO group)
         {

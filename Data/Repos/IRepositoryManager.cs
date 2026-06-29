@@ -15,6 +15,10 @@ namespace Data.Repos
         IRepository<Stadium> Stadium { get; }
         IRepository<WorldCup> WorldCup { get; }
         IRepository<Group> Group { get; }
+        IRepository<Team> Team { get; }
+        IRepository<Coach> Coach { get; }
+        IRepository<Player> Player { get; }
+        IRepository<PlayerPosition> PlayerPosition { get; }
         Task SaveAsync();
     }
 }

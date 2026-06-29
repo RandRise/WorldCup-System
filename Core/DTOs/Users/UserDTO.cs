@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Core.DTOs.Users
+﻿namespace Core.DTOs.Users
 {
     public class UserDTO
     {
-        public int Id { get; set; }
+        public required long Id { get; set; }
         public required string Name { get; set; }
-
+        public string? Email { get; set; }
     }
     public class CreateUserDto
     {
@@ -20,12 +14,12 @@ namespace Core.DTOs.Users
     }
     public class RemoveUserDto
     {
-        public required int Id { get; set; }
+        public required long Id { get; set; }
 
     }
     public class UpdateUserDto
     {
-        public required int Id { get; set; }
+        public required long Id { get; set; }
         public required string Name { get; set; }
 
     }
@@ -34,4 +28,5 @@ namespace Core.DTOs.Users
         public required string? Email { get; set; }
         public required string? Password { get; set; }
     }
+    
 }

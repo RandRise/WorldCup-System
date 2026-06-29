@@ -20,6 +20,7 @@ namespace Core.Services.WorldCups
             var worldCups = _repository.WorldCup.GetAllAsync();
             var worldCupDto = worldCups.Select(e => new WorldCupDTO
             {
+                Id = e.Id,
                 Year = e.Year,
             }).ToList();
             return worldCupDto;
