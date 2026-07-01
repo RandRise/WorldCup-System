@@ -1,10 +1,16 @@
+using Core.Services.Bets;
+using Core.Services.Cards;
 using Core.Services.Cities;
 using Core.Services.Coaches;
 using Core.Services.Countries;
+using Core.Services.Goals;
 using Core.Services.Groups;
+using Core.Services.Matches;
 using Core.Services.PlayerPositions;
 using Core.Services.Players;
 using Core.Services.Stadiums;
+using Core.Services.Standings;
+using Core.Services.Stats;
 using Core.Services.Teams;
 using Core.Services.Users;
 using Core.Services.WorldCups;
@@ -90,6 +96,13 @@ builder.Services.AddScoped<ITeamService, TeamService>();
 builder.Services.AddScoped<ICoachService, CoachService>();
 builder.Services.AddScoped<IPlayerService, PlayerService>();
 builder.Services.AddScoped<IPlayerPositionService, PlayerPositionService>();
+builder.Services.AddScoped<IMatchService, MatchService>();
+builder.Services.AddScoped<IGoalService, GoalService>();
+builder.Services.AddScoped<ICardService, CardService>();
+builder.Services.AddScoped<ITeamStatsService, TeamStatsService>();
+builder.Services.AddScoped<IStandingsService, StandingsService>();
+builder.Services.AddScoped<IBetService, BetService>();
+builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

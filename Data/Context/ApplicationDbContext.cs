@@ -195,6 +195,9 @@ namespace Data.Context
             modelBuilder.Entity<Bet>(e =>
             {
                 e.ToTable("Bet");
+                e.HasIndex(bet => new { bet.UserId, bet.MatchId })
+                    .IsUnique()
+                    .HasDatabaseName("Uq_Bet_User_Match");
                 e.HasOne(e => e.User)
                 .WithMany(p => p.Bets)
                 .HasForeignKey(e => e.UserId)
@@ -208,12 +211,16 @@ namespace Data.Context
                 e.HasOne(e => e.Team)
                 .WithMany(p => p.Bets)
                 .HasForeignKey(e => e.TeamId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Team_Bets");
             });
             modelBuilder.Entity<BetResult>(e =>
             {
                 e.ToTable("BetResult");
+                e.HasIndex(result => result.BetId)
+                    .IsUnique()
+                    .HasDatabaseName("Uq_BetResult_Bet");
                 e.HasOne(e => e.Bet)
                 .WithMany(p => p.Results)
                 .HasForeignKey(e => e.BetId)

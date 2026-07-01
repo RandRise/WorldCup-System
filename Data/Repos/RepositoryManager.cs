@@ -15,6 +15,12 @@ namespace Data.Repos
         private IRepository<Coach>? _coachRepository;
         private IRepository<Player>? _playerRepository;
         private IRepository<PlayerPosition>? _playerPositionRepository;
+        private IRepository<Match>? _matchRepository;
+        private IRepository<TeamStats>? _teamStatsRepository;
+        private IRepository<Goal>? _goalRepository;
+        private IRepository<Card>? _cardRepository;
+        private IRepository<Bet>? _betRepository;
+        private IRepository<BetResult>? _betResultRepository;
         public RepositoryManager(ApplicationDbContext context)
         {
             _context = context;
@@ -117,6 +123,66 @@ namespace Data.Repos
                 if (_playerPositionRepository == null)
                     _playerPositionRepository = new Repository<PlayerPosition>(_context);
                 return _playerPositionRepository;
+            }
+        }
+
+        public IRepository<Match> Match
+        {
+            get
+            {
+                if (_matchRepository == null)
+                    _matchRepository = new Repository<Match>(_context);
+                return _matchRepository;
+            }
+        }
+
+        public IRepository<TeamStats> TeamStats
+        {
+            get
+            {
+                if (_teamStatsRepository == null)
+                    _teamStatsRepository = new Repository<TeamStats>(_context);
+                return _teamStatsRepository;
+            }
+        }
+
+        public IRepository<Goal> Goal
+        {
+            get
+            {
+                if (_goalRepository == null)
+                    _goalRepository = new Repository<Goal>(_context);
+                return _goalRepository;
+            }
+        }
+
+        public IRepository<Card> Card
+        {
+            get
+            {
+                if (_cardRepository == null)
+                    _cardRepository = new Repository<Card>(_context);
+                return _cardRepository;
+            }
+        }
+
+        public IRepository<Bet> Bet
+        {
+            get
+            {
+                if (_betRepository == null)
+                    _betRepository = new Repository<Bet>(_context);
+                return _betRepository;
+            }
+        }
+
+        public IRepository<BetResult> BetResult
+        {
+            get
+            {
+                if (_betResultRepository == null)
+                    _betResultRepository = new Repository<BetResult>(_context);
+                return _betResultRepository;
             }
         }
 

@@ -3,6 +3,7 @@ using System;
 using Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260701144245_BetDrawSupport")]
+    partial class BetDrawSupport
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -48,9 +51,7 @@ namespace Data.Migrations
 
                     b.HasIndex("TeamId");
 
-                    b.HasIndex("UserId", "MatchId")
-                        .IsUnique()
-                        .HasDatabaseName("Uq_Bet_User_Match");
+                    b.HasIndex("UserId");
 
                     b.ToTable("Bet", (string)null);
                 });
@@ -71,9 +72,7 @@ namespace Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BetId")
-                        .IsUnique()
-                        .HasDatabaseName("Uq_BetResult_Bet");
+                    b.HasIndex("BetId");
 
                     b.ToTable("BetResult", (string)null);
                 });

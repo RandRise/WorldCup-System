@@ -19,6 +19,12 @@ namespace Data.Repos
         IRepository<Coach> Coach { get; }
         IRepository<Player> Player { get; }
         IRepository<PlayerPosition> PlayerPosition { get; }
+        IRepository<Match> Match { get; }
+        IRepository<TeamStats> TeamStats { get; }
+        IRepository<Goal> Goal { get; }
+        IRepository<Card> Card { get; }
+        IRepository<Bet> Bet { get; }
+        IRepository<BetResult> BetResult { get; }
         Task SaveAsync();
     }
 }
