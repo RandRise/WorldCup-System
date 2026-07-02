@@ -1,0 +1,10 @@
+@if (context.worldCups().length > 0) {
+  <label class="wc-select">
+    <span>Tournament</span>
+    <select [value]="selectedId() ?? ''" (change)="onSelect($event)">
+      @for (worldCup of context.worldCups(); track worldCup.id) {
+        <option [value]="worldCup.id">{{ context.worldCupLabel(worldCup) }}</option>
+      }
+    </select>
+  </label>
+}

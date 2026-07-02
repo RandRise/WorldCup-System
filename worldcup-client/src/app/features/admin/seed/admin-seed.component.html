@@ -1,0 +1,37 @@
+<section class="card">
+  <h1>Demo tournament seed</h1>
+  <p class="subtitle">
+    Load World Cup 2026 reference data from bundled CSV files — countries, host cities
+    across USA, Canada, and Mexico, stadiums, groups A–L, and all 48 teams.
+  </p>
+
+  <ul class="seed-list">
+    <li><code>all_countries.csv</code> — nation lookup</li>
+    <li><code>WorldCup2026_host_cities.csv</code> — host cities</li>
+    <li><code>Stadiums.csv</code> — 16 World Cup venues</li>
+    <li><code>WorldCup2026_teams.csv</code> — groups and squads</li>
+  </ul>
+
+  @if (errorMessage()) {
+    <p class="alert alert-error" role="alert">{{ errorMessage() }}</p>
+  }
+
+  <button type="button" class="btn btn-primary" [disabled]="isLoading()" (click)="loadDemoData()">
+    {{ isLoading() ? 'Loading…' : 'Load World Cup 2026 demo data' }}
+  </button>
+
+  @if (result(); as seedResult) {
+    <div class="result card" [class.muted]="seedResult.alreadySeeded">
+      <h2>{{ seedResult.alreadySeeded ? 'Already seeded' : 'Seed complete' }}</h2>
+      <p>{{ seedResult.message }}</p>
+      <dl>
+        <div><dt>World Cup ID</dt><dd>{{ seedResult.worldCupId }}</dd></div>
+        <div><dt>Countries added</dt><dd>{{ seedResult.countriesAdded }}</dd></div>
+        <div><dt>Cities added</dt><dd>{{ seedResult.citiesAdded }}</dd></div>
+        <div><dt>Stadiums added</dt><dd>{{ seedResult.stadiumsAdded }}</dd></div>
+        <div><dt>Groups added</dt><dd>{{ seedResult.groupsAdded }}</dd></div>
+        <div><dt>Teams added</dt><dd>{{ seedResult.teamsAdded }}</dd></div>
+      </dl>
+    </div>
+  }
+</section>

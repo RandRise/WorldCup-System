@@ -1,0 +1,57 @@
+<section class="card">
+  <header class="page-header">
+    <div>
+      <h1>My bets</h1>
+      <p>Your match predictions and earned points.</p>
+    </div>
+    <a routerLink="/fixtures" class="btn btn-secondary">Place predictions</a>
+  </header>
+
+  <div class="tabs">
+    <button type="button" [class.active]="!showActiveOnly()" (click)="toggleFilter(false)">All bets</button>
+    <button type="button" [class.active]="showActiveOnly()" (click)="toggleFilter(true)">Active only</button>
+  </div>
+
+  @if (errorMessage()) {
+    <p class="alert alert-error" role="alert">{{ errorMessage() }}</p>
+  }
+
+  @if (isLoading()) {
+    <p class="muted">Loading bets…</p>
+  } @else if (bets().length === 0) {
+    <p class="muted">No bets yet. <a routerLink="/fixtures">Browse fixtures</a> to predict outcomes.</p>
+  } @else {
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Match</th>
+            <th>Date</th>
+            <th>Prediction</th>
+            <th>Status</th>
+            <th>Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (bet of bets(); track bet.id) {
+            <tr>
+              <td>{{ bet.teamOneName }} vs {{ bet.teamTwoName }}</td>
+              <td>{{ bet.matchDate | date: 'medium' }}</td>
+              <td>{{ bet.predictedOutcome }}</td>
+              <td>
+                @if (bet.isResolved) {
+                  <span class="status-pill finished">Resolved</span>
+                } @else if (bet.isActive) {
+                  <span class="status-pill scheduled">Active</span>
+                } @else {
+                  <span class="status-pill live">Pending</span>
+                }
+              </td>
+              <td>{{ bet.pointsEarned ?? '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

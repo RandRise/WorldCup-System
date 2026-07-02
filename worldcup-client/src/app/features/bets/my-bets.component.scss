@@ -1,0 +1,11 @@
+.muted {
+  color: var(--text-muted);
+
+  a {
+    color: var(--primary);
+  }
+}
+
+.table-wrap {
+  overflow-x: auto;
+}

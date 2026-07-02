@@ -15,4 +15,10 @@
     <ProjectReference Include="..\Data\Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="CitiesCsvData\**\*" />
+    <EmbeddedResource Include="StadiumCsvData\**\*" />
+    <EmbeddedResource Include="DemoSeedData\**\*" />
+  </ItemGroup>
+
 </Project>

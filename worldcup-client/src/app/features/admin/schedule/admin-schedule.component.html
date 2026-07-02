@@ -1,0 +1,99 @@
+<section class="card">
+  <header class="page-header">
+    <div>
+      <h1>Match schedule</h1>
+      <p>Create and manage fixtures for the selected tournament.</p>
+    </div>
+    <app-world-cup-selector />
+  </header>
+
+  @if (message()) {
+    <p class="alert alert-success" role="status">{{ message() }}</p>
+  }
+  @if (errorMessage()) {
+    <p class="alert alert-error" role="alert">{{ errorMessage() }}</p>
+  }
+
+  <form class="match-form" (ngSubmit)="saveMatch()">
+    <h2>{{ matchForm.id > 0 ? 'Edit match' : 'Schedule match' }}</h2>
+    <div class="form-grid">
+      <label>
+        Home team
+        <select [(ngModel)]="matchForm.teamOneId" name="teamOne" required>
+          @for (team of teamsForWorldCup(); track team.id) {
+            <option [ngValue]="team.id">{{ team.countryName }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Away team
+        <select [(ngModel)]="matchForm.teamTwoId" name="teamTwo" required>
+          @for (team of teamsForWorldCup(); track team.id) {
+            <option [ngValue]="team.id">{{ team.countryName }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Stadium
+        <select [(ngModel)]="matchForm.stadiumId" name="stadium" required>
+          @for (stadium of stadiums(); track stadium.id) {
+            <option [ngValue]="stadium.id">{{ stadium.name }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Kickoff (UTC)
+        <input type="datetime-local" [(ngModel)]="matchForm.date" name="kickoff" required />
+      </label>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Save match</button>
+      @if (matchForm.id > 0) {
+        <button type="button" class="btn btn-secondary" (click)="resetForm()">Cancel edit</button>
+      }
+    </div>
+  </form>
+
+  <h2 class="section-title">Fixtures</h2>
+  @if (isLoading()) {
+    <p class="muted">Loading…</p>
+  } @else if (matchesForWorldCup().length === 0) {
+    <p class="muted">No matches scheduled yet.</p>
+  } @else {
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Match</th>
+            <th>Stadium</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (match of matchesForWorldCup(); track match.id) {
+            <tr>
+              <td>{{ match.date | date: 'medium' }}</td>
+              <td>
+                {{ match.teamOneName }} vs {{ match.teamTwoName }}
+                @if (match.teamOneScore != null && match.teamTwoScore != null) {
+                  <strong class="score">{{ match.teamOneScore }} – {{ match.teamTwoScore }}</strong>
+                }
+              </td>
+              <td>{{ match.stadiumName }}</td>
+              <td><span class="status-pill" [class]="statusClass(match.status)">{{ match.status }}</span></td>
+              <td class="actions">
+                <button type="button" class="btn btn-secondary btn-sm" (click)="editMatch(match)">Edit</button>
+                <button type="button" class="btn btn-secondary btn-sm" (click)="deleteMatch(match.id)">Delete</button>
+                @if (match.status === 'Finished') {
+                  <button type="button" class="btn btn-primary btn-sm" (click)="resolveBets(match.id)">Resolve bets</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

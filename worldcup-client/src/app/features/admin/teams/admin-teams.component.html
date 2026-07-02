@@ -1,0 +1,133 @@
+<section class="card">
+  <header class="page-header">
+    <div>
+      <h1>Teams &amp; squads</h1>
+      <p>Assign nations to groups and manage coaches and players.</p>
+    </div>
+    <app-world-cup-selector />
+  </header>
+
+  @if (message()) {
+    <p class="alert alert-success" role="status">{{ message() }}</p>
+  }
+  @if (errorMessage()) {
+    <p class="alert alert-error" role="alert">{{ errorMessage() }}</p>
+  }
+
+  <div class="layout">
+    <div class="panel">
+      <h2>Add team</h2>
+      <div class="form-grid">
+        <label>
+          Country
+          <select [(ngModel)]="teamForm.countryId">
+            @for (country of countries(); track country.id) {
+              <option [ngValue]="country.id">{{ country.name }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          Group
+          <select [(ngModel)]="teamForm.groupId">
+            @for (group of context.groupsForSelectedWorldCup(); track group.id) {
+              <option [ngValue]="group.id">Group {{ group.name }}</option>
+            }
+          </select>
+        </label>
+      </div>
+      <button type="button" class="btn btn-primary" (click)="addTeam()">Add team</button>
+
+      <h2 class="section-title">Teams</h2>
+      @if (isLoading()) {
+        <p class="muted">Loading…</p>
+      } @else {
+        <ul class="team-list">
+          @for (team of teamsForWorldCup(); track team.id) {
+            <li [class.active]="selectedTeamId() === team.id">
+              <button type="button" class="team-btn" (click)="selectTeam(team.id)">
+                <strong>{{ team.countryName }}</strong>
+                <span>Group {{ team.groupName }}</span>
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="deleteTeam(team.id)">Delete</button>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+    @if (selectedTeamId(); as teamId) {
+      <div class="panel squad-panel">
+        <h2>Squad management</h2>
+
+        <section>
+          <h3>Coaches</h3>
+          <div class="form-grid">
+            <label>
+              Name
+              <input [(ngModel)]="coachForm.name" />
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-primary" (click)="saveCoach()" [disabled]="!coachForm.name.trim()">
+              {{ coachForm.id > 0 ? 'Update coach' : 'Add coach' }}
+            </button>
+            @if (coachForm.id > 0) {
+              <button type="button" class="btn btn-secondary" (click)="coachForm = { id: 0, name: '', teamId }">Cancel</button>
+            }
+          </div>
+          <ul class="mini-list">
+            @for (coach of coaches(); track coach.id) {
+              <li>
+                <span>{{ coach.name }}</span>
+                <span>
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="editCoach(coach)">Edit</button>
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="deleteCoach(coach.id)">Delete</button>
+                </span>
+              </li>
+            }
+          </ul>
+        </section>
+
+        <section>
+          <h3>Players</h3>
+          <div class="form-grid">
+            <label>Name <input [(ngModel)]="playerForm.name" /></label>
+            <label>Number <input type="number" [(ngModel)]="playerForm.number" min="1" max="99" /></label>
+            <label>
+              Position
+              <select [(ngModel)]="playerForm.positionId">
+                @for (position of positions(); track position.id) {
+                  <option [ngValue]="position.id">{{ position.name }}</option>
+                }
+              </select>
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-primary" (click)="savePlayer()" [disabled]="!playerForm.name.trim()">
+              {{ playerForm.id > 0 ? 'Update player' : 'Add player' }}
+            </button>
+            @if (playerForm.id > 0) {
+              <button type="button" class="btn btn-secondary" (click)="playerForm = { id: 0, name: '', number: 1, teamId, positionId: positions()[0]?.id ?? 0 }">Cancel</button>
+            }
+          </div>
+          <table class="data-table">
+            <thead><tr><th>#</th><th>Name</th><th>Position</th><th></th></tr></thead>
+            <tbody>
+              @for (player of players(); track player.id) {
+                <tr>
+                  <td>{{ player.number }}</td>
+                  <td>{{ player.name }}</td>
+                  <td>{{ player.positionName }}</td>
+                  <td>
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="editPlayer(player)">Edit</button>
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="deletePlayer(player.id)">Delete</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </section>
+      </div>
+    }
+  </div>
+</section>

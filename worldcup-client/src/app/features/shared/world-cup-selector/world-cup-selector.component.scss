@@ -1,0 +1,12 @@
+.wc-select {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  max-width: 280px;
+
+  span {
+    color: var(--text-muted);
+  }
+}

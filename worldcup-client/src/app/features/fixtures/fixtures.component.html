@@ -1,0 +1,74 @@
+<section class="card">
+  <header class="page-header">
+    <div>
+      <h1>Fixtures</h1>
+      <p>Upcoming and completed matches with live scores.</p>
+    </div>
+    <app-world-cup-selector />
+  </header>
+
+  @if (message()) {
+    <p class="alert alert-success" role="status">{{ message() }}</p>
+  }
+  @if (errorMessage()) {
+    <p class="alert alert-error" role="alert">{{ errorMessage() }}</p>
+  }
+
+  @if (isLoading()) {
+    <p class="muted">Loading fixtures…</p>
+  } @else if (matches().length === 0) {
+    <p class="muted">No fixtures yet. An admin can schedule matches or load the World Cup 2026 demo seed.</p>
+  } @else {
+    <div class="fixture-list">
+      @for (match of matches(); track match.id) {
+        <article class="fixture card">
+          <div class="fixture-meta">
+            <span>{{ match.date | date: 'EEE, MMM d · HH:mm' }} UTC</span>
+            <span class="status-pill" [class]="statusClass(match.status)">{{ match.status }}</span>
+          </div>
+          <div class="fixture-teams">
+            <span class="team">{{ match.teamOneName }}</span>
+            <span class="score">
+              @if (match.teamOneScore != null && match.teamTwoScore != null) {
+                {{ match.teamOneScore }} – {{ match.teamTwoScore }}
+              } @else {
+                vs
+              }
+            </span>
+            <span class="team">{{ match.teamTwoName }}</span>
+          </div>
+          <p class="stadium">{{ match.stadiumName }}</p>
+
+          @if (userBet(match.id); as bet) {
+            <p class="prediction">Your pick: <strong>{{ bet.predictedOutcome }}</strong></p>
+          } @else if (match.canBet) {
+            @if (auth.isAuthenticated()) {
+              <div class="bet-actions">
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  [disabled]="placingMatchId() === match.id"
+                  (click)="placeBet(match, false, match.teamOneId)"
+                >{{ match.teamOneName }}</button>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  [disabled]="placingMatchId() === match.id"
+                  (click)="placeBet(match, true)"
+                >Draw</button>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  [disabled]="placingMatchId() === match.id"
+                  (click)="placeBet(match, false, match.teamTwoId)"
+                >{{ match.teamTwoName }}</button>
+              </div>
+            } @else {
+              <p class="hint"><a routerLink="/login">Log in</a> to place a prediction.</p>
+            }
+          }
+        </article>
+      }
+    </div>
+  }
+</section>

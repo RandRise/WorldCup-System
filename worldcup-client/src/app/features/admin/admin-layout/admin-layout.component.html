@@ -1,0 +1,8 @@
+<div class="admin-layout">
+  <nav class="admin-subnav" aria-label="Admin navigation">
+    @for (link of links; track link.path) {
+      <a [routerLink]="link.path" routerLinkActive="active">{{ link.label }}</a>
+    }
+  </nav>
+  <router-outlet />
+</div>

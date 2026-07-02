@@ -1,0 +1,38 @@
+.auth-card {
+  max-width: 420px;
+  margin: 2rem auto;
+
+  h1 {
+    margin: 0 0 0.25rem;
+  }
+
+  .subtitle {
+    margin: 0 0 1.25rem;
+    color: var(--text-muted);
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .footer-link {
+    margin: 1.25rem 0 0;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+
+    a {
+      color: var(--primary);
+    }
+  }
+}

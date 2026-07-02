@@ -1,0 +1,64 @@
+<section class="card">
+  <header class="page-header">
+    <div>
+      <h1>Group standings</h1>
+      <p>Tables update automatically from recorded match results.</p>
+    </div>
+    <app-world-cup-selector />
+  </header>
+
+  @if (errorMessage()) {
+    <p class="alert alert-error" role="alert">{{ errorMessage() }}</p>
+  }
+
+  <div class="tabs">
+    @for (group of context.groupsForSelectedWorldCup(); track group.id) {
+      <button
+        type="button"
+        [class.active]="selectedGroupId() === group.id"
+        (click)="selectGroup(group)"
+      >Group {{ group.name }}</button>
+    }
+  </div>
+
+  @if (isLoading()) {
+    <p class="muted">Loading standings…</p>
+  } @else if (standings().length === 0) {
+    <p class="muted">No standings yet — schedule matches and record results first.</p>
+  } @else {
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Team</th>
+            <th>P</th>
+            <th>W</th>
+            <th>D</th>
+            <th>L</th>
+            <th>GF</th>
+            <th>GA</th>
+            <th>GD</th>
+            <th>Pts</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of standings(); track row.teamId) {
+            <tr>
+              <td>{{ row.rank }}</td>
+              <td>{{ row.teamName }}</td>
+              <td>{{ row.played }}</td>
+              <td>{{ row.won }}</td>
+              <td>{{ row.drawn }}</td>
+              <td>{{ row.lost }}</td>
+              <td>{{ row.goalsFor }}</td>
+              <td>{{ row.goalsAgainst }}</td>
+              <td>{{ row.goalDifference }}</td>
+              <td><strong>{{ row.points }}</strong></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

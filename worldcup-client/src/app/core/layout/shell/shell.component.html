@@ -1,0 +1,32 @@
+<header class="topbar">
+  <a class="brand" routerLink="/">⚽ WorldCup</a>
+
+  <nav class="nav-links" aria-label="Main navigation">
+    <a routerLink="/fixtures" routerLinkActive="active">Fixtures</a>
+    <a routerLink="/standings" routerLinkActive="active">Standings</a>
+    <a routerLink="/leaderboard" routerLinkActive="active">Leaderboard</a>
+    <a routerLink="/bets" routerLinkActive="active">My Bets</a>
+
+    @if (auth.isAdmin()) {
+      <a routerLink="/admin/seed" routerLinkActive="active" class="admin-link">Admin</a>
+    }
+  </nav>
+
+  <div class="user-actions">
+    @if (auth.isAuthenticated()) {
+      <span class="user-chip">{{ auth.currentUser()?.name }}</span>
+      <button type="button" class="btn btn-secondary" (click)="logout()">Log out</button>
+    } @else {
+      <a routerLink="/login" class="btn btn-secondary">Log in</a>
+      <a routerLink="/register" class="btn btn-primary">Register</a>
+    }
+  </div>
+</header>
+
+<main class="page">
+  <router-outlet />
+</main>
+
+<footer class="footer">
+  <span>WorldCup System — prediction pool</span>
+</footer>
