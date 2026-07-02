@@ -14,6 +14,8 @@ namespace Core.DTOs.Matches
         public string? TeamTwoName { get; set; }
         public int TeamOneScore { get; set; }
         public int TeamTwoScore { get; set; }
+        public string Status { get; set; } = "Scheduled";
+        public bool CanBet { get; set; }
     }
 
     public class MatchDetailDTO : MatchDTO

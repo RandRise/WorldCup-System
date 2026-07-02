@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using Core.DTOs.Users;
 using Core.Services.Users;
 using Data.Entities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -148,6 +150,52 @@ namespace WorldCup_System.Tests.Controllers
             await _userController.RemoveUser(removeUserDto);
 
             _userServiceMock.Verify(userService => userService.RemoveUser(removeUserDto), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetMe_WhenAuthenticated_ReturnsCurrentUserProfile()
+        {
+            User user = new User
+            {
+                Id = 12,
+                Email = "user@example.com",
+                UserName = "user@example.com",
+                Name = "User"
+            };
+            CurrentUserDTO currentUser = new CurrentUserDTO
+            {
+                Id = 12,
+                Name = "User",
+                Email = "user@example.com",
+                Roles = new List<string> { "User" }
+            };
+
+            SetUserClaims("user@example.com");
+            _userManagerMock.Setup(userManager => userManager.FindByEmailAsync("user@example.com")).ReturnsAsync(user);
+            _userServiceMock.Setup(userService => userService.GetCurrentUser(12)).ReturnsAsync(currentUser);
+
+            IActionResult actionResult = await _userController.GetMe();
+
+            OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
+            CurrentUserDTO result = Assert.IsType<CurrentUserDTO>(okResult.Value);
+            Assert.Equal(12, result.Id);
+            Assert.Equal("User", result.Name);
+        }
+
+        private void SetUserClaims(string email)
+        {
+            List<Claim> claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Email, email)
+            };
+            ClaimsIdentity identity = new ClaimsIdentity(claims, "TestAuth");
+            _userController.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(identity)
+                }
+            };
         }
 
         private static Mock<UserManager<User>> CreateUserManagerMock()

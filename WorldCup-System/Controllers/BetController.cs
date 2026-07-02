@@ -33,9 +33,41 @@ namespace WorldCup_System.Controllers
         }
 
         [HttpGet]
-        public List<LeaderboardEntryDTO> GetLeaderboard()
+        public List<LeaderboardEntryDTO> GetLeaderboard([FromQuery] int? worldCupId = null)
         {
-            return _leaderboardService.GetLeaderboard();
+            return _leaderboardService.GetLeaderboard(worldCupId);
+        }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> GetMySummary([FromQuery] int? worldCupId = null)
+        {
+            try
+            {
+                long userId = await ResolveCurrentUserIdAsync();
+                LeaderboardSummaryDTO summary = _leaderboardService.GetMySummary(userId, worldCupId);
+                return Ok(summary);
+            }
+            catch (Exception ex)
+            {
+                return ApiErrorHelper.FromException(ex);
+            }
+        }
+
+        [Authorize]
+        [HttpGet("{matchId}")]
+        public async Task<IActionResult> GetMyBetForMatch(int matchId)
+        {
+            try
+            {
+                long userId = await ResolveCurrentUserIdAsync();
+                BetDTO? bet = _betService.GetMyBetForMatch(userId, matchId);
+                return Ok(bet);
+            }
+            catch (Exception ex)
+            {
+                return ApiErrorHelper.FromException(ex);
+            }
         }
 
         [Authorize]

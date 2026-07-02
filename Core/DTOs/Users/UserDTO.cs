@@ -28,5 +28,12 @@
         public required string? Email { get; set; }
         public required string? Password { get; set; }
     }
-    
+
+    public class CurrentUserDTO
+    {
+        public long Id { get; set; }
+        public required string Name { get; set; }
+        public string? Email { get; set; }
+        public IReadOnlyList<string> Roles { get; set; } = Array.Empty<string>();
+    }
 }

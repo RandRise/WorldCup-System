@@ -79,6 +79,19 @@ namespace Core.Services.Bets
             return BuildBetDtos(activeBets);
         }
 
+        public BetDTO? GetMyBetForMatch(long userId, int matchId)
+        {
+            Bet? bet = _repository.Bet
+                .Find(existingBet => existingBet.UserId == userId && existingBet.MatchId == matchId)
+                .FirstOrDefault();
+            if (bet == null)
+            {
+                return null;
+            }
+
+            return BuildBetDtos(new List<Bet> { bet }).FirstOrDefault();
+        }
+
         public async Task<int> ResolveBetsForMatch(int matchId)
         {
             Match match = await _repository.Match.GetByIdAsync(matchId);

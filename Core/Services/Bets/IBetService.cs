@@ -7,6 +7,7 @@ namespace Core.Services.Bets
         Task PlaceBet(long userId, PlaceBetDTO betDto);
         List<BetDTO> GetUserBets(long userId);
         List<BetDTO> GetActiveBets(long userId);
+        BetDTO? GetMyBetForMatch(long userId, int matchId);
         Task<int> ResolveBetsForMatch(int matchId);
         BettingRulesResponseDTO GetScoringRules();
     }

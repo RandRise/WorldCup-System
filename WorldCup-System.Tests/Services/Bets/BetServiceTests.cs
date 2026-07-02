@@ -365,5 +365,45 @@ namespace WorldCup_System.Tests.Services.Bets
             Assert.Equal(6, rules.Rules.Count);
             Assert.Contains(rules.Rules, rule => rule.Rule.Contains("3 points"));
         }
+
+        [Fact]
+        public void GetMyBetForMatch_WhenBetExists_ReturnsBetDto()
+        {
+            List<Bet> bets = new List<Bet>
+            {
+                new Bet { Id = 7, UserId = 5, MatchId = 1, IsDraw = false, TeamId = 10 }
+            };
+            List<MatchEntity> matches = new List<MatchEntity>
+            {
+                new MatchEntity { Id = 1, Date = DateTime.UtcNow.AddDays(1), StadiumId = 1, TeamOneId = 10, TeamTwoId = 20 }
+            };
+
+            _betRepositoryMock.Setup(betRepository => betRepository.Find(It.IsAny<Expression<Func<Bet, bool>>>()))
+                .Returns((Expression<Func<Bet, bool>> predicate) => bets.AsQueryable().Where(predicate));
+            _matchRepositoryMock.Setup(matchRepository => matchRepository.Find(It.IsAny<Expression<Func<MatchEntity, bool>>>()))
+                .Returns((Expression<Func<MatchEntity, bool>> predicate) => matches.AsQueryable().Where(predicate));
+            _teamRepositoryMock.Setup(teamRepository => teamRepository.GetAllAsync()).Returns(new List<Team>().AsQueryable());
+            _countryRepositoryMock.Setup(countryRepository => countryRepository.GetAllAsync()).Returns(new List<Country>().AsQueryable());
+            _betResultRepositoryMock.Setup(betResultRepository => betResultRepository.Find(It.IsAny<Expression<Func<BetResult, bool>>>()))
+                .Returns(new List<BetResult>().AsQueryable());
+
+            BetDTO? result = _betService.GetMyBetForMatch(5, 1);
+
+            Assert.NotNull(result);
+            Assert.Equal(7, result.Id);
+            Assert.Equal(1, result.MatchId);
+            Assert.True(result.IsActive);
+        }
+
+        [Fact]
+        public void GetMyBetForMatch_WhenNoBet_ReturnsNull()
+        {
+            _betRepositoryMock.Setup(betRepository => betRepository.Find(It.IsAny<Expression<Func<Bet, bool>>>()))
+                .Returns(new List<Bet>().AsQueryable());
+
+            BetDTO? result = _betService.GetMyBetForMatch(5, 99);
+
+            Assert.Null(result);
+        }
     }
 }

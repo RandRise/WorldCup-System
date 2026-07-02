@@ -23,6 +23,25 @@ namespace Core.Services.Users
             }).ToList();
             return userDto;
         }
+
+        public async Task<CurrentUserDTO> GetCurrentUser(long userId)
+        {
+            User? user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null)
+            {
+                throw new KeyNotFoundException("User was not found.");
+            }
+
+            IList<string> roles = await _userManager.GetRolesAsync(user);
+            return new CurrentUserDTO
+            {
+                Id = user.Id,
+                Name = user.Name,
+                Email = user.Email,
+                Roles = roles.ToList()
+            };
+        }
+
         public async Task CreateNewUser(CreateUserDto user)
         {
             

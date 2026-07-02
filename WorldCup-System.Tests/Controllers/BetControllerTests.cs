@@ -58,7 +58,7 @@ namespace WorldCup_System.Tests.Controllers
                 new LeaderboardEntryDTO { Rank = 1, UserId = 1, TotalPoints = 9 }
             };
 
-            _leaderboardServiceMock.Setup(leaderboardService => leaderboardService.GetLeaderboard()).Returns(entries);
+            _leaderboardServiceMock.Setup(leaderboardService => leaderboardService.GetLeaderboard(null)).Returns(entries);
 
             List<LeaderboardEntryDTO> result = _betController.GetLeaderboard();
 
@@ -111,6 +111,49 @@ namespace WorldCup_System.Tests.Controllers
 
             OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
             Assert.NotNull(okResult.Value);
+        }
+
+        [Fact]
+        public async Task GetMySummary_WhenAuthenticated_ReturnsSummaryFromService()
+        {
+            User user = new User { Id = 42, Email = "user@test.com", UserName = "user@test.com", Name = "User" };
+            SetUserClaims("user@test.com");
+            _userManagerMock.Setup(userManager => userManager.FindByEmailAsync("user@test.com")).ReturnsAsync(user);
+
+            LeaderboardSummaryDTO summary = new LeaderboardSummaryDTO
+            {
+                Rank = 3,
+                UserId = 42,
+                UserName = "User",
+                TotalPoints = 6,
+                ResolvedBets = 2,
+                ActiveBets = 1
+            };
+            _leaderboardServiceMock.Setup(leaderboardService => leaderboardService.GetMySummary(42, null)).Returns(summary);
+
+            IActionResult actionResult = await _betController.GetMySummary();
+
+            OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
+            LeaderboardSummaryDTO result = Assert.IsType<LeaderboardSummaryDTO>(okResult.Value);
+            Assert.Equal(3, result.Rank);
+            Assert.Equal(6, result.TotalPoints);
+        }
+
+        [Fact]
+        public async Task GetMyBetForMatch_WhenAuthenticated_ReturnsBetFromService()
+        {
+            User user = new User { Id = 42, Email = "user@test.com", UserName = "user@test.com", Name = "User" };
+            SetUserClaims("user@test.com");
+            _userManagerMock.Setup(userManager => userManager.FindByEmailAsync("user@test.com")).ReturnsAsync(user);
+
+            BetDTO bet = new BetDTO { Id = 9, UserId = 42, MatchId = 5, IsDraw = true, PredictedOutcome = "Draw" };
+            _betServiceMock.Setup(betService => betService.GetMyBetForMatch(42, 5)).Returns(bet);
+
+            IActionResult actionResult = await _betController.GetMyBetForMatch(5);
+
+            OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
+            BetDTO result = Assert.IsType<BetDTO>(okResult.Value);
+            Assert.Equal(9, result.Id);
         }
 
         private void SetUserClaims(string email)

@@ -37,6 +37,16 @@ namespace Core.DTOs.Bets
         public int ResolvedBets { get; set; }
     }
 
+    public class LeaderboardSummaryDTO
+    {
+        public int? Rank { get; set; }
+        public long UserId { get; set; }
+        public string? UserName { get; set; }
+        public int TotalPoints { get; set; }
+        public int ResolvedBets { get; set; }
+        public int ActiveBets { get; set; }
+    }
+
     public class BettingRuleDTO
     {
         public required string Rule { get; set; }

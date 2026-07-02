@@ -4,6 +4,7 @@ namespace Core.Services.Bets
 {
     public interface ILeaderboardService
     {
-        List<LeaderboardEntryDTO> GetLeaderboard();
+        List<LeaderboardEntryDTO> GetLeaderboard(int? worldCupId = null);
+        LeaderboardSummaryDTO GetMySummary(long userId, int? worldCupId = null);
     }
 }

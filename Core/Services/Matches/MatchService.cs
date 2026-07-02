@@ -1,4 +1,5 @@
 using Core.DTOs.Matches;
+using Core.Services.Bets;
 using Data.Entities;
 using Data.Repos;
 
@@ -39,6 +40,7 @@ namespace Core.Services.Matches
 
             TeamStats? teamOneStats = stats.FirstOrDefault(teamStats => teamStats.TeamId == match.TeamOneId);
             TeamStats? teamTwoStats = stats.FirstOrDefault(teamStats => teamStats.TeamId == match.TeamTwoId);
+            (string status, bool canBet) = ResolveMatchStatus(match.Date);
 
             return new MatchDetailDTO
             {
@@ -52,6 +54,8 @@ namespace Core.Services.Matches
                 TeamTwoName = ResolveTeamName(match.TeamTwoId, teams, countries),
                 TeamOneScore = teamOneStats == null ? 0 : goals.Count(goal => goal.TeamStatsId == teamOneStats.Id),
                 TeamTwoScore = teamTwoStats == null ? 0 : goals.Count(goal => goal.TeamStatsId == teamTwoStats.Id),
+                Status = status,
+                CanBet = canBet,
                 TeamOneStats = BuildTeamStatsDto(teamOneStats, match, teams, countries, players, goals, cards),
                 TeamTwoStats = BuildTeamStatsDto(teamTwoStats, match, teams, countries, players, goals, cards)
             };
@@ -256,6 +260,8 @@ namespace Core.Services.Matches
                 TeamStats? teamTwoStats = stats.FirstOrDefault(teamStats =>
                     teamStats.MatchId == match.Id && teamStats.TeamId == match.TeamTwoId);
 
+                (string status, bool canBet) = ResolveMatchStatus(match.Date);
+
                 return new MatchDTO
                 {
                     Id = match.Id,
@@ -267,7 +273,9 @@ namespace Core.Services.Matches
                     TeamTwoId = match.TeamTwoId,
                     TeamTwoName = ResolveTeamName(match.TeamTwoId, teams, countries),
                     TeamOneScore = teamOneStats == null ? 0 : goals.Count(goal => goal.TeamStatsId == teamOneStats.Id),
-                    TeamTwoScore = teamTwoStats == null ? 0 : goals.Count(goal => goal.TeamStatsId == teamTwoStats.Id)
+                    TeamTwoScore = teamTwoStats == null ? 0 : goals.Count(goal => goal.TeamStatsId == teamTwoStats.Id),
+                    Status = status,
+                    CanBet = canBet
                 };
             }).ToList();
         }
@@ -364,6 +372,23 @@ namespace Core.Services.Matches
                 2 => "Red",
                 _ => "Unknown"
             };
+        }
+
+        private static (string Status, bool CanBet) ResolveMatchStatus(DateTime kickoff)
+        {
+            DateTime now = DateTime.UtcNow;
+            if (kickoff > now)
+            {
+                return ("Scheduled", true);
+            }
+
+            DateTime fullTime = kickoff.AddMinutes(BetScoringRules.MatchDurationMinutes);
+            if (fullTime > now)
+            {
+                return ("Live", false);
+            }
+
+            return ("Finished", false);
         }
     }
 }

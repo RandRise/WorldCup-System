@@ -96,6 +96,31 @@ namespace WorldCup_System.Tests.Services.Matches
         }
 
         [Fact]
+        public void GetMatches_SetsStatusAndCanBetFromKickoff()
+        {
+            DateTime futureKickoff = DateTime.UtcNow.AddDays(2);
+            DateTime liveKickoff = DateTime.UtcNow.AddMinutes(-30);
+            DateTime finishedKickoff = DateTime.UtcNow.AddHours(-3);
+            List<MatchEntity> matches = new List<MatchEntity>
+            {
+                new MatchEntity { Id = 1, Date = futureKickoff, StadiumId = 5, TeamOneId = 10, TeamTwoId = 20 },
+                new MatchEntity { Id = 2, Date = liveKickoff, StadiumId = 5, TeamOneId = 10, TeamTwoId = 20 },
+                new MatchEntity { Id = 3, Date = finishedKickoff, StadiumId = 5, TeamOneId = 10, TeamTwoId = 20 }
+            };
+
+            SetupEmptyMatchLookups(matches);
+
+            List<MatchDTO> result = _matchService.GetMatches();
+
+            Assert.Equal("Scheduled", result[0].Status);
+            Assert.True(result[0].CanBet);
+            Assert.Equal("Live", result[1].Status);
+            Assert.False(result[1].CanBet);
+            Assert.Equal("Finished", result[2].Status);
+            Assert.False(result[2].CanBet);
+        }
+
+        [Fact]
         public async Task GetMatchById_ReturnsDetailWithGoalsAndCards()
         {
             DateTime kickoff = new DateTime(2026, 6, 15, 18, 0, 0);
@@ -545,6 +570,16 @@ namespace WorldCup_System.Tests.Services.Matches
             repositoryMock
                 .Setup(repository => repository.Find(It.IsAny<Expression<Func<T, bool>>>()))
                 .Returns((Expression<Func<T, bool>> predicate) => entities.AsQueryable().Where(predicate));
+        }
+
+        private void SetupEmptyMatchLookups(List<MatchEntity> matches)
+        {
+            _matchRepositoryMock.Setup(matchRepository => matchRepository.GetAllAsync()).Returns(matches.AsQueryable());
+            _teamRepositoryMock.Setup(teamRepository => teamRepository.GetAllAsync()).Returns(new List<Team>().AsQueryable());
+            _countryRepositoryMock.Setup(countryRepository => countryRepository.GetAllAsync()).Returns(new List<Country>().AsQueryable());
+            _stadiumRepositoryMock.Setup(stadiumRepository => stadiumRepository.GetAllAsync()).Returns(new List<Stadium>().AsQueryable());
+            SetupFind(_teamStatsRepositoryMock, new List<TeamStats>());
+            SetupFind(_goalRepositoryMock, new List<Goal>());
         }
     }
 }

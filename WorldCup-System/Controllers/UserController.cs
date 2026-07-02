@@ -54,6 +54,39 @@ namespace WorldCup_System.Controllers
             await _userService.UpdateUser(updateUserDto);
         }
 
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> GetMe()
+        {
+            try
+            {
+                long userId = await ResolveCurrentUserIdAsync();
+                CurrentUserDTO currentUser = await _userService.GetCurrentUser(userId);
+                return Ok(currentUser);
+            }
+            catch (Exception ex)
+            {
+                return ApiErrorHelper.FromException(ex);
+            }
+        }
+
+        private async Task<long> ResolveCurrentUserIdAsync()
+        {
+            string? email = User.FindFirstValue(ClaimTypes.Email);
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                throw new InvalidOperationException("Authenticated user email claim is missing.");
+            }
+
+            User? user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                throw new KeyNotFoundException("Authenticated user was not found.");
+            }
+
+            return user.Id;
+        }
+
         private JwtSecurityToken GetToken(List<Claim> authClaims)
         {
             string? jwtSecret = _configuration["JWT:Secret"];

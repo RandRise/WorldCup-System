@@ -201,6 +201,43 @@ namespace WorldCup_System.Tests.Services.Users
             _userManagerMock.Verify(userManager => userManager.DeleteAsync(It.IsAny<User>()), Times.Never);
         }
 
+        [Fact]
+        public async Task GetCurrentUser_WhenUserExists_ReturnsProfileWithRoles()
+        {
+            User existingUser = new User
+            {
+                Id = 7,
+                Name = "Current User",
+                UserName = "current@example.com",
+                Email = "current@example.com"
+            };
+
+            _userManagerMock
+                .Setup(userManager => userManager.FindByIdAsync("7"))
+                .ReturnsAsync(existingUser);
+
+            _userManagerMock
+                .Setup(userManager => userManager.GetRolesAsync(existingUser))
+                .ReturnsAsync(new List<string> { "User", "Admin" });
+
+            CurrentUserDTO result = await _userService.GetCurrentUser(7);
+
+            Assert.Equal(7, result.Id);
+            Assert.Equal("Current User", result.Name);
+            Assert.Equal("current@example.com", result.Email);
+            Assert.Equal(new[] { "User", "Admin" }, result.Roles);
+        }
+
+        [Fact]
+        public async Task GetCurrentUser_WhenUserNotFound_ThrowsKeyNotFoundException()
+        {
+            _userManagerMock
+                .Setup(userManager => userManager.FindByIdAsync("999"))
+                .ReturnsAsync((User?)null);
+
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _userService.GetCurrentUser(999));
+        }
+
         private static Mock<UserManager<User>> CreateUserManagerMock()
         {
             Mock<IUserStore<User>> userStoreMock = new Mock<IUserStore<User>>();
