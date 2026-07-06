@@ -6,6 +6,6 @@ namespace Core.Services.WorldCups
     {
         public List<WorldCupDTO> GetAllWorldCups();
         Task CreateNewWorldCup(WorldCupDTO worldCup);
-           
+
     }
 }

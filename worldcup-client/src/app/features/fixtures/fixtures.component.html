@@ -29,7 +29,7 @@
           <div class="fixture-teams">
             <span class="team">{{ match.teamOneName }}</span>
             <span class="score">
-              @if (match.teamOneScore != null && match.teamTwoScore != null) {
+              @if (typeof match.teamOneScore === 'number' && typeof match.teamTwoScore === 'number') {
                 {{ match.teamOneScore }} – {{ match.teamTwoScore }}
               } @else {
                 vs

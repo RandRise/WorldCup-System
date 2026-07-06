@@ -10,6 +10,6 @@ namespace Data.Repos
         void Update(T entity);
         void Delete(T entity);
         public IQueryable<T> Find(Expression<Func<T, bool>> predicate);
-        
+
     }
 }

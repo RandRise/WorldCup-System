@@ -10,7 +10,7 @@ namespace Data.Entities
     {
         public int Id { get; set; }
 
-        public int CountryId  { get; set; }
+        public int CountryId { get; set; }
         public required Country Country { get; set; }
         public int GroupId { get; set; }
         public required Group Group { get; set; }

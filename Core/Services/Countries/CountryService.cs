@@ -70,7 +70,7 @@ namespace Core.Services.Countries
                     {
                         var countries = _repository.Country.Find(e => e.Name == values[1].Trim());
                         if (countries == null || countries.FirstOrDefault() == null)
-                            _repository.Country.Create(new Country { Name= values[1].Trim() });
+                            _repository.Country.Create(new Country { Name = values[1].Trim() });
                     }
 
                 }

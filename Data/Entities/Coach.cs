@@ -12,7 +12,7 @@ namespace Data.Entities
         public required string Name { get; set; }
         public required int TeamId { get; set; }
         public Team Team { get; set; }
-        
+
 
     }
 }

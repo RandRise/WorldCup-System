@@ -72,7 +72,7 @@ namespace Core.Services.Cities
                     {
                         var cities = _repository.City.Find(e => e.Name == values[0].Trim());
                         if (cities == null || cities.FirstOrDefault() == null)
-                            _repository.City.Create(new City { Name= values[0].Trim(), CountryId= CountryId });
+                            _repository.City.Create(new City { Name = values[0].Trim(), CountryId = CountryId });
                     }
 
                 }

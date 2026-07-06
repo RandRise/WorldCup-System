@@ -44,7 +44,7 @@ namespace Core.Services.Users
 
         public async Task CreateNewUser(CreateUserDto user)
         {
-            
+
             var identityUser = new User
             {
                 Email = user.Email,

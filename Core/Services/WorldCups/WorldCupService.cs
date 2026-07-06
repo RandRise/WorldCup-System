@@ -13,7 +13,7 @@ namespace Core.Services.WorldCups
         private readonly IRepositoryManager _repository;
         public WorldCupService(IRepositoryManager repository)
         {
-            _repository=repository;
+            _repository = repository;
         }
         public List<WorldCupDTO> GetAllWorldCups()
         {

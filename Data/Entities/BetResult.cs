@@ -11,7 +11,7 @@ namespace Data.Entities
         public int Id { get; set; }
         public Bet Bet { get; set; }
         public int BetId { get; set; }
-        public int Point {  get; set; }
+        public int Point { get; set; }
 
     }
 }

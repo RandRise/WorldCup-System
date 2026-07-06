@@ -23,6 +23,9 @@ jobs:
       - name: Build
         run: dotnet build WorldCup-System.sln --no-restore -c Release
 
+      - name: Format
+        run: dotnet format --verify-no-changes
+
       - name: Test
         run: dotnet test WorldCup-System.Tests/WorldCup-System.Tests.csproj --no-build -c Release --verbosity normal
 
@@ -43,6 +46,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Lint
+        run: npm run lint
 
       - name: Unit tests
         run: npm test -- --watch=false --browsers=ChromeHeadless

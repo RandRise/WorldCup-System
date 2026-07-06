@@ -11,7 +11,7 @@ namespace Core.Services.Groups
         {
             _repository = repository;
         }
-       
+
         public async Task AddGroup(AddGroupsDTO groupDto)
         {
             var group = new Group

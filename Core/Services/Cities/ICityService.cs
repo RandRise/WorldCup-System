@@ -7,7 +7,7 @@ namespace Core.Services.Cities
     {
         public List<CityDTO> GetAllCities();
         Task AddCities(CityDTO citiesDto);
-        
+
         Task LoadCitiesFromCsv(IFormFile file, int CountryId);
     }
 }

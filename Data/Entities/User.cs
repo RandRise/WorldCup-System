@@ -8,6 +8,6 @@ namespace Data.Entities
         public required string Name { get; set; }
         public string? RefreshToken { get; set; }
         public ICollection<Bet> Bets { get; set; } = new List<Bet>();
-        
+
     }
 }
