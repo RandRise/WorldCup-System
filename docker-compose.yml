@@ -2,15 +2,15 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: WorldCupDb
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-WorldCupDb}
     ports:
       - "5432:5432"
     volumes:
       - worldcup_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d WorldCupDb"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-WorldCupDb}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -20,19 +20,25 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "5055:8080"
+      - "${API_PORT:-5055}:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=WorldCupDb;Username=postgres;Password=postgres
-      JWT__Secret: docker-dev-jwt-secret-key-at-least-32-characters
-      JWT__ValidIssuer: http://localhost:5000
-      JWT__ValidAudience: http://localhost:4200
-      DevAdmin__Email: admin@localhost
-      DevAdmin__Password: Admin123!
-      DevSeed__WorldCup2026: "true"
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=${POSTGRES_DB:-WorldCupDb};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      JWT__Secret: ${JWT_SECRET:-docker-dev-jwt-secret-key-at-least-32-characters}
+      JWT__ValidIssuer: ${JWT_VALID_ISSUER:-http://localhost:5000}
+      JWT__ValidAudience: ${JWT_VALID_AUDIENCE:-http://localhost:4200}
+      DevAdmin__Email: ${DEV_ADMIN_EMAIL:-admin@localhost}
+      DevAdmin__Password: ${DEV_ADMIN_PASSWORD:-Admin123!}
+      DevSeed__WorldCup2026: ${DEV_SEED_WORLDCUP_2026:-true}
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
 volumes:
   worldcup_pgdata:

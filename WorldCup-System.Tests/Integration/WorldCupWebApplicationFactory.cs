@@ -9,6 +9,8 @@ namespace WorldCup_System.Tests.Integration
 {
     public class WorldCupWebApplicationFactory : WebApplicationFactory<Program>
     {
+        private readonly string _databaseName = $"WorldCupIntegrationTests_{Guid.NewGuid():N}";
+
         public WorldCupWebApplicationFactory()
         {
             Environment.SetEnvironmentVariable("JWT__Secret", "integration-test-jwt-secret-key-32chars");
@@ -52,7 +54,7 @@ namespace WorldCup_System.Tests.Integration
 
                 services.AddDbContext<ApplicationDbContext>(options =>
                 {
-                    options.UseInMemoryDatabase("WorldCupIntegrationTests");
+                    options.UseInMemoryDatabase(_databaseName);
                 });
             });
         }
