@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: WorldCupDb
+    ports:
+      - "5432:5432"
+    volumes:
+      - worldcup_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d WorldCupDb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5055:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=WorldCupDb;Username=postgres;Password=postgres
+      JWT__Secret: docker-dev-jwt-secret-key-at-least-32-characters
+      JWT__ValidIssuer: http://localhost:5000
+      JWT__ValidAudience: http://localhost:4200
+      DevAdmin__Email: admin@localhost
+      DevAdmin__Password: Admin123!
+      DevSeed__WorldCup2026: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  worldcup_pgdata:

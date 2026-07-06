@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  dotnet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore WorldCup-System.sln
+
+      - name: Build
+        run: dotnet build WorldCup-System.sln --no-restore -c Release
+
+      - name: Test
+        run: dotnet test WorldCup-System.Tests/WorldCup-System.Tests.csproj --no-build -c Release --verbosity normal
+
+  angular:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: worldcup-client
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: worldcup-client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Unit tests
+        run: npm test -- --watch=false --browsers=ChromeHeadless

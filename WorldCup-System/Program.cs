@@ -1,3 +1,5 @@
+using Serilog;
+using Serilog.Formatting.Compact;
 using Core.Services.Bets;
 using Core.Services.Cards;
 using Core.Services.Cities;
@@ -27,6 +29,15 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 ConfigurationManager configuration = builder.Configuration;
+
+builder.Host.UseSerilog((context, services, loggerConfiguration) =>
+{
+    loggerConfiguration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext()
+        .WriteTo.Console(new RenderedCompactJsonFormatter());
+});
 
 string? jwtSecret = configuration["JWT:Secret"];
 if (string.IsNullOrWhiteSpace(jwtSecret))
@@ -133,6 +144,14 @@ builder.Services.AddDbContext<ApplicationDbContext>(option =>
 {
     option.UseNpgsql(builder.Configuration["ConnectionStrings:DefaultConnection"]);
 });
+
+IHealthChecksBuilder healthChecksBuilder = builder.Services.AddHealthChecks()
+    .AddDbContextCheck<ApplicationDbContext>("database");
+
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    healthChecksBuilder.AddNpgSql(connectionString, name: "postgresql");
+}
 builder.Services.AddIdentity<User, IdentityRole<long>>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
@@ -198,6 +217,16 @@ using (var scope = app.Services.CreateScope())
     }
 
     ApplicationDbContext dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+    if (app.Environment.IsEnvironment("Testing"))
+    {
+        await dbContext.Database.EnsureCreatedAsync();
+    }
+    else
+    {
+        await dbContext.Database.MigrateAsync();
+    }
+
     string[] playerPositions = { "Goalkeeper", "Defender", "Midfielder", "Forward" };
     foreach (string positionName in playerPositions)
     {
@@ -235,6 +264,10 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+app.MapHealthChecks("/health");
+
 app.Run();
+
+public partial class Program { }
 
 
