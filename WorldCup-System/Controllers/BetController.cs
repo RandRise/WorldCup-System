@@ -1,4 +1,5 @@
 using Core.DTOs.Bets;
+using Core.Helpers;
 using Core.Services.Bets;
 using Data.Entities;
 using Microsoft.AspNetCore.Authorization;
@@ -47,6 +48,22 @@ namespace WorldCup_System.Controllers
                 long userId = await ResolveCurrentUserIdAsync();
                 LeaderboardSummaryDTO summary = _leaderboardService.GetMySummary(userId, worldCupId);
                 return Ok(summary);
+            }
+            catch (Exception ex)
+            {
+                return ApiErrorHelper.FromException(ex);
+            }
+        }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> GetMyBetsForWorldCup([FromQuery] int worldCupId)
+        {
+            try
+            {
+                long userId = await ResolveCurrentUserIdAsync();
+                List<BetDTO> bets = _betService.GetMyBetsForWorldCup(userId, worldCupId);
+                return Ok(bets);
             }
             catch (Exception ex)
             {
@@ -138,21 +155,9 @@ namespace WorldCup_System.Controllers
             }
         }
 
-        private async Task<long> ResolveCurrentUserIdAsync()
+        private Task<long> ResolveCurrentUserIdAsync()
         {
-            string? email = User.FindFirstValue(ClaimTypes.Email);
-            if (string.IsNullOrWhiteSpace(email))
-            {
-                throw new InvalidOperationException("Authenticated user email claim is missing.");
-            }
-
-            User? user = await _userManager.FindByEmailAsync(email);
-            if (user == null)
-            {
-                throw new KeyNotFoundException("Authenticated user was not found.");
-            }
-
-            return user.Id;
+            return CurrentUserResolver.ResolveUserIdAsync(User, _userManager);
         }
     }
 }

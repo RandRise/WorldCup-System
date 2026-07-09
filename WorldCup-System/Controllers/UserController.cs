@@ -1,4 +1,5 @@
 ﻿using Core.DTOs.Users;
+using Core.Helpers;
 using Core.Services.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -70,21 +71,9 @@ namespace WorldCup_System.Controllers
             }
         }
 
-        private async Task<long> ResolveCurrentUserIdAsync()
+        private Task<long> ResolveCurrentUserIdAsync()
         {
-            string? email = User.FindFirstValue(ClaimTypes.Email);
-            if (string.IsNullOrWhiteSpace(email))
-            {
-                throw new InvalidOperationException("Authenticated user email claim is missing.");
-            }
-
-            User? user = await _userManager.FindByEmailAsync(email);
-            if (user == null)
-            {
-                throw new KeyNotFoundException("Authenticated user was not found.");
-            }
-
-            return user.Id;
+            return CurrentUserResolver.ResolveUserIdAsync(User, _userManager);
         }
 
         private JwtSecurityToken GetToken(List<Claim> authClaims)
@@ -127,6 +116,9 @@ namespace WorldCup_System.Controllers
                 var userRoles = await _userManager.GetRolesAsync(user);
                 var authClaims = new List<Claim>
         {
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new Claim(JwtRegisteredClaimNames.Email, user.Email!),
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Email, user.Email!),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };

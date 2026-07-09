@@ -120,6 +120,29 @@ namespace Core.Services.Teams
                     "Cannot delete team while coaches or players are still assigned. Remove them first.");
             }
 
+            bool hasMatches = _repository.Match
+                .Find(match => match.TeamOneId == id || match.TeamTwoId == id)
+                .Any();
+            if (hasMatches)
+            {
+                throw new InvalidOperationException(
+                    "Cannot delete team while it is scheduled in one or more matches. Delete those matches first.");
+            }
+
+            bool hasBets = _repository.Bet.Find(bet => bet.TeamId == id).Any();
+            if (hasBets)
+            {
+                throw new InvalidOperationException(
+                    "Cannot delete team while bets reference it. Remove related bets first.");
+            }
+
+            bool hasTeamStats = _repository.TeamStats.Find(teamStats => teamStats.TeamId == id).Any();
+            if (hasTeamStats)
+            {
+                throw new InvalidOperationException(
+                    "Cannot delete team while match statistics reference it. Remove related match data first.");
+            }
+
             _repository.Team.Delete(team);
             await _repository.SaveAsync();
         }

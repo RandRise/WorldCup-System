@@ -1,4 +1,5 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { ReferenceApiService } from '../../../core/api/reference-api.service';
 import { TournamentApiService } from '../../../core/api/tournament-api.service';
@@ -87,8 +88,8 @@ export class AdminTeamsComponent implements OnInit {
       });
       this.message.set('Team added.');
       await this.reload();
-    } catch {
-      this.errorMessage.set('Failed to add team. Country may already have a team.');
+    } catch (error: unknown) {
+      this.errorMessage.set(this.readApiError(error, 'Failed to add team.'));
     }
   }
 
@@ -106,8 +107,8 @@ export class AdminTeamsComponent implements OnInit {
       }
       this.message.set('Team deleted.');
       await this.reload();
-    } catch {
-      this.errorMessage.set('Failed to delete team.');
+    } catch (error: unknown) {
+      this.errorMessage.set(this.readApiError(error, 'Failed to delete team.'));
     }
   }
 
@@ -226,5 +227,19 @@ export class AdminTeamsComponent implements OnInit {
   private clearMessages(): void {
     this.message.set(null);
     this.errorMessage.set(null);
+  }
+
+  private readApiError(error: unknown, fallback: string): string {
+    if (error instanceof HttpErrorResponse) {
+      const body = error.error;
+      if (typeof body === 'object' && body !== null && 'error' in body) {
+        const message = (body as { error?: string }).error;
+        if (typeof message === 'string' && message.trim().length > 0) {
+          return message;
+        }
+      }
+    }
+
+    return fallback;
   }
 }

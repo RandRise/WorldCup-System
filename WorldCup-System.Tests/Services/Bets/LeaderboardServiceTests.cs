@@ -85,14 +85,45 @@ namespace WorldCup_System.Tests.Services.Bets
         }
 
         [Fact]
-        public void GetLeaderboard_WhenNoResults_ReturnsEmptyList()
+        public void GetLeaderboard_WhenNoBets_ReturnsEmptyList()
         {
-            _betResultRepositoryMock.Setup(betResultRepository => betResultRepository.GetAllAsync())
-                .Returns(new List<BetResult>().AsQueryable());
+            _betRepositoryMock.Setup(betRepository => betRepository.GetAllAsync())
+                .Returns(new List<Bet>().AsQueryable());
 
             List<LeaderboardEntryDTO> leaderboard = _leaderboardService.GetLeaderboard();
 
             Assert.Empty(leaderboard);
+        }
+
+        [Fact]
+        public void GetLeaderboard_WhenBetsExistWithoutResults_IncludesUsersWithZeroPoints()
+        {
+            List<Bet> bets = new List<Bet>
+            {
+                new Bet { Id = 1, UserId = 1, MatchId = 1, TeamId = 10 },
+                new Bet { Id = 2, UserId = 2, MatchId = 1, TeamId = 20 }
+            };
+            List<User> users = new List<User>
+            {
+                new User { Id = 1, Name = "Alice", Email = "alice@test.com", UserName = "alice@test.com" },
+                new User { Id = 2, Name = "Bob", Email = "bob@test.com", UserName = "bob@test.com" }
+            };
+
+            _betRepositoryMock.Setup(betRepository => betRepository.GetAllAsync()).Returns(bets.AsQueryable());
+            _betResultRepositoryMock.Setup(betResultRepository => betResultRepository.Find(It.IsAny<Expression<Func<BetResult, bool>>>()))
+                .Returns(new List<BetResult>().AsQueryable());
+            _userRepositoryMock.Setup(userRepository => userRepository.GetAllAsync()).Returns(users.AsQueryable());
+
+            List<LeaderboardEntryDTO> leaderboard = _leaderboardService.GetLeaderboard();
+
+            Assert.Equal(2, leaderboard.Count);
+            Assert.All(leaderboard, entry =>
+            {
+                Assert.Equal(0, entry.TotalPoints);
+                Assert.Equal(0, entry.ResolvedBets);
+            });
+            Assert.Contains(leaderboard, entry => entry.UserName == "Alice" && entry.Rank == 1);
+            Assert.Contains(leaderboard, entry => entry.UserName == "Bob" && entry.Rank == 2);
         }
 
         [Fact]

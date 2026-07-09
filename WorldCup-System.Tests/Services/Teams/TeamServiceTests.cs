@@ -172,24 +172,56 @@ namespace WorldCup_System.Tests.Services.Teams
             Group group = new Group { Id = 1, Name = "A" };
             Team team = new Team { Id = 7, CountryId = 1, GroupId = 1, Country = country, Group = group, Coach = new List<Coach>() };
 
-            Mock<IRepository<Coach>> coachRepositoryMock = new Mock<IRepository<Coach>>();
-            Mock<IRepository<Player>> playerRepositoryMock = new Mock<IRepository<Player>>();
-            _repositoryManagerMock.Setup(repositoryManager => repositoryManager.Coach).Returns(coachRepositoryMock.Object);
-            _repositoryManagerMock.Setup(repositoryManager => repositoryManager.Player).Returns(playerRepositoryMock.Object);
+            SetupDeleteDependencies(
+                coachRepositoryMock => coachRepositoryMock
+                    .Setup(coachRepository => coachRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Coach, bool>>>()))
+                    .Returns(new List<Coach>().AsQueryable()),
+                playerRepositoryMock => playerRepositoryMock
+                    .Setup(playerRepository => playerRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Player, bool>>>()))
+                    .Returns(new List<Player>().AsQueryable()));
 
             _teamRepositoryMock.Setup(teamRepository => teamRepository.GetByIdAsync(7)).ReturnsAsync(team);
-            coachRepositoryMock
-                .Setup(coachRepository => coachRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Coach, bool>>>()))
-                .Returns(new List<Coach>().AsQueryable());
-            playerRepositoryMock
-                .Setup(playerRepository => playerRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Player, bool>>>()))
-                .Returns(new List<Player>().AsQueryable());
             _repositoryManagerMock.Setup(repositoryManager => repositoryManager.SaveAsync()).Returns(Task.CompletedTask);
 
             await _teamService.DeleteTeam(7);
 
             _teamRepositoryMock.Verify(teamRepository => teamRepository.Delete(team), Times.Once);
             _repositoryManagerMock.Verify(repositoryManager => repositoryManager.SaveAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task DeleteTeam_WhenMatchesExist_ThrowsInvalidOperationException()
+        {
+            Country country = new Country { Id = 1, Name = "Spain" };
+            Group group = new Group { Id = 1, Name = "A" };
+            Team team = new Team { Id = 7, CountryId = 1, GroupId = 1, Country = country, Group = group, Coach = new List<Coach>() };
+
+            Mock<IRepository<Match>> matchRepositoryMock = new Mock<IRepository<Match>>();
+            SetupDeleteDependencies(
+                coachRepositoryMock => coachRepositoryMock
+                    .Setup(coachRepository => coachRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Coach, bool>>>()))
+                    .Returns(new List<Coach>().AsQueryable()),
+                playerRepositoryMock => playerRepositoryMock
+                    .Setup(playerRepository => playerRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Player, bool>>>()))
+                    .Returns(new List<Player>().AsQueryable()),
+                matchRepositoryMock: matchRepositoryMock);
+
+            _teamRepositoryMock.Setup(teamRepository => teamRepository.GetByIdAsync(7)).ReturnsAsync(team);
+            matchRepositoryMock
+                .Setup(matchRepository => matchRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Match, bool>>>()))
+                .Returns(new List<Match>
+                {
+                    new Match
+                    {
+                        Id = 1,
+                        Date = DateTime.UtcNow,
+                        StadiumId = 1,
+                        TeamOneId = 7,
+                        TeamTwoId = 2
+                    }
+                }.AsQueryable());
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _teamService.DeleteTeam(7));
         }
 
         [Fact]
@@ -236,6 +268,41 @@ namespace WorldCup_System.Tests.Services.Teams
                 .Returns(new List<Player>().AsQueryable());
 
             await Assert.ThrowsAsync<InvalidOperationException>(() => _teamService.DeleteTeam(7));
+        }
+
+        private void SetupDeleteDependencies(
+            Action<Mock<IRepository<Coach>>>? configureCoachRepository = null,
+            Action<Mock<IRepository<Player>>>? configurePlayerRepository = null,
+            Mock<IRepository<Match>>? matchRepositoryMock = null)
+        {
+            Mock<IRepository<Coach>> coachRepositoryMock = new Mock<IRepository<Coach>>();
+            Mock<IRepository<Player>> playerRepositoryMock = new Mock<IRepository<Player>>();
+            Mock<IRepository<Bet>> betRepositoryMock = new Mock<IRepository<Bet>>();
+            Mock<IRepository<TeamStats>> teamStatsRepositoryMock = new Mock<IRepository<TeamStats>>();
+            Mock<IRepository<Match>> resolvedMatchRepositoryMock = matchRepositoryMock ?? new Mock<IRepository<Match>>();
+
+            configureCoachRepository?.Invoke(coachRepositoryMock);
+            configurePlayerRepository?.Invoke(playerRepositoryMock);
+
+            if (matchRepositoryMock == null)
+            {
+                resolvedMatchRepositoryMock
+                    .Setup(matchRepository => matchRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Match, bool>>>()))
+                    .Returns(new List<Match>().AsQueryable());
+            }
+
+            betRepositoryMock
+                .Setup(betRepository => betRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Bet, bool>>>()))
+                .Returns(new List<Bet>().AsQueryable());
+            teamStatsRepositoryMock
+                .Setup(teamStatsRepository => teamStatsRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<TeamStats, bool>>>()))
+                .Returns(new List<TeamStats>().AsQueryable());
+
+            _repositoryManagerMock.Setup(repositoryManager => repositoryManager.Coach).Returns(coachRepositoryMock.Object);
+            _repositoryManagerMock.Setup(repositoryManager => repositoryManager.Player).Returns(playerRepositoryMock.Object);
+            _repositoryManagerMock.Setup(repositoryManager => repositoryManager.Match).Returns(resolvedMatchRepositoryMock.Object);
+            _repositoryManagerMock.Setup(repositoryManager => repositoryManager.Bet).Returns(betRepositoryMock.Object);
+            _repositoryManagerMock.Setup(repositoryManager => repositoryManager.TeamStats).Returns(teamStatsRepositoryMock.Object);
         }
     }
 }

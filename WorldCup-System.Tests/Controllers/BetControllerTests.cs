@@ -70,7 +70,7 @@ namespace WorldCup_System.Tests.Controllers
         public async Task PlaceBet_WhenAuthenticated_CallsServiceWithUserId()
         {
             User user = new User { Id = 42, Email = "user@test.com", UserName = "user@test.com", Name = "User" };
-            SetUserClaims("user@test.com");
+            SetUserClaims(new Claim(ClaimTypes.Email, "user@test.com"));
             _userManagerMock.Setup(userManager => userManager.FindByEmailAsync("user@test.com")).ReturnsAsync(user);
 
             PlaceBetDTO placeBetDto = new PlaceBetDTO { MatchId = 1, IsDraw = false, TeamId = 10 };
@@ -86,7 +86,7 @@ namespace WorldCup_System.Tests.Controllers
         public async Task GetMyBets_WhenAuthenticated_ReturnsUserBets()
         {
             User user = new User { Id = 42, Email = "user@test.com", UserName = "user@test.com", Name = "User" };
-            SetUserClaims("user@test.com");
+            SetUserClaims(new Claim(ClaimTypes.Email, "user@test.com"));
             _userManagerMock.Setup(userManager => userManager.FindByEmailAsync("user@test.com")).ReturnsAsync(user);
 
             List<BetDTO> bets = new List<BetDTO>
@@ -117,7 +117,7 @@ namespace WorldCup_System.Tests.Controllers
         public async Task GetMySummary_WhenAuthenticated_ReturnsSummaryFromService()
         {
             User user = new User { Id = 42, Email = "user@test.com", UserName = "user@test.com", Name = "User" };
-            SetUserClaims("user@test.com");
+            SetUserClaims(new Claim(ClaimTypes.Email, "user@test.com"));
             _userManagerMock.Setup(userManager => userManager.FindByEmailAsync("user@test.com")).ReturnsAsync(user);
 
             LeaderboardSummaryDTO summary = new LeaderboardSummaryDTO
@@ -143,7 +143,7 @@ namespace WorldCup_System.Tests.Controllers
         public async Task GetMyBetForMatch_WhenAuthenticated_ReturnsBetFromService()
         {
             User user = new User { Id = 42, Email = "user@test.com", UserName = "user@test.com", Name = "User" };
-            SetUserClaims("user@test.com");
+            SetUserClaims(new Claim(ClaimTypes.Email, "user@test.com"));
             _userManagerMock.Setup(userManager => userManager.FindByEmailAsync("user@test.com")).ReturnsAsync(user);
 
             BetDTO bet = new BetDTO { Id = 9, UserId = 42, MatchId = 5, IsDraw = true, PredictedOutcome = "Draw" };
@@ -156,12 +156,44 @@ namespace WorldCup_System.Tests.Controllers
             Assert.Equal(9, result.Id);
         }
 
-        private void SetUserClaims(string email)
+        [Fact]
+        public async Task GetMyBetsForWorldCup_WhenAuthenticated_ReturnsBetsFromService()
         {
-            List<Claim> claims = new List<Claim>
+            User user = new User { Id = 42, Email = "user@test.com", UserName = "user@test.com", Name = "User" };
+            SetUserClaims(new Claim(ClaimTypes.Email, "user@test.com"));
+            _userManagerMock.Setup(userManager => userManager.FindByEmailAsync("user@test.com")).ReturnsAsync(user);
+
+            List<BetDTO> bets = new List<BetDTO>
             {
-                new Claim(ClaimTypes.Email, email)
+                new BetDTO { Id = 9, UserId = 42, MatchId = 5, IsDraw = true, PredictedOutcome = "Draw" },
+                new BetDTO { Id = 10, UserId = 42, MatchId = 6, IsDraw = false, PredictedOutcome = "Brazil" }
             };
+            _betServiceMock.Setup(betService => betService.GetMyBetsForWorldCup(42, 2026)).Returns(bets);
+
+            IActionResult actionResult = await _betController.GetMyBetsForWorldCup(2026);
+
+            OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
+            List<BetDTO> result = Assert.IsType<List<BetDTO>>(okResult.Value);
+            Assert.Equal(2, result.Count);
+        }
+
+        [Fact]
+        public async Task PlaceBet_WhenAuthenticatedWithNameIdentifier_UsesClaimWithoutEmailLookup()
+        {
+            SetUserClaims(new Claim(ClaimTypes.NameIdentifier, "42"));
+
+            PlaceBetDTO placeBetDto = new PlaceBetDTO { MatchId = 1, IsDraw = false, TeamId = 10 };
+
+            IActionResult actionResult = await _betController.PlaceBet(placeBetDto);
+
+            OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
+            _betServiceMock.Verify(betService => betService.PlaceBet(42, placeBetDto), Times.Once);
+            _userManagerMock.Verify(userManager => userManager.FindByEmailAsync(It.IsAny<string>()), Times.Never);
+            Assert.Equal("Bet placed successfully.", okResult.Value);
+        }
+
+        private void SetUserClaims(params Claim[] claims)
+        {
             ClaimsIdentity identity = new ClaimsIdentity(claims, "TestAuth");
             _betController.ControllerContext.HttpContext.User = new ClaimsPrincipal(identity);
         }

@@ -8,10 +8,12 @@ import {
   LeaderboardSummary,
   PlaceBetRequest,
 } from '../models/api.models';
+import { ApiHttpService } from './api-http.service';
 
 @Injectable({ providedIn: 'root' })
 export class BetApiService {
   private readonly http = inject(HttpClient);
+  private readonly apiHttp = inject(ApiHttpService);
   private readonly baseUrl = environment.apiUrl;
 
   getLeaderboard(worldCupId?: number): Promise<LeaderboardEntry[]> {
@@ -42,11 +44,18 @@ export class BetApiService {
     return firstValueFrom(this.http.get<Bet[]>(`${this.baseUrl}/Bet/GetMyActiveBets`));
   }
 
+  getMyBetsForWorldCup(worldCupId: number): Promise<Bet[]> {
+    const params = new HttpParams().set('worldCupId', String(worldCupId));
+    return firstValueFrom(
+      this.http.get<Bet[]>(`${this.baseUrl}/Bet/GetMyBetsForWorldCup`, { params }),
+    );
+  }
+
   getMyBetForMatch(matchId: number): Promise<Bet | null> {
     return firstValueFrom(this.http.get<Bet | null>(`${this.baseUrl}/Bet/GetMyBetForMatch/${matchId}`));
   }
 
   placeBet(request: PlaceBetRequest): Promise<void> {
-    return firstValueFrom(this.http.post<void>(`${this.baseUrl}/Bet/PlaceBet`, request));
+    return this.apiHttp.postCommand(`${this.baseUrl}/Bet/PlaceBet`, request);
   }
 }

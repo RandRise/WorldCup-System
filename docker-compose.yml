@@ -29,7 +29,9 @@ services:
       JWT__ValidAudience: ${JWT_VALID_AUDIENCE:-http://localhost:4200}
       DevAdmin__Email: ${DEV_ADMIN_EMAIL:-admin@localhost}
       DevAdmin__Password: ${DEV_ADMIN_PASSWORD:-Admin123!}
-      DevSeed__WorldCup2026: ${DEV_SEED_WORLDCUP_2026:-true}
+      DevUser__Email: ${DEV_USER_EMAIL:-user@localhost}
+      DevUser__Password: ${DEV_USER_PASSWORD:-User123!}
+      DevSeed__WorldCup2026: ${DEV_SEED_WORLDCUP_2026:-false}
     depends_on:
       db:
         condition: service_healthy

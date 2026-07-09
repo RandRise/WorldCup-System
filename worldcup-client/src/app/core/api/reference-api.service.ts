@@ -9,10 +9,12 @@ import {
   Stadium,
   UpdateStadiumRequest,
 } from '../models/api.models';
+import { ApiHttpService } from './api-http.service';
 
 @Injectable({ providedIn: 'root' })
 export class ReferenceApiService {
   private readonly http = inject(HttpClient);
+  private readonly apiHttp = inject(ApiHttpService);
   private readonly baseUrl = environment.apiUrl;
 
   getCountries(): Promise<Country[]> {
@@ -28,31 +30,29 @@ export class ReferenceApiService {
   }
 
   addStadium(request: AddStadiumRequest): Promise<void> {
-    return firstValueFrom(this.http.post<void>(`${this.baseUrl}/Stadium/AddStadium`, request));
+    return this.apiHttp.postCommand(`${this.baseUrl}/Stadium/AddStadium`, request);
   }
 
   updateStadium(request: UpdateStadiumRequest): Promise<void> {
-    return firstValueFrom(this.http.post<void>(`${this.baseUrl}/Stadium/UpdateStadium`, request));
+    return this.apiHttp.postCommand(`${this.baseUrl}/Stadium/UpdateStadium`, request);
   }
 
   importCountriesCsv(file: File): Promise<void> {
     const formData = new FormData();
     formData.append('file', file);
-    return firstValueFrom(this.http.post<void>(`${this.baseUrl}/Country/AddCountries`, formData));
+    return this.apiHttp.postCommand(`${this.baseUrl}/Country/AddCountries`, formData);
   }
 
   importCitiesCsv(file: File, countryId: number): Promise<void> {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('countryId', String(countryId));
-    return firstValueFrom(this.http.post<void>(`${this.baseUrl}/City/AddCities`, formData));
+    return this.apiHttp.postCommand(`${this.baseUrl}/City/AddCities`, formData);
   }
 
   importStadiumsCsv(file: File): Promise<void> {
     const formData = new FormData();
     formData.append('file', file);
-    return firstValueFrom(
-      this.http.post<void>(`${this.baseUrl}/Stadium/ImportStadiumsFromCsv`, formData),
-    );
+    return this.apiHttp.postCommand(`${this.baseUrl}/Stadium/ImportStadiumsFromCsv`, formData);
   }
 }

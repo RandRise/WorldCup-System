@@ -116,29 +116,7 @@ builder.Services.AddScoped<IStandingsService, StandingsService>();
 builder.Services.AddScoped<IBetService, BetService>();
 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 builder.Services.AddScoped<IDemoSeedService, DemoSeedService>();
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-
-// Adding Jwt Bearer
-.AddJwtBearer(options =>
-{
-    options.SaveToken = true;
-    options.RequireHttpsMetadata = false;
-    options.TokenValidationParameters = new TokenValidationParameters()
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidAudience = configuration["JWT:ValidAudience"],
-        ValidIssuer = configuration["JWT:ValidIssuer"],
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
-    };
-});
+builder.Services.AddScoped<ITournamentDataResetService, TournamentDataResetService>();
 
 builder.Services.AddDbContext<ApplicationDbContext>(option =>
 {
@@ -152,6 +130,7 @@ if (!builder.Environment.IsEnvironment("Testing"))
 {
     healthChecksBuilder.AddNpgSql(connectionString, name: "postgresql");
 }
+
 builder.Services.AddIdentity<User, IdentityRole<long>>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
@@ -168,6 +147,30 @@ builder.Services.AddIdentity<User, IdentityRole<long>>(options =>
     options.Lockout.AllowedForNewUsers = true;
 
 }).AddEntityFrameworkStores<ApplicationDbContext>();
+
+// JWT must be registered after AddIdentity so cookie defaults do not overwrite the API scheme.
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.MapInboundClaims = true;
+    options.SaveToken = true;
+    options.RequireHttpsMetadata = false;
+    options.TokenValidationParameters = new TokenValidationParameters()
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidAudience = configuration["JWT:ValidAudience"],
+        ValidIssuer = configuration["JWT:ValidIssuer"],
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+    };
+});
 
 var app = builder.Build();
 
@@ -187,33 +190,21 @@ using (var scope = app.Services.CreateScope())
 
     if (app.Environment.IsDevelopment())
     {
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
-        string? adminEmail = configuration["DevAdmin:Email"];
-        string? adminPassword = configuration["DevAdmin:Password"];
+        UserManager<User> userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
 
-        if (!string.IsNullOrWhiteSpace(adminEmail) && !string.IsNullOrWhiteSpace(adminPassword))
-        {
-            User? adminUser = await userManager.FindByEmailAsync(adminEmail);
-            if (adminUser == null)
-            {
-                adminUser = new User
-                {
-                    Email = adminEmail,
-                    UserName = adminEmail,
-                    Name = "Admin",
-                    SecurityStamp = Guid.NewGuid().ToString()
-                };
-                IdentityResult createResult = await userManager.CreateAsync(adminUser, adminPassword);
-                if (createResult.Succeeded)
-                {
-                    await userManager.AddToRoleAsync(adminUser, "Admin");
-                }
-            }
-            else if (!await userManager.IsInRoleAsync(adminUser, "Admin"))
-            {
-                await userManager.AddToRoleAsync(adminUser, "Admin");
-            }
-        }
+        await EnsureDevUserInRoleAsync(
+            userManager,
+            email: configuration["DevAdmin:Email"],
+            password: configuration["DevAdmin:Password"] ?? "Admin123!",
+            displayName: "Admin",
+            roleName: "Admin");
+
+        await EnsureDevUserInRoleAsync(
+            userManager,
+            email: configuration["DevUser:Email"],
+            password: configuration["DevUser:Password"] ?? "User123!",
+            displayName: "Demo User",
+            roleName: "User");
     }
 
     ApplicationDbContext dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -254,7 +245,10 @@ if (app.Environment.IsDevelopment())
 
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseCors("AngularDev");
 
@@ -268,6 +262,43 @@ app.MapHealthChecks("/health");
 
 app.Run();
 
-public partial class Program { }
+public partial class Program
+{
+    private static async Task EnsureDevUserInRoleAsync(
+        UserManager<User> userManager,
+        string? email,
+        string? password,
+        string displayName,
+        string roleName)
+    {
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            return;
+        }
+
+        User? user = await userManager.FindByEmailAsync(email);
+        if (user == null)
+        {
+            user = new User
+            {
+                Email = email,
+                UserName = email,
+                Name = displayName,
+                SecurityStamp = Guid.NewGuid().ToString()
+            };
+
+            IdentityResult createResult = await userManager.CreateAsync(user, password);
+            if (!createResult.Succeeded)
+            {
+                return;
+            }
+        }
+
+        if (!await userManager.IsInRoleAsync(user, roleName))
+        {
+            await userManager.AddToRoleAsync(user, roleName);
+        }
+    }
+}
 
 

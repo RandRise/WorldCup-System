@@ -1,6 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, effect, inject, OnInit, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';import { RouterLink } from '@angular/router';
 import { MatchApiService } from '../../core/api/match-api.service';
 import { BetApiService } from '../../core/api/bet-api.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -14,12 +13,13 @@ import { WorldCupSelectorComponent } from '../shared/world-cup-selector/world-cu
   templateUrl: './fixtures.component.html',
   styleUrl: './fixtures.component.scss',
 })
-export class FixturesComponent implements OnInit {
+export class FixturesComponent implements OnInit, OnDestroy {
   private readonly matchApi = inject(MatchApiService);
   private readonly betApi = inject(BetApiService);
   protected readonly auth = inject(AuthService);
   protected readonly context = inject(WorldCupContextService);
 
+  private refreshTimer: ReturnType<typeof setInterval> | null = null;
   protected readonly isLoading = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly message = signal<string | null>(null);
@@ -36,8 +36,18 @@ export class FixturesComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.loadFixtures();
+    this.refreshTimer = setInterval(() => {
+      if (this.shouldAutoRefresh()) {
+        void this.loadFixtures();
+      }
+    }, 30_000);
   }
 
+  ngOnDestroy(): void {
+    if (this.refreshTimer != null) {
+      clearInterval(this.refreshTimer);
+    }
+  }
   async loadFixtures(): Promise<void> {
     const worldCupId = this.context.selectedWorldCupId();
     if (worldCupId == null) {
@@ -50,15 +60,11 @@ export class FixturesComponent implements OnInit {
       this.matches.set(fixtures.sort((a, b) => a.date.localeCompare(b.date)));
 
       if (this.auth.isAuthenticated()) {
+        const bets = await this.betApi.getMyBetsForWorldCup(worldCupId);
         const betMap = new Map<number, Bet>();
-        await Promise.all(
-          fixtures.map(async (match) => {
-            const bet = await this.betApi.getMyBetForMatch(match.id);
-            if (bet) {
-              betMap.set(match.id, bet);
-            }
-          }),
-        );
+        for (const bet of bets) {
+          betMap.set(bet.matchId, bet);
+        }
         this.userBets.set(betMap);
       }
     } catch {
@@ -101,5 +107,22 @@ export class FixturesComponent implements OnInit {
 
   statusClass(status: string): string {
     return status.toLowerCase();
+  }
+
+  /** Refresh while any match is live, or a scheduled kickoff is due / overdue (Scheduled → Live). */
+  private shouldAutoRefresh(): boolean {
+    const now = Date.now();
+    return this.matches().some((match) => {
+      if (match.status === 'Live') {
+        return true;
+      }
+
+      if (match.status !== 'Scheduled') {
+        return false;
+      }
+
+      const kickoffMs = Date.parse(match.date);
+      return !Number.isNaN(kickoffMs) && kickoffMs <= now + 60_000;
+    });
   }
 }

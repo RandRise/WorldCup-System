@@ -3,6 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { ApiHttpService } from '../api/api-http.service';
 import {
   CurrentUser,
   LoginRequest,
@@ -15,6 +16,7 @@ const TOKEN_STORAGE_KEY = 'wc_access_token';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
+  private readonly apiHttp = inject(ApiHttpService);
   private readonly router = inject(Router);
 
   private readonly currentUserSignal = signal<CurrentUser | null>(null);
@@ -54,9 +56,7 @@ export class AuthService {
   }
 
   async register(request: RegisterRequest): Promise<void> {
-    await firstValueFrom(
-      this.http.post<void>(`${environment.apiUrl}/User/CreateNewUser`, request),
-    );
+    await this.apiHttp.postCommand(`${environment.apiUrl}/User/CreateNewUser`, request);
   }
 
   logout(): void {

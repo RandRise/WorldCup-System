@@ -16,10 +16,12 @@ import {
   UpdateTeamRequest,
   WorldCup,
 } from '../models/api.models';
+import { ApiHttpService } from './api-http.service';
 
 @Injectable({ providedIn: 'root' })
 export class TournamentApiService {
   private readonly http = inject(HttpClient);
+  private readonly apiHttp = inject(ApiHttpService);
   private readonly baseUrl = environment.apiUrl;
 
   getWorldCups(): Promise<WorldCup[]> {
@@ -39,15 +41,15 @@ export class TournamentApiService {
   }
 
   addTeam(request: AddTeamRequest): Promise<void> {
-    return firstValueFrom(this.http.post<void>(`${this.baseUrl}/Team/AddTeam`, request));
+    return this.apiHttp.postCommand(`${this.baseUrl}/Team/AddTeam`, request);
   }
 
   updateTeam(request: UpdateTeamRequest): Promise<void> {
-    return firstValueFrom(this.http.post<void>(`${this.baseUrl}/Team/UpdateTeam`, request));
+    return this.apiHttp.postCommand(`${this.baseUrl}/Team/UpdateTeam`, request);
   }
 
   deleteTeam(id: number): Promise<void> {
-    return firstValueFrom(this.http.delete<void>(`${this.baseUrl}/Team/DeleteTeam/${id}`));
+    return this.apiHttp.deleteCommand(`${this.baseUrl}/Team/DeleteTeam/${id}`);
   }
 
   getCoaches(): Promise<Coach[]> {
@@ -59,15 +61,15 @@ export class TournamentApiService {
   }
 
   addCoach(request: AddCoachRequest): Promise<void> {
-    return firstValueFrom(this.http.post<void>(`${this.baseUrl}/Coach/AddCoach`, request));
+    return this.apiHttp.postCommand(`${this.baseUrl}/Coach/AddCoach`, request);
   }
 
   updateCoach(request: UpdateCoachRequest): Promise<void> {
-    return firstValueFrom(this.http.post<void>(`${this.baseUrl}/Coach/UpdateCoach`, request));
+    return this.apiHttp.postCommand(`${this.baseUrl}/Coach/UpdateCoach`, request);
   }
 
   deleteCoach(id: number): Promise<void> {
-    return firstValueFrom(this.http.delete<void>(`${this.baseUrl}/Coach/DeleteCoach/${id}`));
+    return this.apiHttp.deleteCommand(`${this.baseUrl}/Coach/DeleteCoach/${id}`);
   }
 
   getPlayers(): Promise<Player[]> {
@@ -85,14 +87,14 @@ export class TournamentApiService {
   }
 
   addPlayer(request: AddPlayerRequest): Promise<void> {
-    return firstValueFrom(this.http.post<void>(`${this.baseUrl}/Player/AddPlayer`, request));
+    return this.apiHttp.postCommand(`${this.baseUrl}/Player/AddPlayer`, request);
   }
 
   updatePlayer(request: UpdatePlayerRequest): Promise<void> {
-    return firstValueFrom(this.http.post<void>(`${this.baseUrl}/Player/UpdatePlayer`, request));
+    return this.apiHttp.postCommand(`${this.baseUrl}/Player/UpdatePlayer`, request);
   }
 
   deletePlayer(id: number): Promise<void> {
-    return firstValueFrom(this.http.delete<void>(`${this.baseUrl}/Player/DeletePlayer/${id}`));
+    return this.apiHttp.deleteCommand(`${this.baseUrl}/Player/DeletePlayer/${id}`);
   }
 }

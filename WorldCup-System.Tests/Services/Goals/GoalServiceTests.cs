@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Core.DTOs.Goals;
+using Core.Services.Bets;
 using Core.Services.Goals;
 using Data.Entities;
 using Data.Repos;
@@ -15,6 +16,7 @@ namespace WorldCup_System.Tests.Services.Goals
         private readonly Mock<IRepository<TeamStats>> _teamStatsRepositoryMock;
         private readonly Mock<IRepository<Goal>> _goalRepositoryMock;
         private readonly Mock<IRepository<Player>> _playerRepositoryMock;
+        private readonly Mock<IBetService> _betServiceMock;
         private readonly GoalService _goalService;
 
         public GoalServiceTests()
@@ -24,13 +26,17 @@ namespace WorldCup_System.Tests.Services.Goals
             _teamStatsRepositoryMock = new Mock<IRepository<TeamStats>>();
             _goalRepositoryMock = new Mock<IRepository<Goal>>();
             _playerRepositoryMock = new Mock<IRepository<Player>>();
+            _betServiceMock = new Mock<IBetService>();
 
             _repositoryManagerMock.Setup(repositoryManager => repositoryManager.Match).Returns(_matchRepositoryMock.Object);
             _repositoryManagerMock.Setup(repositoryManager => repositoryManager.TeamStats).Returns(_teamStatsRepositoryMock.Object);
             _repositoryManagerMock.Setup(repositoryManager => repositoryManager.Goal).Returns(_goalRepositoryMock.Object);
             _repositoryManagerMock.Setup(repositoryManager => repositoryManager.Player).Returns(_playerRepositoryMock.Object);
+            _betServiceMock
+                .Setup(betService => betService.ResolveBetsForMatch(It.IsAny<int>()))
+                .ReturnsAsync(0);
 
-            _goalService = new GoalService(_repositoryManagerMock.Object);
+            _goalService = new GoalService(_repositoryManagerMock.Object, _betServiceMock.Object);
         }
 
         [Fact]
@@ -83,7 +89,7 @@ namespace WorldCup_System.Tests.Services.Goals
         [Fact]
         public async Task AddGoal_CreatesGoalAndSaves()
         {
-            DateTime kickoff = new DateTime(2026, 6, 15, 18, 0, 0);
+            DateTime kickoff = DateTime.UtcNow.AddDays(1);
             MatchEntity match = new MatchEntity { Id = 1, Date = kickoff, StadiumId = 5, TeamOneId = 10, TeamTwoId = 20 };
             TeamStats stats = new TeamStats { Id = 100, MatchId = 1, TeamId = 10 };
             Player player = new Player { Id = 1, Name = "Neymar", Number = 10, TeamId = 10, PositionId = 1 };
@@ -112,6 +118,65 @@ namespace WorldCup_System.Tests.Services.Goals
             Assert.Equal(kickoff.AddMinutes(42), capturedGoal.TimeScored);
             Assert.Equal(0, capturedGoal.IsOwnGoal);
             _repositoryManagerMock.Verify(repositoryManager => repositoryManager.SaveAsync(), Times.Once);
+            _betServiceMock.Verify(betService => betService.ResolveBetsForMatch(It.IsAny<int>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task AddGoal_WhenMatchFinished_AutoResolvesBets()
+        {
+            DateTime kickoff = DateTime.UtcNow.AddMinutes(-(BetScoringRules.MatchDurationMinutes + 5));
+            MatchEntity match = new MatchEntity { Id = 1, Date = kickoff, StadiumId = 5, TeamOneId = 10, TeamTwoId = 20 };
+            TeamStats stats = new TeamStats { Id = 100, MatchId = 1, TeamId = 10 };
+            Player player = new Player { Id = 1, Name = "Neymar", Number = 10, TeamId = 10, PositionId = 1 };
+            AddGoalDTO addGoalDto = new AddGoalDTO
+            {
+                MatchId = 1,
+                TeamId = 10,
+                PlayerId = 1,
+                Minute = 42,
+                IsOwnGoal = false
+            };
+
+            _matchRepositoryMock.Setup(matchRepository => matchRepository.GetByIdAsync(1)).ReturnsAsync(match);
+            _playerRepositoryMock.Setup(playerRepository => playerRepository.GetByIdAsync(1)).ReturnsAsync(player);
+            SetupFind(_teamStatsRepositoryMock, new List<TeamStats> { stats });
+            _goalRepositoryMock.Setup(goalRepository => goalRepository.Create(It.IsAny<Goal>()));
+            _repositoryManagerMock.Setup(repositoryManager => repositoryManager.SaveAsync()).Returns(Task.CompletedTask);
+            _betServiceMock.Setup(betService => betService.ResolveBetsForMatch(1)).ReturnsAsync(2);
+
+            await _goalService.AddGoal(addGoalDto);
+
+            _betServiceMock.Verify(betService => betService.ResolveBetsForMatch(1), Times.Once);
+        }
+
+        [Fact]
+        public async Task AddGoal_WhenMatchFinishedAndResolveThrows_SwallowsInvalidOperationException()
+        {
+            DateTime kickoff = DateTime.UtcNow.AddMinutes(-(BetScoringRules.MatchDurationMinutes + 5));
+            MatchEntity match = new MatchEntity { Id = 1, Date = kickoff, StadiumId = 5, TeamOneId = 10, TeamTwoId = 20 };
+            TeamStats stats = new TeamStats { Id = 100, MatchId = 1, TeamId = 10 };
+            Player player = new Player { Id = 1, Name = "Neymar", Number = 10, TeamId = 10, PositionId = 1 };
+            AddGoalDTO addGoalDto = new AddGoalDTO
+            {
+                MatchId = 1,
+                TeamId = 10,
+                PlayerId = 1,
+                Minute = 42,
+                IsOwnGoal = false
+            };
+
+            _matchRepositoryMock.Setup(matchRepository => matchRepository.GetByIdAsync(1)).ReturnsAsync(match);
+            _playerRepositoryMock.Setup(playerRepository => playerRepository.GetByIdAsync(1)).ReturnsAsync(player);
+            SetupFind(_teamStatsRepositoryMock, new List<TeamStats> { stats });
+            _goalRepositoryMock.Setup(goalRepository => goalRepository.Create(It.IsAny<Goal>()));
+            _repositoryManagerMock.Setup(repositoryManager => repositoryManager.SaveAsync()).Returns(Task.CompletedTask);
+            _betServiceMock
+                .Setup(betService => betService.ResolveBetsForMatch(1))
+                .ThrowsAsync(new InvalidOperationException("Incomplete match stats."));
+
+            await _goalService.AddGoal(addGoalDto);
+
+            _betServiceMock.Verify(betService => betService.ResolveBetsForMatch(1), Times.Once);
         }
 
         [Fact]

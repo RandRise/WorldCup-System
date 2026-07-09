@@ -39,9 +39,14 @@ export class WorldCupContextService {
     this.groupsSignal.set(groups);
 
     if (this.selectedWorldCupIdSignal() == null && worldCups.length > 0) {
-      const preferred = worldCups.find(
-        (worldCup) => new Date(worldCup.year).getUTCFullYear() === 2026,
-      );
+      const preferred =
+        worldCups.find((worldCup) => {
+          const date = new Date(worldCup.year);
+          return date.getUTCFullYear() === 2026 && date.getUTCMonth() === 5;
+        }) ??
+        worldCups.find(
+          (worldCup) => new Date(worldCup.year).getUTCFullYear() === 2026,
+        );
       this.selectedWorldCupIdSignal.set(preferred?.id ?? worldCups[0].id);
     }
   }

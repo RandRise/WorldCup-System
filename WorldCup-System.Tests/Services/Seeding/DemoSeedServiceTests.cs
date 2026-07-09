@@ -1,10 +1,12 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using Core.DTOs.Seeding;
+using Core.Services.Bets;
 using Core.Services.Seeding;
 using Data.Entities;
 using Data.Repos;
 using Moq;
+using MatchEntity = Data.Entities.Match;
 
 namespace WorldCup_System.Tests.Services.Seeding
 {
@@ -16,6 +18,11 @@ namespace WorldCup_System.Tests.Services.Seeding
         private readonly Mock<IRepository<WorldCup>> _worldCupRepositoryMock;
         private readonly Mock<IRepository<Group>> _groupRepositoryMock;
         private readonly Mock<IRepository<Team>> _teamRepositoryMock;
+        private readonly Mock<IRepository<MatchEntity>> _matchRepositoryMock;
+        private readonly Mock<IRepository<TeamStats>> _teamStatsRepositoryMock;
+        private readonly Mock<IRepository<Goal>> _goalRepositoryMock;
+        private readonly Mock<IRepository<PlayerPosition>> _playerPositionRepositoryMock;
+        private readonly Mock<IBetService> _betServiceMock;
         private readonly DemoSeedService _demoSeedService;
 
         public DemoSeedServiceTests()
@@ -24,12 +31,24 @@ namespace WorldCup_System.Tests.Services.Seeding
             _worldCupRepositoryMock = new Mock<IRepository<WorldCup>>();
             _groupRepositoryMock = new Mock<IRepository<Group>>();
             _teamRepositoryMock = new Mock<IRepository<Team>>();
+            _matchRepositoryMock = new Mock<IRepository<MatchEntity>>();
+            _teamStatsRepositoryMock = new Mock<IRepository<TeamStats>>();
+            _goalRepositoryMock = new Mock<IRepository<Goal>>();
+            _playerPositionRepositoryMock = new Mock<IRepository<PlayerPosition>>();
+            _betServiceMock = new Mock<IBetService>();
 
             _repositoryManagerMock.Setup(repositoryManager => repositoryManager.WorldCup).Returns(_worldCupRepositoryMock.Object);
             _repositoryManagerMock.Setup(repositoryManager => repositoryManager.Group).Returns(_groupRepositoryMock.Object);
             _repositoryManagerMock.Setup(repositoryManager => repositoryManager.Team).Returns(_teamRepositoryMock.Object);
+            _repositoryManagerMock.Setup(repositoryManager => repositoryManager.Match).Returns(_matchRepositoryMock.Object);
+            _repositoryManagerMock.Setup(repositoryManager => repositoryManager.TeamStats).Returns(_teamStatsRepositoryMock.Object);
+            _repositoryManagerMock.Setup(repositoryManager => repositoryManager.Goal).Returns(_goalRepositoryMock.Object);
+            _repositoryManagerMock.Setup(repositoryManager => repositoryManager.PlayerPosition).Returns(_playerPositionRepositoryMock.Object);
+            _betServiceMock
+                .Setup(betService => betService.ResolveBetsForMatch(It.IsAny<int>()))
+                .ReturnsAsync(0);
 
-            _demoSeedService = new DemoSeedService(_repositoryManagerMock.Object);
+            _demoSeedService = new DemoSeedService(_repositoryManagerMock.Object, _betServiceMock.Object);
         }
 
         [Theory]
@@ -102,11 +121,42 @@ namespace WorldCup_System.Tests.Services.Seeding
                 .Returns((Expression<Func<Team, bool>> predicate) =>
                     teams.AsQueryable().Where(predicate));
 
+            // Future kickoffs so AlreadySeeded path skips goal backfill and bet resolution.
+            DateTime futureKickoff = DateTime.UtcNow.AddDays(30);
+            List<MatchEntity> matches = new List<MatchEntity>();
+            int matchId = 1;
+            foreach (Group group in groups)
+            {
+                List<int> groupTeamIds = teams.Where(team => team.GroupId == group.Id).Select(team => team.Id).ToList();
+                for (int leftIndex = 0; leftIndex < groupTeamIds.Count; leftIndex++)
+                {
+                    for (int rightIndex = leftIndex + 1; rightIndex < groupTeamIds.Count; rightIndex++)
+                    {
+                        matches.Add(new MatchEntity
+                        {
+                            Id = matchId++,
+                            TeamOneId = groupTeamIds[leftIndex],
+                            TeamTwoId = groupTeamIds[rightIndex],
+                            StadiumId = 1,
+                            Date = futureKickoff,
+                        });
+                    }
+                }
+            }
+
+            _matchRepositoryMock
+                .Setup(matchRepository => matchRepository.Find(It.IsAny<Expression<Func<MatchEntity, bool>>>()))
+                .Returns((Expression<Func<MatchEntity, bool>> predicate) =>
+                    matches.AsQueryable().Where(predicate));
+
             DemoSeedResultDTO result = await _demoSeedService.SeedWorldCup2026DemoAsync();
 
             Assert.True(result.AlreadySeeded);
             Assert.Equal(9, result.WorldCupId);
+            Assert.Equal(0, result.GoalsAdded);
+            Assert.Equal(0, result.BetsResolved);
             Assert.Equal("World Cup 2026 demo tournament is already seeded.", result.Message);
+            _betServiceMock.Verify(betService => betService.ResolveBetsForMatch(It.IsAny<int>()), Times.Never);
         }
 
         [Fact]
@@ -126,6 +176,10 @@ namespace WorldCup_System.Tests.Services.Seeding
             Assert.Equal(16, result.CitiesAdded);
             Assert.Equal(16, result.StadiumsAdded);
             Assert.Contains("Seeded World Cup 2026 demo", result.Message);
+            Assert.Equal(72, result.MatchesAdded);
+            Assert.Equal(72, stores.Matches.Count);
+            Assert.True(result.GoalsAdded > 0);
+            Assert.True(stores.Goals.Count > 0);
             Assert.Equal(12, stores.Groups.Count(group => group.WorldCupId == result.WorldCupId));
             Assert.Equal(48, stores.Teams.Count);
             stores.RepositoryManagerMock.Verify(repositoryManager => repositoryManager.SaveAsync(), Times.AtLeastOnce);
@@ -176,10 +230,45 @@ namespace WorldCup_System.Tests.Services.Seeding
             Assert.Equal(48, firstResult.TeamsAdded);
             Assert.True(secondResult.AlreadySeeded);
             Assert.Equal(firstResult.WorldCupId, secondResult.WorldCupId);
+            Assert.Equal(0, secondResult.GoalsAdded);
             Assert.Equal("World Cup 2026 demo tournament is already seeded.", secondResult.Message);
         }
 
-        private static DemoSeedService CreateServiceWithInMemoryStores(InMemorySeedStores stores)
+        [Fact]
+        public async Task SeedWorldCup2026Demo_WhenAlreadySeededButFinishedMatchesLackGoals_BackfillsGoalsAndResolvesBets()
+        {
+            InMemorySeedStores stores = new InMemorySeedStores();
+            Mock<IBetService> betServiceMock = new Mock<IBetService>();
+            betServiceMock
+                .Setup(betService => betService.ResolveBetsForMatch(It.IsAny<int>()))
+                .ReturnsAsync(1);
+
+            DemoSeedService demoSeedService = CreateServiceWithInMemoryStores(stores, betServiceMock);
+
+            DemoSeedResultDTO firstResult = await demoSeedService.SeedWorldCup2026DemoAsync();
+            Assert.False(firstResult.AlreadySeeded);
+            Assert.True(firstResult.GoalsAdded > 0);
+
+            int goalsBeforeClear = stores.Goals.Count;
+            stores.Goals.Clear();
+            betServiceMock.Invocations.Clear();
+
+            DemoSeedResultDTO secondResult = await demoSeedService.SeedWorldCup2026DemoAsync();
+
+            Assert.True(secondResult.AlreadySeeded);
+            Assert.True(secondResult.GoalsAdded > 0);
+            Assert.Equal(stores.Goals.Count, secondResult.GoalsAdded);
+            Assert.True(secondResult.BetsResolved > 0);
+            Assert.Contains("backfilled", secondResult.Message);
+            Assert.Equal(goalsBeforeClear, stores.Goals.Count);
+            betServiceMock.Verify(
+                betService => betService.ResolveBetsForMatch(It.IsAny<int>()),
+                Times.AtLeastOnce);
+        }
+
+        private static DemoSeedService CreateServiceWithInMemoryStores(
+            InMemorySeedStores stores,
+            Mock<IBetService>? betServiceMock = null)
         {
             SetupRepository(stores.CountryRepositoryMock, stores.Countries);
             SetupRepository(stores.CityRepositoryMock, stores.Cities);
@@ -187,6 +276,48 @@ namespace WorldCup_System.Tests.Services.Seeding
             SetupRepository(stores.WorldCupRepositoryMock, stores.WorldCups);
             SetupRepository(stores.GroupRepositoryMock, stores.Groups);
             SetupRepository(stores.TeamRepositoryMock, stores.Teams);
+            SetupRepository(stores.PlayerRepositoryMock, stores.Players);
+            SetupRepository(stores.TeamStatsRepositoryMock, stores.TeamStats);
+            SetupRepository(stores.GoalRepositoryMock, stores.Goals);
+            SetupRepository(stores.PlayerPositionRepositoryMock, stores.PlayerPositions);
+
+            int nextMatchId = 1;
+            stores.MatchRepositoryMock
+                .Setup(matchRepository => matchRepository.Find(It.IsAny<Expression<Func<MatchEntity, bool>>>()))
+                .Returns((Expression<Func<MatchEntity, bool>> predicate) => stores.Matches.AsQueryable().Where(predicate));
+            stores.MatchRepositoryMock
+                .Setup(matchRepository => matchRepository.GetAllAsync())
+                .Returns(stores.Matches.AsQueryable());
+            stores.MatchRepositoryMock
+                .Setup(matchRepository => matchRepository.Create(It.IsAny<MatchEntity>()))
+                .Callback<MatchEntity>(match =>
+                {
+                    if (match.Id == 0)
+                    {
+                        match.Id = nextMatchId++;
+                    }
+
+                    stores.Matches.Add(match);
+                    foreach (TeamStats teamStats in match.TeamStats)
+                    {
+                        teamStats.MatchId = match.Id;
+                        if (teamStats.Id == 0)
+                        {
+                            teamStats.Id = stores.TeamStats.Count + 1;
+                        }
+
+                        stores.TeamStats.Add(teamStats);
+                    }
+                });
+
+            stores.PlayerPositionRepositoryMock
+                .Setup(playerPositionRepository => playerPositionRepository.Find(It.IsAny<Expression<Func<PlayerPosition, bool>>>()))
+                .Returns((Expression<Func<PlayerPosition, bool>> predicate) =>
+                    stores.PlayerPositions.AsQueryable().Where(predicate));
+            if (stores.PlayerPositions.Count == 0)
+            {
+                stores.PlayerPositions.Add(new PlayerPosition { Id = 1, Name = "Forward" });
+            }
 
             stores.GroupRepositoryMock
                 .Setup(groupRepository => groupRepository.GetByIdAsync(It.IsAny<int>()))
@@ -205,7 +336,15 @@ namespace WorldCup_System.Tests.Services.Seeding
                 .Setup(repositoryManager => repositoryManager.SaveAsync())
                 .Returns(Task.CompletedTask);
 
-            return new DemoSeedService(stores.RepositoryManagerMock.Object);
+            Mock<IBetService> resolvedBetServiceMock = betServiceMock ?? new Mock<IBetService>();
+            if (betServiceMock == null)
+            {
+                resolvedBetServiceMock
+                    .Setup(betService => betService.ResolveBetsForMatch(It.IsAny<int>()))
+                    .ReturnsAsync(0);
+            }
+
+            return new DemoSeedService(stores.RepositoryManagerMock.Object, resolvedBetServiceMock.Object);
         }
 
         private static void SetupRepository<TEntity>(Mock<IRepository<TEntity>> repositoryMock, List<TEntity> entities)
@@ -252,6 +391,18 @@ namespace WorldCup_System.Tests.Services.Seeding
                 case Team team when team.Id == 0:
                     team.Id = nextId++;
                     break;
+                case MatchEntity match when match.Id == 0:
+                    match.Id = nextId++;
+                    break;
+                case Player player when player.Id == 0:
+                    player.Id = nextId++;
+                    break;
+                case TeamStats teamStats when teamStats.Id == 0:
+                    teamStats.Id = nextId++;
+                    break;
+                case Goal goal when goal.Id == 0:
+                    goal.Id = nextId++;
+                    break;
             }
         }
 
@@ -264,6 +415,11 @@ namespace WorldCup_System.Tests.Services.Seeding
             public Mock<IRepository<WorldCup>> WorldCupRepositoryMock { get; } = new Mock<IRepository<WorldCup>>();
             public Mock<IRepository<Group>> GroupRepositoryMock { get; } = new Mock<IRepository<Group>>();
             public Mock<IRepository<Team>> TeamRepositoryMock { get; } = new Mock<IRepository<Team>>();
+            public Mock<IRepository<MatchEntity>> MatchRepositoryMock { get; } = new Mock<IRepository<MatchEntity>>();
+            public Mock<IRepository<Player>> PlayerRepositoryMock { get; } = new Mock<IRepository<Player>>();
+            public Mock<IRepository<TeamStats>> TeamStatsRepositoryMock { get; } = new Mock<IRepository<TeamStats>>();
+            public Mock<IRepository<Goal>> GoalRepositoryMock { get; } = new Mock<IRepository<Goal>>();
+            public Mock<IRepository<PlayerPosition>> PlayerPositionRepositoryMock { get; } = new Mock<IRepository<PlayerPosition>>();
 
             public List<Country> Countries { get; } = new List<Country>();
             public List<City> Cities { get; } = new List<City>();
@@ -271,6 +427,11 @@ namespace WorldCup_System.Tests.Services.Seeding
             public List<WorldCup> WorldCups { get; } = new List<WorldCup>();
             public List<Group> Groups { get; } = new List<Group>();
             public List<Team> Teams { get; } = new List<Team>();
+            public List<MatchEntity> Matches { get; } = new List<MatchEntity>();
+            public List<Player> Players { get; } = new List<Player>();
+            public List<TeamStats> TeamStats { get; } = new List<TeamStats>();
+            public List<Goal> Goals { get; } = new List<Goal>();
+            public List<PlayerPosition> PlayerPositions { get; } = new List<PlayerPosition>();
 
             public InMemorySeedStores()
             {
@@ -280,6 +441,11 @@ namespace WorldCup_System.Tests.Services.Seeding
                 RepositoryManagerMock.Setup(repositoryManager => repositoryManager.WorldCup).Returns(WorldCupRepositoryMock.Object);
                 RepositoryManagerMock.Setup(repositoryManager => repositoryManager.Group).Returns(GroupRepositoryMock.Object);
                 RepositoryManagerMock.Setup(repositoryManager => repositoryManager.Team).Returns(TeamRepositoryMock.Object);
+                RepositoryManagerMock.Setup(repositoryManager => repositoryManager.Match).Returns(MatchRepositoryMock.Object);
+                RepositoryManagerMock.Setup(repositoryManager => repositoryManager.Player).Returns(PlayerRepositoryMock.Object);
+                RepositoryManagerMock.Setup(repositoryManager => repositoryManager.TeamStats).Returns(TeamStatsRepositoryMock.Object);
+                RepositoryManagerMock.Setup(repositoryManager => repositoryManager.Goal).Returns(GoalRepositoryMock.Object);
+                RepositoryManagerMock.Setup(repositoryManager => repositoryManager.PlayerPosition).Returns(PlayerPositionRepositoryMock.Object);
             }
         }
     }

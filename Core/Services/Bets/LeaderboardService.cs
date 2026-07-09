@@ -74,10 +74,6 @@ namespace Core.Services.Bets
             List<BetResult> results = _repository.BetResult
                 .Find(result => betIds.Contains(result.BetId))
                 .ToList();
-            if (results.Count == 0)
-            {
-                return new List<LeaderboardEntryDTO>();
-            }
 
             List<User> users = _repository.User.GetAllAsync().ToList();
             Dictionary<long, LeaderboardEntryDTO> totals = new Dictionary<long, LeaderboardEntryDTO>();
@@ -107,6 +103,31 @@ namespace Core.Services.Bets
             }
 
             List<LeaderboardEntryDTO> leaderboard = totals.Values
+                .OrderByDescending(entry => entry.TotalPoints)
+                .ThenByDescending(entry => entry.ResolvedBets)
+                .ThenBy(entry => entry.UserName)
+                .ToList();
+
+            HashSet<long> rankedUserIds = totals.Keys.ToHashSet();
+            foreach (Bet bet in scopedBets)
+            {
+                if (rankedUserIds.Contains(bet.UserId))
+                {
+                    continue;
+                }
+
+                User? user = users.FirstOrDefault(existingUser => existingUser.Id == bet.UserId);
+                leaderboard.Add(new LeaderboardEntryDTO
+                {
+                    UserId = bet.UserId,
+                    UserName = user?.Name,
+                    TotalPoints = 0,
+                    ResolvedBets = 0,
+                });
+                rankedUserIds.Add(bet.UserId);
+            }
+
+            leaderboard = leaderboard
                 .OrderByDescending(entry => entry.TotalPoints)
                 .ThenByDescending(entry => entry.ResolvedBets)
                 .ThenBy(entry => entry.UserName)

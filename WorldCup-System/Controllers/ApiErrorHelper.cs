@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace WorldCup_System.Controllers
 {
@@ -12,11 +13,31 @@ namespace WorldCup_System.Controllers
                 ArgumentNullException => new BadRequestObjectResult(new { error = exception.Message }),
                 ArgumentException => new BadRequestObjectResult(new { error = exception.Message }),
                 InvalidOperationException => new BadRequestObjectResult(new { error = exception.Message }),
+                DbUpdateException dbUpdateException => new BadRequestObjectResult(new
+                {
+                    error = GetDatabaseErrorMessage(dbUpdateException)
+                }),
                 _ => new ObjectResult(new { error = $"Internal server error: {exception.Message}" })
                 {
                     StatusCode = StatusCodes.Status500InternalServerError
                 }
             };
+        }
+
+        private static string GetDatabaseErrorMessage(DbUpdateException exception)
+        {
+            Exception? innerException = exception.InnerException;
+            while (innerException != null)
+            {
+                if (!string.IsNullOrWhiteSpace(innerException.Message))
+                {
+                    return innerException.Message;
+                }
+
+                innerException = innerException.InnerException;
+            }
+
+            return exception.Message;
         }
     }
 }

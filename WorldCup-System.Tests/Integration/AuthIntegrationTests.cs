@@ -11,7 +11,10 @@ namespace WorldCup_System.Tests.Integration
 
         public AuthIntegrationTests(WorldCupWebApplicationFactory factory)
         {
-            _client = factory.CreateClient();
+            _client = factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+            {
+                AllowAutoRedirect = false
+            });
         }
 
         [Fact]
@@ -53,7 +56,20 @@ namespace WorldCup_System.Tests.Integration
 
             JsonElement loginBody = await loginResponse.Content.ReadFromJsonAsync<JsonElement>();
             Assert.True(loginBody.TryGetProperty("token", out JsonElement tokenElement));
-            Assert.False(string.IsNullOrWhiteSpace(tokenElement.GetString()));
+            string token = tokenElement.GetString() ?? string.Empty;
+            Assert.False(string.IsNullOrWhiteSpace(token));
+
+            using HttpRequestMessage getMeRequest = new HttpRequestMessage(HttpMethod.Get, "/User/GetMe");
+            getMeRequest.Headers.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            HttpResponseMessage getMeResponse = await _client.SendAsync(getMeRequest);
+            getMeResponse.EnsureSuccessStatusCode();
+
+            JsonElement profile = await getMeResponse.Content.ReadFromJsonAsync<JsonElement>();
+            Assert.Equal(uniqueEmail, profile.GetProperty("email").GetString());
+            Assert.Equal("Integration User", profile.GetProperty("name").GetString());
+            Assert.Contains("User", profile.GetProperty("roles").EnumerateArray().Select(role => role.GetString()));
         }
     }
 }

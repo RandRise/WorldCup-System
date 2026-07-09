@@ -1,4 +1,5 @@
 using Core.DTOs.Goals;
+using Core.Services.Bets;
 using Data.Entities;
 using Data.Repos;
 
@@ -7,10 +8,12 @@ namespace Core.Services.Goals
     public class GoalService : IGoalService
     {
         private readonly IRepositoryManager _repository;
+        private readonly IBetService _betService;
 
-        public GoalService(IRepositoryManager repository)
+        public GoalService(IRepositoryManager repository, IBetService betService)
         {
             _repository = repository;
+            _betService = betService;
         }
 
         public List<GoalDTO> GetGoalsByMatch(int matchId)
@@ -87,6 +90,19 @@ namespace Core.Services.Goals
 
             _repository.Goal.Create(goal);
             await _repository.SaveAsync();
+
+            DateTime fullTime = match.Date.AddMinutes(BetScoringRules.MatchDurationMinutes);
+            if (fullTime <= DateTime.UtcNow)
+            {
+                try
+                {
+                    await _betService.ResolveBetsForMatch(goalDto.MatchId);
+                }
+                catch (InvalidOperationException)
+                {
+                    // Resolution may fail until both team stats rows exist with a complete result.
+                }
+            }
         }
 
         public async Task DeleteGoal(int id)

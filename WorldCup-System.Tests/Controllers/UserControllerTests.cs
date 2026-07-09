@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Core.DTOs.Users;
 using Core.Services.Users;
@@ -90,6 +91,18 @@ namespace WorldCup_System.Tests.Controllers
 
             OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
             Assert.NotNull(okResult.Value);
+
+            string token = GetAnonymousToken(okResult.Value!);
+            JwtSecurityToken jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+
+            Assert.Contains(jwt.Claims, claim =>
+                (claim.Type == JwtRegisteredClaimNames.Sub || claim.Type == ClaimTypes.NameIdentifier || claim.Type == "nameid")
+                && claim.Value == "1");
+            Assert.Contains(jwt.Claims, claim =>
+                (claim.Type == JwtRegisteredClaimNames.Email || claim.Type == ClaimTypes.Email || claim.Type == "email")
+                && claim.Value == "user@example.com");
+            Assert.True(jwt.Claims.Count(claim => claim.Value == "1") >= 2);
+            Assert.True(jwt.Claims.Count(claim => claim.Value == "user@example.com") >= 2);
         }
 
         [Fact]
@@ -153,7 +166,30 @@ namespace WorldCup_System.Tests.Controllers
         }
 
         [Fact]
-        public async Task GetMe_WhenAuthenticated_ReturnsCurrentUserProfile()
+        public async Task GetMe_WhenAuthenticatedWithNameIdentifier_ReturnsCurrentUserProfile()
+        {
+            CurrentUserDTO currentUser = new CurrentUserDTO
+            {
+                Id = 12,
+                Name = "User",
+                Email = "user@example.com",
+                Roles = new List<string> { "User" }
+            };
+
+            SetUserClaims(new Claim(ClaimTypes.NameIdentifier, "12"));
+            _userServiceMock.Setup(userService => userService.GetCurrentUser(12)).ReturnsAsync(currentUser);
+
+            IActionResult actionResult = await _userController.GetMe();
+
+            OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
+            CurrentUserDTO result = Assert.IsType<CurrentUserDTO>(okResult.Value);
+            Assert.Equal(12, result.Id);
+            Assert.Equal("User", result.Name);
+            _userManagerMock.Verify(userManager => userManager.FindByEmailAsync(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GetMe_WhenAuthenticatedWithEmailOnly_ResolvesViaUserManager()
         {
             User user = new User
             {
@@ -170,7 +206,7 @@ namespace WorldCup_System.Tests.Controllers
                 Roles = new List<string> { "User" }
             };
 
-            SetUserClaims("user@example.com");
+            SetUserClaims(new Claim(ClaimTypes.Email, "user@example.com"));
             _userManagerMock.Setup(userManager => userManager.FindByEmailAsync("user@example.com")).ReturnsAsync(user);
             _userServiceMock.Setup(userService => userService.GetCurrentUser(12)).ReturnsAsync(currentUser);
 
@@ -179,15 +215,11 @@ namespace WorldCup_System.Tests.Controllers
             OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
             CurrentUserDTO result = Assert.IsType<CurrentUserDTO>(okResult.Value);
             Assert.Equal(12, result.Id);
-            Assert.Equal("User", result.Name);
+            _userManagerMock.Verify(userManager => userManager.FindByEmailAsync("user@example.com"), Times.Once);
         }
 
-        private void SetUserClaims(string email)
+        private void SetUserClaims(params Claim[] claims)
         {
-            List<Claim> claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Email, email)
-            };
             ClaimsIdentity identity = new ClaimsIdentity(claims, "TestAuth");
             _userController.ControllerContext = new ControllerContext
             {
@@ -196,6 +228,15 @@ namespace WorldCup_System.Tests.Controllers
                     User = new ClaimsPrincipal(identity)
                 }
             };
+        }
+
+        private static string GetAnonymousToken(object loginResponse)
+        {
+            System.Reflection.PropertyInfo? tokenProperty = loginResponse.GetType().GetProperty("token");
+            Assert.NotNull(tokenProperty);
+            string? token = tokenProperty.GetValue(loginResponse) as string;
+            Assert.False(string.IsNullOrWhiteSpace(token));
+            return token!;
         }
 
         private static Mock<UserManager<User>> CreateUserManagerMock()

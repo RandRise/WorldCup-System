@@ -8,6 +8,9 @@ namespace Core.DTOs.Seeding
         public int WorldCupId { get; set; }
         public int GroupsAdded { get; set; }
         public int TeamsAdded { get; set; }
+        public int MatchesAdded { get; set; }
+        public int GoalsAdded { get; set; }
+        public int BetsResolved { get; set; }
         public bool AlreadySeeded { get; set; }
         public required string Message { get; set; }
     }

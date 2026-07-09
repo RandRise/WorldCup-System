@@ -92,6 +92,21 @@ namespace Core.Services.Bets
             return BuildBetDtos(new List<Bet> { bet }).FirstOrDefault();
         }
 
+        public List<BetDTO> GetMyBetsForWorldCup(long userId, int worldCupId)
+        {
+            List<int> matchIds = GetMatchIdsForWorldCup(worldCupId);
+            if (matchIds.Count == 0)
+            {
+                return new List<BetDTO>();
+            }
+
+            List<Bet> bets = _repository.Bet
+                .Find(bet => bet.UserId == userId && matchIds.Contains(bet.MatchId))
+                .ToList();
+
+            return BuildBetDtos(bets);
+        }
+
         public async Task<int> ResolveBetsForMatch(int matchId)
         {
             Match match = await _repository.Match.GetByIdAsync(matchId);
@@ -193,6 +208,32 @@ namespace Core.Services.Bets
             return winnerTeamId.HasValue && bet.TeamId == winnerTeamId.Value
                 ? BetScoringRules.CorrectOutcomePoints
                 : BetScoringRules.IncorrectPredictionPoints;
+        }
+
+        private List<int> GetMatchIdsForWorldCup(int worldCupId)
+        {
+            List<int> groupIds = _repository.Group
+                .Find(group => group.WorldCupId == worldCupId)
+                .Select(group => group.Id)
+                .ToList();
+            if (groupIds.Count == 0)
+            {
+                return new List<int>();
+            }
+
+            List<int> teamIds = _repository.Team
+                .Find(team => groupIds.Contains(team.GroupId))
+                .Select(team => team.Id)
+                .ToList();
+            if (teamIds.Count == 0)
+            {
+                return new List<int>();
+            }
+
+            return _repository.Match
+                .Find(match => teamIds.Contains(match.TeamOneId) && teamIds.Contains(match.TeamTwoId))
+                .Select(match => match.Id)
+                .ToList();
         }
 
         private List<BetDTO> BuildBetDtos(List<Bet> bets)

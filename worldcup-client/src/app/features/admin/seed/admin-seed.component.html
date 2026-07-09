@@ -1,8 +1,47 @@
 <section class="card">
-  <h1>Demo tournament seed</h1>
+  <h1>Tournament data</h1>
   <p class="subtitle">
-    Load World Cup 2026 reference data from bundled CSV files — countries, host cities
-    across USA, Canada, and Mexico, stadiums, groups A–L, and all 48 teams.
+    Start from a clean slate and build the tournament manually from the admin pages
+    (reference data, teams, schedule). Users and player positions are never removed.
+  </p>
+
+  @if (errorMessage()) {
+    <p class="alert alert-error" role="alert">{{ errorMessage() }}</p>
+  }
+
+  <div class="actions">
+    <button
+      type="button"
+      class="btn btn-secondary"
+      [disabled]="isLoading()"
+      (click)="clearTournamentData()"
+    >
+      {{ isLoading() ? 'Working…' : 'Clear all tournament data' }}
+    </button>
+  </div>
+
+  @if (resetResult(); as cleared) {
+    <div class="result card">
+      <h2>Tournament data cleared</h2>
+      <p>{{ cleared.message }}</p>
+      <dl>
+        <div><dt>Countries removed</dt><dd>{{ cleared.countriesRemoved }}</dd></div>
+        <div><dt>Cities removed</dt><dd>{{ cleared.citiesRemoved }}</dd></div>
+        <div><dt>Stadiums removed</dt><dd>{{ cleared.stadiumsRemoved }}</dd></div>
+        <div><dt>World Cups removed</dt><dd>{{ cleared.worldCupsRemoved }}</dd></div>
+        <div><dt>Groups removed</dt><dd>{{ cleared.groupsRemoved }}</dd></div>
+        <div><dt>Teams removed</dt><dd>{{ cleared.teamsRemoved }}</dd></div>
+        <div><dt>Matches removed</dt><dd>{{ cleared.matchesRemoved }}</dd></div>
+        <div><dt>Bets removed</dt><dd>{{ cleared.betsRemoved }}</dd></div>
+      </dl>
+    </div>
+  }
+</section>
+
+<section class="card muted-card">
+  <h2>Optional CSV demo</h2>
+  <p class="subtitle">
+  Load bundled World Cup 2026 CSV data only when you want a quick demo — not loaded on API startup.
   </p>
 
   <ul class="seed-list">
@@ -12,17 +51,13 @@
     <li><code>WorldCup2026_teams.csv</code> — groups and squads</li>
   </ul>
 
-  @if (errorMessage()) {
-    <p class="alert alert-error" role="alert">{{ errorMessage() }}</p>
-  }
-
   <button type="button" class="btn btn-primary" [disabled]="isLoading()" (click)="loadDemoData()">
     {{ isLoading() ? 'Loading…' : 'Load World Cup 2026 demo data' }}
   </button>
 
   @if (result(); as seedResult) {
     <div class="result card" [class.muted]="seedResult.alreadySeeded">
-      <h2>{{ seedResult.alreadySeeded ? 'Already seeded' : 'Seed complete' }}</h2>
+      <h3>{{ seedResult.alreadySeeded ? 'Already seeded' : 'Seed complete' }}</h3>
       <p>{{ seedResult.message }}</p>
       <dl>
         <div><dt>World Cup ID</dt><dd>{{ seedResult.worldCupId }}</dd></div>

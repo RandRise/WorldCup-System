@@ -18,6 +18,7 @@ namespace WorldCup_System.Tests.Services.Bets
         private readonly Mock<IRepository<Country>> _countryRepositoryMock;
         private readonly Mock<IRepository<TeamStats>> _teamStatsRepositoryMock;
         private readonly Mock<IRepository<Goal>> _goalRepositoryMock;
+        private readonly Mock<IRepository<Group>> _groupRepositoryMock;
         private readonly BetService _betService;
 
         public BetServiceTests()
@@ -30,6 +31,7 @@ namespace WorldCup_System.Tests.Services.Bets
             _countryRepositoryMock = new Mock<IRepository<Country>>();
             _teamStatsRepositoryMock = new Mock<IRepository<TeamStats>>();
             _goalRepositoryMock = new Mock<IRepository<Goal>>();
+            _groupRepositoryMock = new Mock<IRepository<Group>>();
 
             _repositoryManagerMock.Setup(repositoryManager => repositoryManager.Match).Returns(_matchRepositoryMock.Object);
             _repositoryManagerMock.Setup(repositoryManager => repositoryManager.Bet).Returns(_betRepositoryMock.Object);
@@ -38,6 +40,7 @@ namespace WorldCup_System.Tests.Services.Bets
             _repositoryManagerMock.Setup(repositoryManager => repositoryManager.Country).Returns(_countryRepositoryMock.Object);
             _repositoryManagerMock.Setup(repositoryManager => repositoryManager.TeamStats).Returns(_teamStatsRepositoryMock.Object);
             _repositoryManagerMock.Setup(repositoryManager => repositoryManager.Goal).Returns(_goalRepositoryMock.Object);
+            _repositoryManagerMock.Setup(repositoryManager => repositoryManager.Group).Returns(_groupRepositoryMock.Object);
 
             _betService = new BetService(_repositoryManagerMock.Object);
         }
@@ -404,6 +407,63 @@ namespace WorldCup_System.Tests.Services.Bets
             BetDTO? result = _betService.GetMyBetForMatch(5, 99);
 
             Assert.Null(result);
+        }
+
+        [Fact]
+        public void GetMyBetsForWorldCup_WhenUserHasBets_ReturnsBetsForTournamentMatches()
+        {
+            List<Group> groups = new List<Group>
+            {
+                new Group { Id = 1, WorldCupId = 2026, Name = "A" }
+            };
+            Group group = groups[0];
+            List<Team> teams = new List<Team>
+            {
+                new Team { Id = 10, GroupId = 1, CountryId = 1, Country = new Country { Id = 1, Name = "Brazil" }, Group = group, Coach = new List<Coach>() },
+                new Team { Id = 20, GroupId = 1, CountryId = 2, Country = new Country { Id = 2, Name = "France" }, Group = group, Coach = new List<Coach>() }
+            };
+            List<MatchEntity> matches = new List<MatchEntity>
+            {
+                new MatchEntity { Id = 1, Date = DateTime.UtcNow.AddDays(1), StadiumId = 1, TeamOneId = 10, TeamTwoId = 20 },
+                new MatchEntity { Id = 2, Date = DateTime.UtcNow.AddDays(2), StadiumId = 1, TeamOneId = 10, TeamTwoId = 20 }
+            };
+            List<Bet> bets = new List<Bet>
+            {
+                new Bet { Id = 7, UserId = 5, MatchId = 1, IsDraw = true },
+                new Bet { Id = 8, UserId = 5, MatchId = 2, IsDraw = false, TeamId = 10 },
+                new Bet { Id = 9, UserId = 99, MatchId = 1, IsDraw = false, TeamId = 20 }
+            };
+
+            _groupRepositoryMock.Setup(groupRepository => groupRepository.Find(It.IsAny<Expression<Func<Group, bool>>>()))
+                .Returns((Expression<Func<Group, bool>> predicate) => groups.AsQueryable().Where(predicate));
+            _teamRepositoryMock.Setup(teamRepository => teamRepository.Find(It.IsAny<Expression<Func<Team, bool>>>()))
+                .Returns((Expression<Func<Team, bool>> predicate) => teams.AsQueryable().Where(predicate));
+            _matchRepositoryMock.Setup(matchRepository => matchRepository.Find(It.IsAny<Expression<Func<MatchEntity, bool>>>()))
+                .Returns((Expression<Func<MatchEntity, bool>> predicate) => matches.AsQueryable().Where(predicate));
+            _betRepositoryMock.Setup(betRepository => betRepository.Find(It.IsAny<Expression<Func<Bet, bool>>>()))
+                .Returns((Expression<Func<Bet, bool>> predicate) => bets.AsQueryable().Where(predicate));
+            _teamRepositoryMock.Setup(teamRepository => teamRepository.GetAllAsync()).Returns(teams.AsQueryable());
+            _countryRepositoryMock.Setup(countryRepository => countryRepository.GetAllAsync()).Returns(new List<Country>().AsQueryable());
+            _betResultRepositoryMock.Setup(betResultRepository => betResultRepository.Find(It.IsAny<Expression<Func<BetResult, bool>>>()))
+                .Returns(new List<BetResult>().AsQueryable());
+
+            List<BetDTO> result = _betService.GetMyBetsForWorldCup(5, 2026);
+
+            Assert.Equal(2, result.Count);
+            Assert.All(result, betDto => Assert.Equal(5, betDto.UserId));
+            Assert.Contains(result, betDto => betDto.MatchId == 1);
+            Assert.Contains(result, betDto => betDto.MatchId == 2);
+        }
+
+        [Fact]
+        public void GetMyBetsForWorldCup_WhenNoTournamentMatches_ReturnsEmptyList()
+        {
+            _groupRepositoryMock.Setup(groupRepository => groupRepository.Find(It.IsAny<Expression<Func<Group, bool>>>()))
+                .Returns(new List<Group>().AsQueryable());
+
+            List<BetDTO> result = _betService.GetMyBetsForWorldCup(5, 2026);
+
+            Assert.Empty(result);
         }
     }
 }
