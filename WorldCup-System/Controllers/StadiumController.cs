@@ -1,12 +1,10 @@
-﻿using Core.DTOs.Cities;
-using Core.DTOs.Stadiums;
+﻿using Core.DTOs.Stadiums;
 using Core.Services.Stadiums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WorldCup_System.Controllers
 {
-
     [ApiController]
     [Route("[controller]/[action]")]
     public class StadiumController : Controller
@@ -17,10 +15,11 @@ namespace WorldCup_System.Controllers
         {
             _stadiumService = stadiumService;
         }
+
         [HttpGet]
         public List<StadiumDTO> GetStadiums()
         {
-            var stadiums = _stadiumService.GetStadiums();
+            List<StadiumDTO> stadiums = _stadiumService.GetStadiums();
             return stadiums;
         }
 
@@ -28,18 +27,17 @@ namespace WorldCup_System.Controllers
         [HttpPost]
         public async Task<IActionResult> AddStadium([FromBody] StadiumDTO stadium)
         {
-
             try
             {
-
                 await _stadiumService.AddStadium(stadium);
-                return Ok("File uploaded and processed successfully.");
+                return Ok("Stadium created successfully.");
             }
             catch (Exception ex)
             {
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
         [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> UpdateStadium([FromBody] UpdateStadiumDto stadium)
@@ -48,26 +46,6 @@ namespace WorldCup_System.Controllers
             {
                 await _stadiumService.UpdateStadium(stadium);
                 return Ok("Stadium information updated successfully.");
-            }
-            catch (Exception ex)
-            {
-                return ApiErrorHelper.FromException(ex);
-            }
-        }
-
-        [Authorize(Roles = "Admin")]
-        [HttpPost]
-        public async Task<IActionResult> ImportStadiumsFromCsv([FromForm] UploadStadiumDto uploadStadium)
-        {
-            if (uploadStadium.File == null)
-            {
-                return BadRequest(new { error = "File is required." });
-            }
-
-            try
-            {
-                await _stadiumService.LoadStadiumsFromCsv(uploadStadium.File);
-                return Ok("Stadiums imported successfully.");
             }
             catch (Exception ex)
             {

@@ -17,7 +17,6 @@ namespace WorldCup_System.Tests.Integration
             Environment.SetEnvironmentVariable(
                 "ConnectionStrings__DefaultConnection",
                 "Host=localhost;Database=test;Username=test;Password=test");
-            Environment.SetEnvironmentVariable("DevSeed__WorldCup2026", "false");
         }
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -25,15 +24,13 @@ namespace WorldCup_System.Tests.Integration
             builder.UseEnvironment("Testing");
             builder.UseSetting("JWT:Secret", "integration-test-jwt-secret-key-32chars");
             builder.UseSetting("ConnectionStrings:DefaultConnection", "Host=localhost;Database=test;Username=test;Password=test");
-            builder.UseSetting("DevSeed:WorldCup2026", "false");
 
             builder.ConfigureAppConfiguration((context, configurationBuilder) =>
             {
                 Dictionary<string, string?> settings = new Dictionary<string, string?>
                 {
                     ["JWT:Secret"] = "integration-test-jwt-secret-key-32chars",
-                    ["ConnectionStrings:DefaultConnection"] = "Host=localhost;Database=test;Username=test;Password=test",
-                    ["DevSeed:WorldCup2026"] = "false"
+                    ["ConnectionStrings:DefaultConnection"] = "Host=localhost;Database=test;Username=test;Password=test"
                 };
                 configurationBuilder.AddInMemoryCollection(settings);
             });

@@ -36,23 +36,4 @@ export class ReferenceApiService {
   updateStadium(request: UpdateStadiumRequest): Promise<void> {
     return this.apiHttp.postCommand(`${this.baseUrl}/Stadium/UpdateStadium`, request);
   }
-
-  importCountriesCsv(file: File): Promise<void> {
-    const formData = new FormData();
-    formData.append('file', file);
-    return this.apiHttp.postCommand(`${this.baseUrl}/Country/AddCountries`, formData);
-  }
-
-  importCitiesCsv(file: File, countryId: number): Promise<void> {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('countryId', String(countryId));
-    return this.apiHttp.postCommand(`${this.baseUrl}/City/AddCities`, formData);
-  }
-
-  importStadiumsCsv(file: File): Promise<void> {
-    const formData = new FormData();
-    formData.append('file', file);
-    return this.apiHttp.postCommand(`${this.baseUrl}/Stadium/ImportStadiumsFromCsv`, formData);
-  }
 }

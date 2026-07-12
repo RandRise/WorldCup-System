@@ -2,9 +2,7 @@ using Core.DTOs.Cities;
 using Core.Services.Cities;
 using Data.Entities;
 using Data.Repos;
-using Microsoft.AspNetCore.Http;
 using Moq;
-using System.Text;
 
 namespace WorldCup_System.Tests.Services.Cities
 {
@@ -66,45 +64,6 @@ namespace WorldCup_System.Tests.Services.Cities
             Assert.NotNull(capturedCity);
             Assert.Equal("Marseille", capturedCity.Name);
             Assert.Equal(5, capturedCity.CountryId);
-            _repositoryManagerMock.Verify(repositoryManager => repositoryManager.SaveAsync(), Times.Once);
-        }
-
-        [Fact]
-        public async Task LoadCitiesFromCsv_WhenFileIsEmpty_ThrowsException()
-        {
-            Mock<IFormFile> fileMock = new Mock<IFormFile>();
-            fileMock.Setup(formFile => formFile.Length).Returns(0);
-
-            Exception exception = await Assert.ThrowsAsync<Exception>(
-                () => _cityService.LoadCitiesFromCsv(fileMock.Object, 1));
-
-            Assert.Equal("File is empty.", exception.Message);
-        }
-
-        [Fact]
-        public async Task LoadCitiesFromCsv_WhenValidCsv_CreatesNewCitiesAndSaves()
-        {
-            string csvContent = "Name\nBerlin\nMunich\n";
-            MemoryStream stream = new MemoryStream(Encoding.UTF8.GetBytes(csvContent));
-
-            Mock<IFormFile> fileMock = new Mock<IFormFile>();
-            fileMock.Setup(formFile => formFile.Length).Returns(stream.Length);
-            fileMock.Setup(formFile => formFile.FileName).Returns("cities.csv");
-            fileMock.Setup(formFile => formFile.OpenReadStream()).Returns(stream);
-
-            _cityRepositoryMock
-                .Setup(cityRepository => cityRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<City, bool>>>()))
-                .Returns(new List<City>().AsQueryable());
-
-            _repositoryManagerMock
-                .Setup(repositoryManager => repositoryManager.SaveAsync())
-                .Returns(Task.CompletedTask);
-
-            await _cityService.LoadCitiesFromCsv(fileMock.Object, 3);
-
-            _cityRepositoryMock.Verify(
-                cityRepository => cityRepository.Create(It.IsAny<City>()),
-                Times.Exactly(2));
             _repositoryManagerMock.Verify(repositoryManager => repositoryManager.SaveAsync(), Times.Once);
         }
     }

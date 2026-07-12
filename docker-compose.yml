@@ -31,7 +31,6 @@ services:
       DevAdmin__Password: ${DEV_ADMIN_PASSWORD:-Admin123!}
       DevUser__Email: ${DEV_USER_EMAIL:-user@localhost}
       DevUser__Password: ${DEV_USER_PASSWORD:-User123!}
-      DevSeed__WorldCup2026: ${DEV_SEED_WORLDCUP_2026:-false}
     depends_on:
       db:
         condition: service_healthy

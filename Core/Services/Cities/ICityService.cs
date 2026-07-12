@@ -1,5 +1,4 @@
 ﻿using Core.DTOs.Cities;
-using Microsoft.AspNetCore.Http;
 
 namespace Core.Services.Cities
 {
@@ -7,7 +6,5 @@ namespace Core.Services.Cities
     {
         public List<CityDTO> GetAllCities();
         Task AddCities(CityDTO citiesDto);
-
-        Task LoadCitiesFromCsv(IFormFile file, int CountryId);
     }
 }

@@ -10,7 +10,6 @@ using Core.Services.Groups;
 using Core.Services.Matches;
 using Core.Services.PlayerPositions;
 using Core.Services.Players;
-using Core.Services.Seeding;
 using Core.Services.Stadiums;
 using Core.Services.Standings;
 using Core.Services.Stats;
@@ -115,8 +114,6 @@ builder.Services.AddScoped<ITeamStatsService, TeamStatsService>();
 builder.Services.AddScoped<IStandingsService, StandingsService>();
 builder.Services.AddScoped<IBetService, BetService>();
 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
-builder.Services.AddScoped<IDemoSeedService, DemoSeedService>();
-builder.Services.AddScoped<ITournamentDataResetService, TournamentDataResetService>();
 
 builder.Services.AddDbContext<ApplicationDbContext>(option =>
 {
@@ -229,12 +226,6 @@ using (var scope = app.Services.CreateScope())
     }
 
     await dbContext.SaveChangesAsync();
-
-    if (app.Environment.IsDevelopment() && configuration.GetValue<bool>("DevSeed:WorldCup2026"))
-    {
-        IDemoSeedService demoSeedService = scope.ServiceProvider.GetRequiredService<IDemoSeedService>();
-        await demoSeedService.SeedWorldCup2026DemoAsync();
-    }
 }
 
 // Configure the HTTP request pipeline.

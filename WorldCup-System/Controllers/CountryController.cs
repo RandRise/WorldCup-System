@@ -1,6 +1,5 @@
 ﻿using Core.DTOs.Countries;
 using Core.Services.Countries;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WorldCup_System.Controllers
@@ -11,7 +10,6 @@ namespace WorldCup_System.Controllers
     {
         private readonly ICountryService _countryService;
 
-
         public CountryController(ICountryService countryService)
         {
             _countryService = countryService;
@@ -20,26 +18,8 @@ namespace WorldCup_System.Controllers
         [HttpGet]
         public List<CountryDTO> GetAllCountries()
         {
-            var countries = _countryService.GetAllCountries();
+            List<CountryDTO> countries = _countryService.GetAllCountries();
             return countries;
-        }
-
-
-        [Authorize(Roles = "Admin")]
-        [HttpPost]
-        public async Task<IActionResult> AddCountries([FromForm] UploadCountryDto uploadCountry)
-        {
-
-            try
-            {
-
-                await _countryService.LoadCountriesFromExcel(uploadCountry.File);
-                return Ok("File uploaded and processed successfully.");
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
         }
     }
 }

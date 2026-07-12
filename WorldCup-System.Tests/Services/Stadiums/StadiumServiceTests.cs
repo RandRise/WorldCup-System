@@ -2,7 +2,6 @@ using Core.DTOs.Stadiums;
 using Core.Services.Stadiums;
 using Data.Entities;
 using Data.Repos;
-using Microsoft.AspNetCore.Http;
 using Moq;
 
 namespace WorldCup_System.Tests.Services.Stadiums
@@ -167,92 +166,6 @@ namespace WorldCup_System.Tests.Services.Stadiums
                 () => _stadiumService.UpdateStadium(updateStadiumDto));
 
             Assert.Contains("City with ID 404", exception.Message);
-        }
-
-        [Fact]
-        public async Task LoadStadiumsFromCsv_WhenCityMissing_ThrowsKeyNotFoundException()
-        {
-            string csvContent = "Stadium Name,City Name\nLusail Stadium,Unknown City\n";
-            MemoryStream stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csvContent));
-            Mock<IFormFile> fileMock = new Mock<IFormFile>();
-            fileMock.Setup(file => file.Length).Returns(stream.Length);
-            fileMock.Setup(file => file.FileName).Returns("stadiums.csv");
-            fileMock.Setup(file => file.OpenReadStream()).Returns(stream);
-
-            _cityRepositoryMock
-                .Setup(cityRepository => cityRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<City, bool>>>()))
-                .Returns(new List<City>().AsQueryable());
-
-            KeyNotFoundException exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _stadiumService.LoadStadiumsFromCsv(fileMock.Object));
-
-            Assert.Contains("Unknown City", exception.Message);
-        }
-
-        [Fact]
-        public async Task LoadStadiumsFromCsv_WhenCityExists_CreatesStadiumAndSaves()
-        {
-            string csvContent = "Stadium Name,City Name\nLusail Stadium,Lusail\n";
-            MemoryStream stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csvContent));
-            Mock<IFormFile> fileMock = new Mock<IFormFile>();
-            fileMock.Setup(file => file.Length).Returns(stream.Length);
-            fileMock.Setup(file => file.FileName).Returns("stadiums.csv");
-            fileMock.Setup(file => file.OpenReadStream()).Returns(stream);
-
-            _cityRepositoryMock
-                .Setup(cityRepository => cityRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<City, bool>>>()))
-                .Returns(new List<City> { new City { Id = 1, Name = "Lusail", CountryId = 1 } }.AsQueryable());
-
-            _stadiumRepositoryMock
-                .Setup(stadiumRepository => stadiumRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Stadium, bool>>>()))
-                .Returns(new List<Stadium>().AsQueryable());
-
-            Stadium? capturedStadium = null;
-            _stadiumRepositoryMock
-                .Setup(stadiumRepository => stadiumRepository.Create(It.IsAny<Stadium>()))
-                .Callback<Stadium>(stadium => capturedStadium = stadium);
-
-            _repositoryManagerMock
-                .Setup(repositoryManager => repositoryManager.SaveAsync())
-                .Returns(Task.CompletedTask);
-
-            await _stadiumService.LoadStadiumsFromCsv(fileMock.Object);
-
-            Assert.NotNull(capturedStadium);
-            Assert.Equal("Lusail Stadium", capturedStadium.Name);
-            Assert.Equal(1, capturedStadium.CityId);
-        }
-
-        [Fact]
-        public async Task LoadStadiumsFromCsv_WhenDuplicateNamesInFile_ImportsOnlyOnce()
-        {
-            string csvContent = "Stadium Name,City Name\nLusail Stadium,Lusail\nLusail Stadium,Lusail\n";
-            MemoryStream stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csvContent));
-            Mock<IFormFile> fileMock = new Mock<IFormFile>();
-            fileMock.Setup(file => file.Length).Returns(stream.Length);
-            fileMock.Setup(file => file.FileName).Returns("stadiums.csv");
-            fileMock.Setup(file => file.OpenReadStream()).Returns(stream);
-
-            _cityRepositoryMock
-                .Setup(cityRepository => cityRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<City, bool>>>()))
-                .Returns(new List<City> { new City { Id = 1, Name = "Lusail", CountryId = 1 } }.AsQueryable());
-
-            _stadiumRepositoryMock
-                .Setup(stadiumRepository => stadiumRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Stadium, bool>>>()))
-                .Returns(new List<Stadium>().AsQueryable());
-
-            int createCount = 0;
-            _stadiumRepositoryMock
-                .Setup(stadiumRepository => stadiumRepository.Create(It.IsAny<Stadium>()))
-                .Callback(() => createCount++);
-
-            _repositoryManagerMock
-                .Setup(repositoryManager => repositoryManager.SaveAsync())
-                .Returns(Task.CompletedTask);
-
-            await _stadiumService.LoadStadiumsFromCsv(fileMock.Object);
-
-            Assert.Equal(1, createCount);
         }
     }
 }

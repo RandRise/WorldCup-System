@@ -17,7 +17,7 @@
   @if (isLoading()) {
     <p class="muted">Loading fixtures…</p>
   } @else if (matches().length === 0) {
-    <p class="muted">No fixtures yet. An admin can schedule matches or load the World Cup 2026 demo seed.</p>
+    <p class="muted">No fixtures yet. An admin can schedule matches from the admin panel.</p>
   } @else {
     <div class="fixture-list">
       @for (match of matches(); track match.id) {

@@ -4,9 +4,7 @@ import { authGuard } from './core/auth/auth.guard';
 import { guestGuard } from './core/auth/guest.guard';
 import { ShellComponent } from './core/layout/shell/shell.component';
 import { AdminLayoutComponent } from './features/admin/admin-layout/admin-layout.component';
-import { AdminReferenceComponent } from './features/admin/reference/admin-reference.component';
 import { AdminScheduleComponent } from './features/admin/schedule/admin-schedule.component';
-import { AdminSeedComponent } from './features/admin/seed/admin-seed.component';
 import { AdminTeamsComponent } from './features/admin/teams/admin-teams.component';
 import { LoginComponent } from './features/auth/login/login.component';
 import { RegisterComponent } from './features/auth/register/register.component';
@@ -33,9 +31,7 @@ export const routes: Routes = [
         component: AdminLayoutComponent,
         canActivate: [adminGuard],
         children: [
-          { path: '', redirectTo: 'seed', pathMatch: 'full' },
-          { path: 'seed', component: AdminSeedComponent },
-          { path: 'reference', component: AdminReferenceComponent },
+          { path: '', redirectTo: 'teams', pathMatch: 'full' },
           { path: 'teams', component: AdminTeamsComponent },
           { path: 'schedule', component: AdminScheduleComponent },
         ],

@@ -45,7 +45,7 @@ namespace WorldCup_System.Tests.Controllers
             IActionResult actionResult = await _stadiumController.AddStadium(stadiumDto);
 
             OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
-            Assert.Equal("File uploaded and processed successfully.", okResult.Value);
+            Assert.Equal("Stadium created successfully.", okResult.Value);
         }
 
         [Fact]
