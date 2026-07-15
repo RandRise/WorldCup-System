@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorldCup System — Phase 7 Bugfixes &amp; Live Data</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h1>⚽ WorldCup System</h1>
+        <p>Project planning &amp; workflow</p>
+      </div>
+      <nav>
+        <a href="../index.html" class="nav-link"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="../overview.html" class="nav-link"><span class="nav-icon">📋</span> System Overview</a>
+        <a href="../roadmap.html" class="nav-link"><span class="nav-icon">🗺️</span> Completion Roadmap</a>
+        <a href="../workflow.html" class="nav-link"><span class="nav-icon">⚙️</span> Dev Workflow</a>
+        <a href="../api-status.html" class="nav-link"><span class="nav-icon">🔌</span> API Status</a>
+        <a href="../data-model.html" class="nav-link"><span class="nav-icon">🗄️</span> Data Model</a>
+        <a href="../changes-review.html" class="nav-link active"><span class="nav-icon">🔍</span> Changes Review</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="page-header">
+        <h2>Phase 7 — Post-Launch Bugfixes &amp; Live Data</h2>
+        <p>Full diff detail for auth session, WC 2026 fixture seed, live fixtures polling, and leaderboard auto-resolve (8 Jul 2026). <a href="../changes-review.html">← Back to Changes Review</a> · <a href="../roadmap.html#phase-7">Roadmap Phase 7</a></p>
+      </header>
+
+      <div class="alert alert-info">
+        <strong>Review + tests cleared (8 Jul 2026).</strong> <code>dotnet test</code> — <strong>227 passed</strong>. Restart the API so demo seed can backfill goals on an existing database. Next: <a href="../roadmap.html#phase-8">Phase 8 dashboards</a>.
+      </div>
+
+      <div class="alert alert-success">
+        <strong>Follow-up fix (9 Jul 2026).</strong> Admin mutations (add/delete match, team, bet, etc.) showed UI errors while the API returned <code>200 OK</code> with <code>text/plain</code> bodies like <code>Match added successfully.</code> — fixed via <code>ApiHttpService</code> (<code>responseType: 'text'</code>).
+      </div>
+
+      <section class="section">
+        <h3 class="section-title">Review Gate — Cleared</h3>
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>Blocker</th><th>Severity</th><th>Status</th><th>Resolution</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Fixtures poll missed Scheduled→Live</td>
+                <td><span class="badge badge-risk-high">High</span></td>
+                <td><span class="badge badge-done">Cleared</span></td>
+                <td><code>shouldAutoRefresh</code> polls Live or due Scheduled kickoffs</td>
+              </tr>
+              <tr>
+                <td>Seed AlreadySeeded skipped goals/resolve</td>
+                <td><span class="badge badge-risk-medium">Medium</span></td>
+                <td><span class="badge badge-done">Cleared</span></td>
+                <td><code>BackfillGoalsForFinishedMatchesAsync</code> + resolve on re-seed</td>
+              </tr>
+              <tr>
+                <td><code>dotnet test</code></td>
+                <td><span class="badge badge-risk-high">High</span></td>
+                <td><span class="badge badge-done">Cleared</span></td>
+                <td>227 passed</td>
+              </tr>
+              <tr>
+                <td>Uncommitted Phase 7 paths</td>
+                <td><span class="badge badge-risk-medium">Medium</span></td>
+                <td><span class="badge badge-partial">Ops</span></td>
+                <td>Commit when you ask</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Root causes</h3>
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Logged in but navbar shows “Log in”; My Bets hits login guard</td>
+                <td><code>POST /User/Login</code> OK but <code>GET /User/GetMe</code> failed — JWT claims / Identity cookie defaults overwrote Bearer scheme; email claim mapping incomplete under .NET 8</td>
+                <td><code>CurrentUserResolver</code>; login emits <code>sub</code>, <code>NameIdentifier</code>, email claims; JWT registered <strong>after</strong> <code>AddIdentity</code>; <code>MapInboundClaims = true</code></td>
+              </tr>
+              <tr>
+                <td>Standings / fixtures empty for World Cup 2026</td>
+                <td>Demo seed had teams only; client could prefer wrong 2026 (or 2022) tournament</td>
+                <td><code>ImportGroupStageFixturesAsync</code> (72 matches + goals); prefer June 2026 in <code>worldcup-context.service.ts</code></td>
+              </tr>
+              <tr>
+                <td>Leaderboard empty / only after manual resolve</td>
+                <td>No auto-resolve when match finished; leaderboard skipped when no <code>BetResult</code> rows</td>
+                <td><code>GoalService</code> + seed call <code>ResolveBetsForMatch</code>; include active bettors at 0 pts</td>
+              </tr>
+              <tr>
+                <td>Fixtures bet map N+1 API calls</td>
+                <td>One <code>GetMyBetForMatch</code> per fixture</td>
+                <td><code>GetMyBetsForWorldCup</code> batch endpoint + client single call; 30s live poll</td>
+              </tr>
+              <tr>
+                <td>Admin add/delete match (and other mutations) shows “Failed to save/delete” but network tab shows success</td>
+                <td>API returns <code>200 OK</code> with <code>Content-Type: text/plain</code> (e.g. <code>Match added successfully.</code>); Angular <code>HttpClient</code> defaults to JSON parsing and throws <code>Http failure during parsing</code></td>
+                <td><code>ApiHttpService.postCommand</code> / <code>deleteCommand</code> with <code>responseType: 'text'</code>; all mutation API services updated (match, team, coach, player, stadium, bet, register)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Phase 7 Roadmap Mapping</h3>
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>Task</th><th>Status</th><th>Evidence</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>p7-auth-session</code> — JWT session + GetMe</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>CurrentUserResolver.cs</code>, <code>UserController</code> claims, <code>Program.cs</code> JWT after Identity, <code>AuthIntegrationTests</code> Bearer → GetMe</td>
+              </tr>
+              <tr>
+                <td><code>p7-my-bets-guard</code> — My Bets redirect to login</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td>Same auth root cause; GetMe/resolver fix unblocks <code>authGuard</code></td>
+              </tr>
+              <tr>
+                <td><code>p7-wc2026-select</code> — Prefer June 2026</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>worldcup-context.service.ts</code> — UTC year 2026 + month 5</td>
+              </tr>
+              <tr>
+                <td><code>p7-fixtures-seed</code> — Group-stage fixtures + scores</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>DemoSeedService</code> — 6 matches × 12 groups; goals for finished kickoffs; DTO counters</td>
+              </tr>
+              <tr>
+                <td><code>p7-live-refresh</code> — Auto-refresh live fixtures</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>fixtures.component.ts</code> — 30s interval while any match <code>Live</code>; cleaned up on destroy</td>
+              </tr>
+              <tr>
+                <td><code>p7-leaderboard-auto</code> — Auto-resolve + show bettors</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>GoalService</code>, <code>ResolveFinishedBetsAsync</code>, <code>LeaderboardService</code> zero-point inclusion</td>
+              </tr>
+              <tr>
+                <td><code>p7-external-api</code> — External football API</td>
+                <td><span class="badge badge-partial">Not started</span></td>
+                <td>Deferred — no free external APIs; next work is admin manual import (see Still to do)</td>
+              </tr>
+              <tr>
+                <td><code>p7-knockout</code> — Knockout bracket</td>
+                <td><span class="badge badge-partial">Not started</span></td>
+                <td>Group stage only</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="actions" style="margin-top: 1rem;">
+            <a href="../roadmap.html#phase-7" class="btn btn-secondary btn-sm">Open Phase 7 checklist</a>
+            <a href="../changes-review.html" class="btn btn-primary btn-sm">Changes Review summary</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Git status snapshot</h3>
+        <div class="card">
+          <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;"><strong>Repo:</strong> <code>WorldCup-System/</code> — 18 modified, 2 untracked · <strong>+663 / −80</strong> (tracked only)</p>
+          <code style="display: block; font-size: 0.78rem; line-height: 1.6;">Modified: DemoSeedResultDTO.cs, BetService.cs, IBetService.cs, LeaderboardService.cs, GoalService.cs, DemoSeedService.cs, BetController.cs, UserController.cs, Program.cs, BetControllerTests.cs, AuthIntegrationTests.cs, BetServiceTests.cs, GoalServiceTests.cs, DemoSeedServiceTests.cs, bet-api.service.ts, worldcup-context.service.ts, fixtures.component.ts, standings.component.html<br>
+Untracked: Core/Helpers/CurrentUserResolver.cs, scripts/run-api.ps1</code>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Architecture — Auth &amp; seed flow</h3>
+        <div class="card">
+          <div class="diagram">Login → JWT claims (sub, NameIdentifier, email)
+       → MapInboundClaims=true · Auth registered AFTER AddIdentity
+       → CurrentUserResolver (id claim → else email lookup)
+       → GetMe / BetController / UserController
+
+Demo seed (idempotent “fully seeded” = groups+teams+72 matches)
+─────────────────────────────────────────────────────────────
+ImportTeams → ImportGroupStageFixtures (pairings + TeamStats)
+  → goals for kickoffs past full-time → ResolveFinishedBetsAsync
+Goal add after FT → ResolveBetsForMatch (catch incomplete stats)
+
+Client
+─────────────────────────────────────────────────────────────
+Prefer WC year=2026 month=June · GetMyBetsForWorldCup batch
+Fixtures: 30s poll if any Live</div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">File-by-file detail</h3>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>Core/Helpers/CurrentUserResolver.cs</h4>
+            <span class="badge badge-done">p7-auth-session · NEW</span>
+          </div>
+          <p class="change-desc">Shared identity resolution for controllers. Prefers <code>NameIdentifier</code> / JWT <code>sub</code>; falls back to email claim + <code>UserManager.FindByEmailAsync</code>.</p>
+          <div class="diff-block"><span class="diff-add">+public static async Task&lt;long&gt; ResolveUserIdAsync(ClaimsPrincipal, UserManager&lt;User&gt;)</span>
+<span class="diff-add">+TryResolveUserId → ClaimTypes.NameIdentifier ?? "sub"</span>
+<span class="diff-add">+TryResolveEmail → ClaimTypes.Email ?? "email"</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>WorldCup-System/Controllers/UserController.cs</h4>
+            <span class="badge badge-done">p7-auth-session</span>
+          </div>
+          <p class="change-desc">Login token now includes <code>sub</code>, JWT email, and <code>NameIdentifier</code>. <code>ResolveCurrentUserIdAsync</code> delegates to <code>CurrentUserResolver</code>.</p>
+          <div class="diff-block"><span class="diff-add">+new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString())</span>
+<span class="diff-add">+new Claim(JwtRegisteredClaimNames.Email, user.Email!)</span>
+<span class="diff-add">+new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())</span>
+<span class="diff-add">+return CurrentUserResolver.ResolveUserIdAsync(User, _userManager);</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>WorldCup-System/Program.cs</h4>
+            <span class="badge badge-done">p7-auth-session</span>
+          </div>
+          <p class="change-desc">JWT Bearer registration moved <strong>after</strong> <code>AddIdentity</code> so cookie defaults do not overwrite API schemes. Enables <code>MapInboundClaims</code>. Skips HTTPS redirection in Testing env (fixes integration redirect noise).</p>
+          <div class="diff-block"><span class="diff-add">+// JWT must be registered after AddIdentity …</span>
+<span class="diff-add">+options.MapInboundClaims = true;</span>
+<span class="diff-add">+if (!app.Environment.IsEnvironment("Testing")) { app.UseHttpsRedirection(); }</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>WorldCup-System/Controllers/BetController.cs</h4>
+            <span class="badge badge-done">p7-leaderboard-auto · auth</span>
+          </div>
+          <p class="change-desc">New authorized <code>GET GetMyBetsForWorldCup?worldCupId=</code>. Uses shared resolver + <code>ApiErrorHelper</code>.</p>
+          <div class="diff-block"><span class="diff-add">+[Authorize] [HttpGet] GetMyBetsForWorldCup(int worldCupId)</span>
+<span class="diff-add">+_betService.GetMyBetsForWorldCup(userId, worldCupId)</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>Core/Services/Bets/BetService.cs + IBetService.cs</h4>
+            <span class="badge badge-done">p7-leaderboard-auto</span>
+          </div>
+          <p class="change-desc">Batch user bets scoped to tournament: groups → teams → matches where both sides are in the cup.</p>
+          <div class="diff-block"><span class="diff-add">+List&lt;BetDTO&gt; GetMyBetsForWorldCup(long userId, int worldCupId)</span>
+<span class="diff-add">+private List&lt;int&gt; GetMatchIdsForWorldCup(int worldCupId)</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>Core/Services/Bets/LeaderboardService.cs</h4>
+            <span class="badge badge-done">p7-leaderboard-auto</span>
+          </div>
+          <p class="change-desc">Removed early empty return when no results. Appends scoped bettors with 0 points / 0 resolved, then re-ranks.</p>
+          <div class="diff-block"><span class="diff-del">-if (results.Count == 0) return new List&lt;LeaderboardEntryDTO&gt;();</span>
+<span class="diff-add">+foreach (Bet bet in scopedBets) { /* add missing users at TotalPoints = 0 */ }</span>
+<span class="diff-add">+leaderboard = OrderByDescending(TotalPoints)…</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>Core/Services/Goals/GoalService.cs</h4>
+            <span class="badge badge-done">p7-leaderboard-auto</span>
+          </div>
+          <p class="change-desc">Injects <code>IBetService</code>. After creating a goal, if match is past full-time duration, attempts <code>ResolveBetsForMatch</code> (swallows incomplete-stats failures).</p>
+          <div class="diff-block"><span class="diff-add">+if (fullTime &lt;= DateTime.UtcNow) await _betService.ResolveBetsForMatch(...)</span>
+<span class="diff-add">+catch (InvalidOperationException) { /* incomplete stats */ }</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>Core/Services/Seeding/DemoSeedService.cs + DemoSeedResultDTO.cs</h4>
+            <span class="badge badge-done">p7-fixtures-seed · p7-leaderboard-auto</span>
+          </div>
+          <p class="change-desc">Full group-stage calendar (6 pairings × 12 groups), placeholder scorers, deterministic demo scores for finished matches, then resolve bets. “Already seeded” now also requires expected match count. DTO gains <code>MatchesAdded</code>, <code>GoalsAdded</code>, <code>BetsResolved</code>.</p>
+          <div class="diff-block"><span class="diff-add">+ImportGroupStageFixturesAsync / SeedMatchGoalsAsync / EnsurePlaceholderPlayerAsync</span>
+<span class="diff-add">+ResolveFinishedBetsAsync / MatchExists / CountGroupStageMatches / GenerateDemoScore</span>
+<span class="diff-add">+MatchesAdded, GoalsAdded, BetsResolved on DemoSeedResultDTO</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>worldcup-client — bet-api / context / fixtures / standings</h4>
+            <span class="badge badge-done">p7-wc2026-select · p7-live-refresh</span>
+          </div>
+          <p class="change-desc">Batch bets API; prefer June 2026 tournament; 30s live refresh with <code>OnDestroy</code> cleanup; standings empty copy clarified.</p>
+          <div class="diff-block"><span class="diff-add">+getMyBetsForWorldCup(worldCupId)</span>
+<span class="diff-add">+preferred: year===2026 &amp;&amp; month===5 (June)</span>
+<span class="diff-add">+setInterval 30_000 when any match.status === 'Live'</span>
+<span class="diff-add">+“No teams in this group yet.”</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>worldcup-client — api-http.service.ts</h4>
+            <span class="badge badge-done">mutation response fix · NEW (9 Jul 2026)</span>
+          </div>
+          <p class="change-desc">Centralizes POST/DELETE commands that return plain-text success strings from the API. Prevents false UI errors when mutations succeed but Angular cannot JSON-parse <code>text/plain</code> bodies.</p>
+          <div class="diff-block"><span class="diff-add">+postCommand(url, body) — responseType: 'text'</span>
+<span class="diff-add">+deleteCommand(url) — responseType: 'text'</span>
+<span class="diff-add">+Used by match-api, tournament-api, reference-api, bet-api, auth.register</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>Tests (Bet / Goal / DemoSeed / Auth / BetController)</h4>
+            <span class="badge badge-done">coverage</span>
+          </div>
+          <p class="change-desc">Mocks updated for new DI (<code>IBetService</code>, Group/Match repos). New facts for world-cup bets + controller. Auth integration disables auto-redirect and asserts Bearer → GetMe profile.</p>
+          <div class="diff-block"><span class="diff-add">+GetMyBetsForWorldCup_WhenAuthenticated_ReturnsBetsFromService</span>
+<span class="diff-add">+GetMyBetsForWorldCup_WhenUserHasBets_ReturnsBetsForTournamentMatches</span>
+<span class="diff-add">+Auth: AllowAutoRedirect=false; GetMe with Bearer after login</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>scripts/run-api.ps1</h4>
+            <span class="badge badge-done">ops · NEW</span>
+          </div>
+          <p class="change-desc">Dev helper: ensure local Postgres service, free port 5055 (force-stop listeners), then <code>dotnet run</code> on the API project.</p>
+          <div class="diff-block"><span class="diff-add">+Ensure-PostgresRunning / Stop-ListenersOnPort / dotnet run --project WorldCup-System.csproj</span></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Still to do</h3>
+        <div class="card">
+          <ul>
+            <li><strong>Phase 8:</strong> user dashboard — return URL after login (My Bets → login → bets, not home)</li>
+            <li><strong>Phase 8:</strong> bet auto-resolve + live snapshot / live-action APIs + admin live console</li>
+            <li><strong>Phase 8:</strong> admin dashboard — resolve/refresh leaderboard + manual team entry (no free API)</li>
+            <li>Roadmap <code>p7-knockout</code> — knockout bracket (deferred)</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="../assets/app.js"></script>
+</body>
+</html>

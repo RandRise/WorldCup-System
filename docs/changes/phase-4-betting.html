@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorldCup System — Phase 4 Betting Module Changes</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h1>⚽ WorldCup System</h1>
+        <p>Project planning &amp; workflow</p>
+      </div>
+      <nav>
+        <a href="../index.html" class="nav-link"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="../overview.html" class="nav-link"><span class="nav-icon">📋</span> System Overview</a>
+        <a href="../roadmap.html" class="nav-link"><span class="nav-icon">🗺️</span> Completion Roadmap</a>
+        <a href="../workflow.html" class="nav-link"><span class="nav-icon">⚙️</span> Dev Workflow</a>
+        <a href="../api-status.html" class="nav-link"><span class="nav-icon">🔌</span> API Status</a>
+        <a href="../data-model.html" class="nav-link"><span class="nav-icon">🗄️</span> Data Model</a>
+        <a href="../changes-review.html" class="nav-link active"><span class="nav-icon">🔍</span> Changes Review</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="page-header">
+        <h2>Phase 4 — Betting Module</h2>
+        <p>Full diff detail for unstaged changes. <a href="../changes-review.html">← Back to Changes Review</a></p>
+      </header>
+
+      <div class="alert alert-info">
+        Source: <code>git status</code> + <code>git diff</code> on <code>master</code> (uncommitted, 1 Jul 2026). Repo: <code>WorldCup-System/</code> — branch ahead of <code>origin/master</code> by 1 commit (Phase 2). Current diff: <strong>6 modified</strong>, <strong>0 deleted</strong>, <strong>41 untracked files</strong> (20 top-level paths). Working tree also includes Phase 3 match lifecycle and unit tests.
+      </div>
+
+      <section class="section">
+        <h3 class="section-title">Review Gate — Fix Before Testing</h3>
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>Blocker</th><th>Severity</th><th>File / area</th><th>Required fix</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Phase 4 source untracked / unstaged</td>
+                <td><span class="badge badge-risk-high">Critical</span></td>
+                <td>Bet services, DTOs, controller, migration, tests</td>
+                <td><code>git add</code> all betting paths and modified entity/repo files before commit; CI cannot reproduce build without them.</td>
+              </tr>
+              <tr>
+                <td><code>BetDrawSupport</code> migration not applied</td>
+                <td><span class="badge badge-risk-high">Critical</span></td>
+                <td><code>Data/Migrations/20260701144245_BetDrawSupport.cs</code></td>
+                <td>Run <code>dotnet ef database update</code> so <code>Bet.IsDraw</code> and nullable <code>TeamId</code> exist in PostgreSQL before integration or smoke tests.</td>
+              </tr>
+              <tr>
+                <td>Early bet resolution allowed</td>
+                <td><span class="badge badge-risk-high">High</span></td>
+                <td><code>BetService.ResolveBetsForMatch</code></td>
+                <td>Only checks <code>match.Date &lt;= DateTime.Now</code> — admin can resolve at kickoff with partial goal counts. Require match-finished signal or minimum elapsed time before scoring.</td>
+              </tr>
+              <tr>
+                <td>Kickoff uses <code>DateTime.Now</code></td>
+                <td><span class="badge badge-risk-high">High</span></td>
+                <td><code>BetService.PlaceBet</code>, <code>ResolveBetsForMatch</code></td>
+                <td>Local server clock vs UTC/unspecified <code>match.Date</code> can allow late bets or block valid ones. Align with UTC or consistent <code>DateTimeKind</code> (same issue as Phase 3 standings).</td>
+              </tr>
+              <tr>
+                <td>Phase 3 blockers in same tree</td>
+                <td><span class="badge badge-risk-high">High</span></td>
+                <td><code>MatchService</code>, <code>StandingsService</code>, <code>TeamStatsService</code></td>
+                <td>Bet resolution reads goals via Phase 3 match stats — fixture filter, standings UTC, and possession bugs affect end-to-end betting smoke tests. Clear Phase 3 gate items first.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Architecture — Betting Layer</h3>
+        <div class="card">
+          <div class="diagram">New in Phase 4
+─────────────────────────────────────────────────────────────
+Bet entity         →  nullable TeamId + IsDraw for draw predictions
+BetDrawSupport     →  EF migration: IsDraw column, TeamId nullable
+RepositoryManager  →  Bet, BetResult repos (plus Phase 3 repos)
+BetService         →  PlaceBet, GetUserBets, GetActiveBets, ResolveBetsForMatch, GetScoringRules
+LeaderboardService →  Aggregate BetResult.Point per user, rank by total
+BetScoringRules    →  3 pts correct outcome, 0 pts incorrect; one bet per match
+Program.cs         →  DI for IBetService, ILeaderboardService
+
+BetController (action-based routes)
+─────────────────────────────────────────────────────────────
+GetScoringRules    →  public — rules summary + list
+GetLeaderboard     →  public — ranked users by points
+PlaceBet           →  [Authorize] — JWT user places prediction
+GetMyBets          →  [Authorize] — all user bets with resolution status
+GetMyActiveBets    →  [Authorize] — unresolved bets only
+ResolveBetsForMatch→  [Authorize(Roles = "Admin")] — score bets from goal counts
+
+Resolution logic
+─────────────────────────────────────────────────────────────
+Winner from goals on TeamStats rows; draw when scores equal.
+Draw bet wins when winnerTeamId is null; team bet wins when TeamId matches.</div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Phase 4 Roadmap Mapping</h3>
+        <div class="card">
+          <table>
+            <thead><tr><th>Task</th><th>Status</th><th>Files</th></tr></thead>
+            <tbody>
+              <tr><td><code>p4-place-bet</code></td><td><span class="badge badge-done">Done</span></td><td>PlaceBetDTO, BetService.PlaceBet, BetController.PlaceBet</td></tr>
+              <tr><td><code>p4-view-bets</code></td><td><span class="badge badge-done">Done</span></td><td>BetDTO, GetUserBets, GetMyActiveBets, BetController</td></tr>
+              <tr><td><code>p4-resolve</code></td><td><span class="badge badge-done">Done</span></td><td>BetService.ResolveBetsForMatch, BetResult entity usage, Admin endpoint</td></tr>
+              <tr><td><code>p4-leaderboard</code></td><td><span class="badge badge-done">Done</span></td><td>LeaderboardService, LeaderboardEntryDTO, GetLeaderboard</td></tr>
+              <tr><td><code>p4-rules</code></td><td><span class="badge badge-done">Done</span></td><td>BetScoringRules, GetScoringRules endpoint</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section" id="entity">
+        <h3 class="section-title">Data/Entities/Bet.cs — draw support</h3>
+        <div class="card file-change">
+          <p class="change-desc">Navigation properties initialized; <code>TeamId</code> nullable for draw bets; <code>IsDraw</code> flag added.</p>
+          <div class="diff-block"><span class="diff-del">-        public Team Team { get; set; }</span>
+<span class="diff-del">-        public int TeamId { get; set; }</span>
+<span class="diff-add">+        public Team? Team { get; set; }</span>
+<span class="diff-add">+        public int? TeamId { get; set; }</span>
+<span class="diff-add">+        public bool IsDraw { get; set; }</span>
+<span class="diff-add">+        public ICollection&lt;BetResult&gt; Results { get; set; } = new List&lt;BetResult&gt;();</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="context">
+        <h3 class="section-title">ApplicationDbContext — optional Team FK</h3>
+        <div class="card file-change">
+          <p class="change-desc">Bet → Team relationship no longer required when predicting a draw.</p>
+          <div class="diff-block"><span class="diff-add">+                .IsRequired(false)</span>
+<span class="diff-ctx">                 .OnDelete(DeleteBehavior.ClientSetNull)</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="migration">
+        <h3 class="section-title">Migration — BetDrawSupport</h3>
+        <div class="card file-change">
+          <p class="change-desc">Alters <code>Bet.TeamId</code> to nullable; adds <code>IsDraw</code> boolean (default false).</p>
+          <div class="diff-block"><span class="diff-add">+            migrationBuilder.AlterColumn&lt;int&gt;(name: "TeamId", table: "Bet", nullable: true, ...);</span>
+<span class="diff-add">+            migrationBuilder.AddColumn&lt;bool&gt;(name: "IsDraw", table: "Bet", type: "boolean", defaultValue: false);</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="repos">
+        <h3 class="section-title">Data/Repos — Bet + BetResult wiring</h3>
+        <div class="card file-change">
+          <p class="change-desc">Lazy repositories for betting entities (also extends Phase 3 match repos in same diff).</p>
+          <div class="diff-block"><span class="diff-add">+        IRepository&lt;Bet&gt; Bet { get; }</span>
+<span class="diff-add">+        IRepository&lt;BetResult&gt; BetResult { get; }</span>
+<span class="diff-ctx">         // RepositoryManager — same lazy-init pattern for Bet, BetResult</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="program">
+        <h3 class="section-title">WorldCup-System/Program.cs — DI registration</h3>
+        <div class="card file-change">
+          <p class="change-desc">Registers betting services as scoped (alongside Phase 3 match services).</p>
+          <div class="diff-block"><span class="diff-add">+using Core.Services.Bets;</span>
+<span class="diff-add">+builder.Services.AddScoped&lt;IBetService, BetService&gt;();</span>
+<span class="diff-add">+builder.Services.AddScoped&lt;ILeaderboardService, LeaderboardService&gt;();</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="bet-service">
+        <h3 class="section-title">BetService — p4-place-bet · p4-view-bets · p4-resolve · p4-rules</h3>
+        <div class="card file-change">
+          <p class="change-desc">One bet per user per match; validates draw vs team prediction; blocks bets after kickoff. Resolution counts goals per TeamStats to determine winner/draw. Idempotent resolve skips bets with existing BetResult.</p>
+          <div class="diff-block"><span class="diff-add">+    if (match.Date &lt;= DateTime.Now) throw new InvalidOperationException("Cannot place a bet after the match has started.");</span>
+<span class="diff-add">+    TeamId = betDto.IsDraw ? null : betDto.TeamId</span>
+<span class="diff-add">+    if (betDto.IsDraw &amp;&amp; betDto.TeamId.HasValue) throw ... "TeamId must not be set when predicting a draw."</span>
+<span class="diff-add">+    int? winnerTeamId = GetMatchWinnerTeamId(match);  // goal counts on TeamStats</span>
+<span class="diff-add">+    Point = bet.IsDraw ? (winnerTeamId == null ? 3 : 0) : (bet.TeamId == winnerTeamId ? 3 : 0)</span>
+<span class="diff-add">+    return new BettingRulesResponseDTO { Summary = BetScoringRules.Summary, Rules = ... }</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="leaderboard">
+        <h3 class="section-title">LeaderboardService — p4-leaderboard</h3>
+        <div class="card file-change">
+          <p class="change-desc">Sums <code>BetResult.Point</code> per user; tie-break by resolved bet count, then username. Assigns rank 1..n.</p>
+          <div class="diff-block"><span class="diff-add">+    entry.TotalPoints += result.Point;</span>
+<span class="diff-add">+    .OrderByDescending(entry =&gt; entry.TotalPoints)</span>
+<span class="diff-add">+        .ThenByDescending(entry =&gt; entry.ResolvedBets)</span>
+<span class="diff-add">+        .ThenBy(entry =&gt; entry.UserName)</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="scoring-rules">
+        <h3 class="section-title">BetScoringRules — p4-rules</h3>
+        <div class="card file-change">
+          <p class="change-desc">Static rules document: 3 points correct, 0 incorrect; bet before kickoff; one per match; resolution from recorded goals.</p>
+          <div class="diff-block"><span class="diff-add">+    public const int CorrectOutcomePoints = 3;</span>
+<span class="diff-add">+    public const int IncorrectPredictionPoints = 0;</span>
+<span class="diff-add">+    public const string DrawOutcomeLabel = "Draw";</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="controller">
+        <h3 class="section-title">BetController — API surface</h3>
+        <div class="card file-change">
+          <p class="change-desc">Resolves current user from JWT email claim via <code>UserManager</code>. Uses <code>ApiErrorHelper</code> for exceptions.</p>
+          <div class="diff-block"><span class="diff-add">+        [HttpGet] GetScoringRules()</span>
+<span class="diff-add">+        [HttpGet] GetLeaderboard()</span>
+<span class="diff-add">+        [Authorize] [HttpPost] PlaceBet([FromBody] PlaceBetDTO betDto)</span>
+<span class="diff-add">+        [Authorize] [HttpGet] GetMyBets()</span>
+<span class="diff-add">+        [Authorize] [HttpGet] GetMyActiveBets()</span>
+<span class="diff-add">+        [Authorize(Roles = "Admin")] [HttpPost("{matchId}")] ResolveBetsForMatch(int matchId)</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="dtos">
+        <h3 class="section-title">Core/DTOs/Bets — DTOs</h3>
+        <div class="card file-change">
+          <p class="change-desc">Rich bet view with match names, predicted outcome label, resolution flags. PlaceBetDTO validates positive MatchId.</p>
+          <div class="diff-block"><span class="diff-add">+    public class PlaceBetDTO { MatchId [Range]; IsDraw; TeamId? }</span>
+<span class="diff-add">+    public class BetDTO { IsDraw, PredictedOutcome, IsResolved, PointsEarned, IsActive, ... }</span>
+<span class="diff-add">+    public class LeaderboardEntryDTO { Rank, UserId, UserName, Email, TotalPoints, ResolvedBets }</span>
+<span class="diff-add">+    public class BettingRulesResponseDTO { Summary, Rules }</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="tests">
+        <h3 class="section-title">Unit Tests — WorldCup-System.Tests</h3>
+        <div class="card file-change">
+          <p class="change-desc">Phase 4 test coverage added (alongside Phase 3 controller/service tests in same working tree).</p>
+          <div class="diff-block"><span class="diff-add">+ WorldCup-System.Tests/Services/Bets/BetServiceTests.cs — 11 tests (place, draw, duplicate, resolve, scoring)</span>
+<span class="diff-add">+ WorldCup-System.Tests/Services/Bets/LeaderboardServiceTests.cs — ranking and empty state</span>
+<span class="diff-add">+ WorldCup-System.Tests/Controllers/BetControllerTests.cs — auth and endpoint wiring</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="file-list">
+        <h3 class="section-title">Complete File List — Phase 4 focus</h3>
+        <div class="card">
+          <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;"><strong>Modified (6):</strong></p>
+          <code style="display: block; font-size: 0.78rem; line-height: 1.6;">Data/Context/ApplicationDbContext.cs · Data/Entities/Bet.cs · Data/Migrations/ApplicationDbContextModelSnapshot.cs · Data/Repos/IRepositoryManager.cs · Data/Repos/RepositoryManager.cs · WorldCup-System/Program.cs</code>
+          <p style="font-size: 0.875rem; color: var(--text-muted); margin: 0.75rem 0 0.5rem;"><strong>Untracked — Phase 4 (11 files):</strong></p>
+          <code style="display: block; font-size: 0.78rem; line-height: 1.6;">Core/DTOs/Bets/BetDTO.cs · Core/Services/Bets/BetScoringRules.cs · BetService.cs · IBetService.cs · ILeaderboardService.cs · LeaderboardService.cs · Data/Migrations/20260701144245_BetDrawSupport.cs · Data/Migrations/20260701144245_BetDrawSupport.Designer.cs · WorldCup-System/Controllers/BetController.cs · WorldCup-System.Tests/Services/Bets/BetServiceTests.cs · LeaderboardServiceTests.cs · WorldCup-System.Tests/Controllers/BetControllerTests.cs</code>
+          <p style="font-size: 0.875rem; color: var(--text-muted); margin: 0.75rem 0 0.5rem;"><strong>Also in working tree (Phase 3):</strong></p>
+          <code style="display: block; font-size: 0.78rem; line-height: 1.6;">Match/Goal/Card/TeamStats/Standings services, DTOs, controllers, and tests — see <a href="phase-3-match-lifecycle.html">Phase 3 detail</a>.</code>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Suggested Next Steps</h3>
+        <div class="card">
+          <div class="flow-step">
+            <div class="flow-number">1</div>
+            <div class="flow-content">
+              <h4>Clear review gate blockers</h4>
+              <p>Stage all files; apply <code>BetDrawSupport</code> migration; fix kickoff timezone and early-resolution guards.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-number">2</div>
+            <div class="flow-content">
+              <h4>Run unit tests</h4>
+              <p><code>dotnet test WorldCup-System.Tests\WorldCup-System.Tests.csproj</code></p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-number">3</div>
+            <div class="flow-content">
+              <h4>Smoke test betting flow</h4>
+              <p>User: login → GetScoringRules → PlaceBet on future match → Admin: record goals → ResolveBetsForMatch → verify GetMyBets points and GetLeaderboard rank.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-number">4</div>
+            <div class="flow-content">
+              <h4>Commit Phase 4</h4>
+              <p>After tests pass and gate cleared — see <a href="../roadmap.html#phase-4">Phase 4 checklist</a>.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="../assets/app.js"></script>
+</body>
+</html>

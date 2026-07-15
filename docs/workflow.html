@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorldCup System — Dev Workflow</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h1>⚽ WorldCup System</h1>
+        <p>Project planning &amp; workflow</p>
+      </div>
+      <nav>
+        <a href="index.html" class="nav-link"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="overview.html" class="nav-link"><span class="nav-icon">📋</span> System Overview</a>
+        <a href="roadmap.html" class="nav-link"><span class="nav-icon">🗺️</span> Completion Roadmap</a>
+        <a href="workflow.html" class="nav-link"><span class="nav-icon">⚙️</span> Dev Workflow</a>
+        <a href="api-status.html" class="nav-link"><span class="nav-icon">🔌</span> API Status</a>
+        <a href="data-model.html" class="nav-link"><span class="nav-icon">🗄️</span> Data Model</a>
+        <a href="changes-review.html" class="nav-link"><span class="nav-icon">🔍</span> Changes Review</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="page-header">
+        <h2>Development Workflow</h2>
+        <p>Step-by-step guide for setting up, developing, and extending the system. Project status: see <a href="index.html">Dashboard</a> / <a href="roadmap.html">Roadmap</a>.</p>
+      </header>
+
+      <section class="section">
+        <h3 class="section-title">1. Initial Setup</h3>
+        <div class="card">
+          <div class="flow-step">
+            <div class="flow-number">A</div>
+            <div class="flow-content">
+              <h4>Prerequisites</h4>
+              <p>.NET 8 SDK, PostgreSQL, Node.js 18+ (for MCP server), Cursor IDE with MCP configured.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-number">B</div>
+            <div class="flow-content">
+              <h4>Database</h4>
+              <p>Create PostgreSQL database. Store the connection string and JWT secret in <strong>User Secrets</strong> or environment variables (not committed <code>appsettings.json</code>). Docker Compose can also run API + Postgres together.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-number">C</div>
+            <div class="flow-content">
+              <h4>Apply migrations</h4>
+              <p>From the Data project directory:</p>
+              <div class="diagram" style="margin-top: 0.5rem;">cd WorldCup-System/Data
+dotnet ef database update --startup-project ../WorldCup-System</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-number">D</div>
+            <div class="flow-content">
+              <h4>Run the API</h4>
+              <p>Prefer the launcher (frees port <code>5055</code> and starts Postgres if needed). Only one API instance can bind that port. Swagger: <code>http://localhost:5055/swagger</code></p>
+              <div class="diagram" style="margin-top: 0.5rem;">cd WorldCup-System
+.\scripts\run-api.ps1
+
+# Or manually: stop the old instance (Ctrl+C), then:
+cd WorldCup-System/WorldCup-System
+dotnet run</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-number">E</div>
+            <div class="flow-content">
+              <h4>MCP server (optional)</h4>
+              <p>Enables read-only DB queries from Cursor. Already configured in <code>.cursor/mcp.json</code>.</p>
+              <div class="diagram" style="margin-top: 0.5rem;">cd mcp-server
+npm install
+npm run build</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">2. Feature Development Pattern</h3>
+        <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">
+          Follow this order for each new domain (Team, Match, Bet, etc.):
+        </p>
+        <div class="diagram">┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│  1. Entity   │ ──► │  2. DTOs     │ ──► │  3. Service  │ ──► │ 4. Controller│
+│  (exists)    │     │  Core/DTOs/  │     │ Core/Services│     │ Controllers/ │
+└──────────────┘     └──────────────┘     └──────┬───────┘     └──────────────┘
+                                                  │
+                     ┌──────────────┐     ┌───────▼──────┐
+                     │  6. Swagger  │ ◄── │  5. Register │
+                     │  test        │     │  in Program  │
+                     └──────────────┘     └──────────────┘</div>
+
+        <div class="grid grid-2" style="margin-top: 1.25rem;">
+          <div class="card">
+            <h3>Repository layer</h3>
+            <ul>
+              <li>Add entity to <code>IRepositoryManager</code> and <code>RepositoryManager</code></li>
+              <li>Use generic <code>IRepository&lt;T&gt;</code> from <code>Data/Repos/</code></li>
+              <li>Implement <code>GetByIdAsync</code> first if not done (Phase 1)</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Service layer</h3>
+            <ul>
+              <li>Create folder under <code>Core/Services/{Domain}/</code></li>
+              <li>Define interface + implementation</li>
+              <li>Map entities ↔ DTOs in service methods</li>
+              <li>Register in <code>Program.cs</code> DI container</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Controller layer</h3>
+            <ul>
+              <li>Route: <code>[controller]/[action]</code> (existing convention)</li>
+              <li>Inject service via constructor</li>
+              <li>Add <code>[Authorize]</code> on write operations</li>
+              <li>Return appropriate HTTP status codes</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Verification</h3>
+            <ul>
+              <li>Test via Swagger UI at <code>/swagger</code></li>
+              <li>Query DB via MCP tools in Cursor</li>
+              <li>Check off task in <a href="roadmap.html">Roadmap</a></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">2.1 Per-Phase Completion Gate</h3>
+        <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">
+          After implementing all tasks in a roadmap phase, follow this order before starting the next phase:
+        </p>
+        <div class="diagram">Implement phase tasks
+        │
+        ▼
+   Review (Bugbot + HTML changes doc)
+        │
+        ▼
+   Fix high/critical findings
+        │
+        ▼
+   Write unit tests → dotnet test (must pass)
+        │
+        ▼
+   Next phase</div>
+        <div class="card" style="margin-top: 1.25rem;">
+          <table>
+            <thead>
+              <tr><th>Step</th><th>What</th><th>Gate</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1. Implement</td>
+                <td>Complete roadmap tasks for the current phase</td>
+                <td><span class="badge badge-partial">In progress</span></td>
+              </tr>
+              <tr>
+                <td>2. Review</td>
+                <td>Bugbot code review + update <a href="changes-review.html">Changes Review</a> HTML</td>
+                <td>No unfixed high/critical issues</td>
+              </tr>
+              <tr>
+                <td>3. Test</td>
+                <td>Extend <code>WorldCup-System.Tests</code>, run <code>dotnet test</code></td>
+                <td>All tests pass</td>
+              </tr>
+              <tr>
+                <td>4. Advance</td>
+                <td>Start next phase in <a href="roadmap.html">Roadmap</a></td>
+                <td><span class="badge badge-done">Only after 2 + 3</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">
+            Cursor rule: <code>.cursor/rules/phase-completion-review.mdc</code> — agent enforces this loop automatically.
+          </p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">3. Entity Change Workflow</h3>
+        <div class="card">
+          <p>When modifying the data model:</p>
+          <ol style="margin: 0.75rem 0 0 1.25rem; color: var(--text-muted); font-size: 0.9rem;">
+            <li style="margin-bottom: 0.5rem;">Edit entity in <code>Data/Entities/</code></li>
+            <li style="margin-bottom: 0.5rem;">Update <code>ApplicationDbContext</code> if needed (relationships, indexes)</li>
+            <li style="margin-bottom: 0.5rem;">Create migration:</li>
+          </ol>
+          <div class="diagram" style="margin-top: 0.5rem;">dotnet ef migrations add MigrationName --project Data --startup-project WorldCup-System</div>
+          <ol start="4" style="margin: 0.75rem 0 0 1.25rem; color: var(--text-muted); font-size: 0.9rem;">
+            <li style="margin-bottom: 0.5rem;">Review generated migration file in <code>Data/Migrations/</code></li>
+            <li style="margin-bottom: 0.5rem;">Apply: <code>dotnet ef database update</code></li>
+            <li>Update DTOs and services to match schema changes</li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">4. Reference Data (One-Time Populate)</h3>
+        <div class="card">
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+            Countries, cities, and stadiums are normal database rows. Insert them once; they persist across API restarts. There is no CSV import or demo-seed endpoint anymore.
+          </p>
+          <table>
+            <thead>
+              <tr><th>Data</th><th>How to populate</th><th>List API</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Countries</td>
+                <td>SQL / migration fixture (no public create endpoint yet)</td>
+                <td><code>Country/GetAllCountries</code></td>
+                <td>Required for admin Teams dropdown</td>
+              </tr>
+              <tr>
+                <td>Cities</td>
+                <td>SQL / migration fixture (no public create endpoint yet)</td>
+                <td><code>City/GetAllCities</code></td>
+                <td>Required before stadiums (FK)</td>
+              </tr>
+              <tr>
+                <td>Stadiums</td>
+                <td>Admin <code>Stadium/AddStadium</code> (Swagger or API client)</td>
+                <td><code>Stadium/GetStadiums</code></td>
+                <td>Required for match schedule venues</td>
+              </tr>
+              <tr>
+                <td>World Cup + Groups</td>
+                <td><code>WorldCup/CreateNewWorldCup</code>, <code>Group/AddGroup</code></td>
+                <td>List endpoints on those controllers</td>
+                <td><span class="badge badge-done">Ready</span></td>
+              </tr>
+              <tr>
+                <td>Teams, Players, Matches</td>
+                <td>Admin UI — Teams &amp; squads, Match schedule</td>
+                <td>Team / Player / Match controllers</td>
+                <td><span class="badge badge-done">Ready</span></td>
+              </tr>
+              <tr>
+                <td>Player positions</td>
+                <td>Auto-seeded at API startup (GK, DF, MF, FW)</td>
+                <td><code>PlayerPosition</code> list</td>
+                <td>Identity roles + DevAdmin/DevUser also seeded in Development</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">
+            Recommended create order: Countries → Cities → Stadiums → WorldCup → Groups → Teams → Players → Matches
+          </p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">5. Auth Testing Workflow</h3>
+        <div class="card">
+          <div class="flow-step">
+            <div class="flow-number">1</div>
+            <div class="flow-content">
+              <h4>Create user</h4>
+              <p>POST <code>User/CreateNewUser</code> with name, email, password.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-number">2</div>
+            <div class="flow-content">
+              <h4>Login</h4>
+              <p>POST <code>User/Login</code> → receive JWT token and expiration.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-number">3</div>
+            <div class="flow-content">
+              <h4>Authorize in Swagger</h4>
+              <p>Click "Authorize" in Swagger UI, enter <code>Bearer {token}</code>.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-number">4</div>
+            <div class="flow-content">
+              <h4>Test protected endpoints</h4>
+              <p>Currently only <code>User/RemoveUser</code> and <code>WeatherForecast</code> require auth. Expand coverage in Phase 1.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">6. MCP Database Exploration</h3>
+        <div class="card">
+          <p>Use Cursor MCP tools to inspect the database while developing:</p>
+          <table style="margin-top: 0.75rem;">
+            <thead>
+              <tr><th>Tool</th><th>Purpose</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>get_database_info</code></td><td>Connection details and PostgreSQL version</td></tr>
+              <tr><td><code>list_tables</code></td><td>All tables in the database</td></tr>
+              <tr><td><code>describe_table</code></td><td>Columns and foreign keys for a table</td></tr>
+              <tr><td><code>query</code></td><td>Read-only SELECT (max 1000 rows)</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">
+            Example: <code>SELECT * FROM "Countries" LIMIT 10;</code>
+          </p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">7. Git Workflow (Suggested)</h3>
+        <div class="card">
+          <div class="diagram">main ─────────────────────────────────────────►
+         │
+         ├── feature/phase-1-auth-hardening
+         ├── feature/team-api
+         ├── feature/match-lifecycle
+         ├── feature/betting-module
+         └── feature/angular-frontend</div>
+          <ul style="margin-top: 1rem;">
+            <li>One feature branch per roadmap phase or sub-feature</li>
+            <li>Small, focused commits with clear messages</li>
+            <li>PR review before merging to main</li>
+            <li>Update roadmap checklists as tasks complete</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="assets/app.js"></script>
+</body>
+</html>

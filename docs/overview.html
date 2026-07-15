@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorldCup System — Overview</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h1>⚽ WorldCup System</h1>
+        <p>Project planning &amp; workflow</p>
+      </div>
+      <nav>
+        <a href="index.html" class="nav-link"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="overview.html" class="nav-link"><span class="nav-icon">📋</span> System Overview</a>
+        <a href="roadmap.html" class="nav-link"><span class="nav-icon">🗺️</span> Completion Roadmap</a>
+        <a href="workflow.html" class="nav-link"><span class="nav-icon">⚙️</span> Dev Workflow</a>
+        <a href="api-status.html" class="nav-link"><span class="nav-icon">🔌</span> API Status</a>
+        <a href="data-model.html" class="nav-link"><span class="nav-icon">🗄️</span> Data Model</a>
+        <a href="changes-review.html" class="nav-link"><span class="nav-icon">🔍</span> Changes Review</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="page-header">
+        <h2>System Overview</h2>
+        <p>Architecture, tech stack, and repository layout. Updated after project review (13 Jul 2026).</p>
+      </header>
+
+      <section class="section">
+        <h3 class="section-title">What This System Does</h3>
+        <div class="card">
+          <p>A FIFA World Cup management platform covering the full tournament lifecycle:</p>
+          <ul style="margin-top: 0.75rem; padding-left: 1.25rem; color: var(--text-muted);">
+            <li>Countries, cities, stadiums (stored once in the database)</li>
+            <li>Tournament setup — World Cups, groups, teams, squads</li>
+            <li>Match management — scheduling, live stats, goals, cards (admin live console)</li>
+            <li>User betting — predictions, scoring (3/0), leaderboard, auto-resolve</li>
+            <li>Public SPA — fixtures, standings, bets; admin hub for ops</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Tech Stack</h3>
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>Backend</h3>
+            <table>
+              <tr><td>Framework</td><td>ASP.NET Core 8 Web API</td></tr>
+              <tr><td>ORM</td><td>Entity Framework Core 8</td></tr>
+              <tr><td>Database</td><td>PostgreSQL (Npgsql)</td></tr>
+              <tr><td>Auth</td><td>ASP.NET Identity + JWT Bearer</td></tr>
+              <tr><td>API Docs</td><td>Swagger / OpenAPI</td></tr>
+              <tr><td>Logging</td><td>Serilog (compact JSON console)</td></tr>
+            </table>
+          </div>
+          <div class="card">
+            <h3>Frontend &amp; Ops</h3>
+            <table>
+              <tr><td>Frontend</td><td>Angular SPA (<code>worldcup-client</code>, port 4200)</td></tr>
+              <tr><td>MCP Server</td><td>Node.js + TypeScript + pg</td></tr>
+              <tr><td>Tests</td><td>xUnit — services, controllers, WebApplicationFactory</td></tr>
+              <tr><td>Containers</td><td>Docker Compose (API + PostgreSQL)</td></tr>
+              <tr><td>CI</td><td>GitHub Actions — dotnet + Angular lint/test</td></tr>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Solution Architecture</h3>
+        <div class="diagram">┌─────────────────────────────────────────────────────────────┐
+│              Angular SPA (worldcup-client)                   │
+│              http://localhost:4200                           │
+│  Public: fixtures · standings · bets · leaderboard · dash    │
+│  Admin:  hub · teams · schedule · live console               │
+└────────────────────────────┬────────────────────────────────┘
+                             │ JWT + CORS (AngularDev)
+                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│              WorldCup-System (ASP.NET Core 8 API)            │
+│              http://localhost:5055  ·  /health · /swagger    │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
+│  │ Controllers │→ │   Core      │→ │   Data (EF Core)    │  │
+│  │  (~16)      │  │  Services   │  │   Repos + Entities  │  │
+│  └─────────────┘  └─────────────┘  └──────────┬──────────┘  │
+└───────────────────────────────────────────────┼─────────────┘
+                                                │
+                             ┌──────────────────┴──────────────────┐
+                             ▼                                     ▼
+                    ┌─────────────────┐              ┌─────────────────────┐
+                    │   PostgreSQL    │              │  MCP Server (Cursor) │
+                    │  (secrets/Docker)│◄─────────────│  Read-only queries   │
+                    └─────────────────┘              └─────────────────────┘</div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Repository Layout</h3>
+        <div class="card">
+          <div class="diagram">WorldCup-System/                    ← workspace root
+├── docs/                           ← these planning pages
+├── README.md
+├── mcp-server/                     ← TypeScript MCP (read-only DB)
+├── .cursor/                        ← rules, skills, mcp.json
+└── WorldCup-System/                ← .NET solution (git repo)
+    ├── WorldCup-System.sln
+    ├── WorldCup-System/            ← Web API host
+    │   ├── Program.cs
+    │   ├── Controllers/
+    │   ├── Dockerfile
+    │   └── docker-compose.yml
+    ├── Core/                       ← DTOs, Services
+    ├── Data/                       ← EF entities, repos, migrations
+    ├── WorldCup-System.Tests/      ← unit + integration tests
+    ├── worldcup-client/            ← Angular SPA (CI target)
+    └── .github/workflows/ci.yml</div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Layer Responsibilities</h3>
+        <div class="grid grid-3">
+          <div class="card">
+            <h3>WorldCup-System (API)</h3>
+            <p>HTTP endpoints, JWT auth, Swagger, DI wiring, health checks. Controllers delegate to Core services.</p>
+          </div>
+          <div class="card">
+            <h3>Core</h3>
+            <p>Business logic, DTOs, service interfaces — teams, matches, goals, cards, bets, standings, leaderboard, etc.</p>
+          </div>
+          <div class="card">
+            <h3>Data</h3>
+            <p>EF Core <code>ApplicationDbContext</code>, entities, generic repository, <code>RepositoryManager</code> (all domain tables wired).</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Open technical debt</h3>
+        <div class="alert alert-info">
+          Phase 1 foundation debt is cleared. Remaining gaps are product features, not blockers for group-stage use.
+        </div>
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>Issue</th><th>Location</th><th>Impact</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>External live scores API deferred</td>
+                <td>—</td>
+                <td><span class="badge badge-todo">Deferred</span></td>
+              </tr>
+              <tr>
+                <td>Duplicate <code>worldcup-client</code> tree at workspace root vs solution folder</td>
+                <td>workspace / solution</td>
+                <td><span class="badge badge-todo">Cleanup</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="assets/app.js"></script>
+</body>
+</html>

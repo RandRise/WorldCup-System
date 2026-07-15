@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorldCup System — Phase 3 Match Lifecycle Changes</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h1>⚽ WorldCup System</h1>
+        <p>Project planning &amp; workflow</p>
+      </div>
+      <nav>
+        <a href="../index.html" class="nav-link"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="../overview.html" class="nav-link"><span class="nav-icon">📋</span> System Overview</a>
+        <a href="../roadmap.html" class="nav-link"><span class="nav-icon">🗺️</span> Completion Roadmap</a>
+        <a href="../workflow.html" class="nav-link"><span class="nav-icon">⚙️</span> Dev Workflow</a>
+        <a href="../api-status.html" class="nav-link"><span class="nav-icon">🔌</span> API Status</a>
+        <a href="../data-model.html" class="nav-link"><span class="nav-icon">🗄️</span> Data Model</a>
+        <a href="../changes-review.html" class="nav-link active"><span class="nav-icon">🔍</span> Changes Review</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="page-header">
+        <h2>Phase 3 — Match Lifecycle</h2>
+        <p>Full diff detail for unstaged changes. <a href="../changes-review.html">← Back to Changes Review</a></p>
+      </header>
+
+      <div class="alert alert-info">
+        Source: <code>git status</code> + <code>git diff</code> on <code>master</code> (uncommitted, 1 Jul 2026). Repo: <code>WorldCup-System/</code> — branch ahead of <code>origin/master</code> by 1 commit (Phase 2). Current diff: <strong>3 modified</strong>, <strong>0 deleted</strong>, <strong>17 untracked entries</strong> (~20 new source files).
+      </div>
+
+      <section class="section">
+        <h3 class="section-title">Review Gate — Fix Before Testing</h3>
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>Blocker</th><th>Severity</th><th>File / area</th><th>Required fix</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Phase 3 source untracked</td>
+                <td><span class="badge badge-risk-high">Critical</span></td>
+                <td>Match/Goal/Card/TeamStats/Standing controllers, services, DTOs</td>
+                <td><code>git add</code> all untracked paths before commit; CI cannot reproduce build without them.</td>
+              </tr>
+              <tr>
+                <td>No Phase 3 unit tests</td>
+                <td><span class="badge badge-risk-high">Critical</span></td>
+                <td><code>WorldCup-System.Tests/</code> — no Match, Goal, Card, Standings, or TeamStats tests</td>
+                <td>Add service/controller tests per phase gate; run <code>dotnet test</code> before advancing.</td>
+              </tr>
+              <tr>
+                <td><code>GetFixturesByWorldCup</code> over-inclusive filter</td>
+                <td><span class="badge badge-risk-high">High</span></td>
+                <td><code>MatchService.GetFixturesByWorldCup</code></td>
+                <td>Uses <code>OR</code> on team membership — matches with only one World Cup team are included. Require <code>AND</code> (both teams in tournament groups) or explicit WorldCup FK on Match.</td>
+              </tr>
+              <tr>
+                <td>Standings kickoff vs UTC clock</td>
+                <td><span class="badge badge-risk-high">High</span></td>
+                <td><code>StandingsService.GetGroupStandings</code></td>
+                <td>Compares <code>match.Date</code> to <code>DateTime.UtcNow</code> — unspecified/local kickoff times may mark future matches as played or skip completed ones.</td>
+                <td>Normalize match dates to UTC on write, or compare using same <code>DateTimeKind</code>.</td>
+              </tr>
+              <tr>
+                <td>Possession not cross-validated</td>
+                <td><span class="badge badge-risk-high">High</span></td>
+                <td><code>TeamStatsService.UpdateTeamStats</code></td>
+                <td>Each team validated 0–100% independently; both teams can sum to 200%. Standings ignore possession but live stats UI will be wrong.</td>
+                <td>Validate pair sums to 100 on update, or update both in one transaction.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Architecture — Match Lifecycle Layer</h3>
+        <div class="card">
+          <div class="diagram">New in Phase 3
+─────────────────────────────────────────────────────────────
+RepositoryManager  →  Match, TeamStats, Goal, Card repos
+MatchService       →  CRUD + fixtures (WorldCup, group, date) + detail view
+GoalService        →  Record/delete goals; own-goal validation
+CardService        →  Record/delete yellow/red cards
+TeamStatsService   →  Possession, shots, shots-on-target per match
+StandingsService   →  Group table from goal counts (3-1-0 points)
+Program.cs         →  DI for all five new services
+
+Controllers (action-based routes)
+─────────────────────────────────────────────────────────────
+MatchController    →  GetMatches, GetMatchById, fixtures, Admin CRUD
+GoalController     →  GetGoalsByMatch; Admin AddGoal / DeleteGoal
+CardController     →  GetCardsByMatch; Admin AddCard / DeleteCard
+TeamStatsController→  GetTeamStatsByMatch; Admin UpdateTeamStats
+StandingController →  GetGroupStandings (public read)
+
+Not in scope
+─────────────────────────────────────────────────────────────
+p3-knockout — knockout bracket progression (design decision pending)</div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Phase 3 Roadmap Mapping</h3>
+        <div class="card">
+          <table>
+            <thead><tr><th>Task</th><th>Status</th><th>Files</th></tr></thead>
+            <tbody>
+              <tr><td><code>p3-match-crud</code></td><td><span class="badge badge-done">Done</span></td><td>Core/DTOs/Matches/MatchDTO.cs, MatchService, MatchController</td></tr>
+              <tr><td><code>p3-goals</code></td><td><span class="badge badge-done">Done</span></td><td>Core/DTOs/Goals/GoalDTO.cs, GoalService, GoalController</td></tr>
+              <tr><td><code>p3-cards</code></td><td><span class="badge badge-done">Done</span></td><td>Core/DTOs/Cards/CardDTO.cs, CardService, CardController</td></tr>
+              <tr><td><code>p3-stats</code></td><td><span class="badge badge-done">Done</span></td><td>Core/DTOs/Stats/TeamStatsDTO.cs, TeamStatsService, TeamStatsController</td></tr>
+              <tr><td><code>p3-standings</code></td><td><span class="badge badge-done">Done</span></td><td>Core/DTOs/Standings/StandingDTO.cs, StandingsService, StandingController</td></tr>
+              <tr><td><code>p3-fixtures</code></td><td><span class="badge badge-done">Done</span></td><td>MatchService.GetFixturesByWorldCup/Group/Date, MatchController fixture actions</td></tr>
+              <tr><td><code>p3-knockout</code></td><td><span class="badge badge-todo">Not started</span></td><td>— (out of scope in this diff)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Repository layer -->
+      <section class="section" id="repos">
+        <h3 class="section-title">Data/Repos — RepositoryManager extension</h3>
+        <div class="card file-change">
+          <p class="change-desc">Lazy-initialized repos for match lifecycle entities added to interface and manager.</p>
+          <div class="diff-block"><span class="diff-add">+        IRepository&lt;Match&gt; Match { get; }</span>
+<span class="diff-add">+        IRepository&lt;TeamStats&gt; TeamStats { get; }</span>
+<span class="diff-add">+        IRepository&lt;Goal&gt; Goal { get; }</span>
+<span class="diff-add">+        IRepository&lt;Card&gt; Card { get; }</span>
+<span class="diff-ctx"> </span>
+<span class="diff-add">+        public IRepository&lt;Match&gt; Match</span>
+<span class="diff-add">+        {</span>
+<span class="diff-add">+            get { if (_matchRepository == null) _matchRepository = new Repository&lt;Match&gt;(_context); return _matchRepository; }</span>
+<span class="diff-add">+        }</span>
+<span class="diff-ctx">         // TeamStats, Goal, Card — same lazy-init pattern (×3)</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="program">
+        <h3 class="section-title">WorldCup-System/Program.cs — DI registration</h3>
+        <div class="card file-change">
+          <p class="change-desc">Registers five scoped services for match lifecycle.</p>
+          <div class="diff-block"><span class="diff-add">+using Core.Services.Cards;</span>
+<span class="diff-add">+using Core.Services.Goals;</span>
+<span class="diff-add">+using Core.Services.Matches;</span>
+<span class="diff-add">+using Core.Services.Standings;</span>
+<span class="diff-add">+using Core.Services.Stats;</span>
+<span class="diff-ctx"> </span>
+<span class="diff-add">+builder.Services.AddScoped&lt;IMatchService, MatchService&gt;();</span>
+<span class="diff-add">+builder.Services.AddScoped&lt;IGoalService, GoalService&gt;();</span>
+<span class="diff-add">+builder.Services.AddScoped&lt;ICardService, CardService&gt;();</span>
+<span class="diff-add">+builder.Services.AddScoped&lt;ITeamStatsService, TeamStatsService&gt;();</span>
+<span class="diff-add">+builder.Services.AddScoped&lt;IStandingsService, StandingsService&gt;();</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="match">
+        <h3 class="section-title">MatchService + MatchController — p3-match-crud · p3-fixtures</h3>
+        <div class="card file-change">
+          <p class="change-desc"><code>AddMatch</code> validates distinct teams and FK existence; creates two <code>TeamStats</code> rows with the match. <code>UpdateMatch</code> blocks team changes after goals/cards recorded. <code>DeleteMatch</code> requires no goals/cards. <code>GetMatchById</code> returns nested goals/cards/stats. Fixture queries filter by WorldCup (via group teams), group (both teams in group), or calendar date.</p>
+          <div class="diff-block"><span class="diff-add">+    public async Task AddMatch(AddMatchDTO matchDto)</span>
+<span class="diff-add">+        TeamStats = new List&lt;TeamStats&gt; { new TeamStats { TeamId = matchDto.TeamOneId }, ... }</span>
+<span class="diff-add">+    public List&lt;MatchDTO&gt; GetFixturesByWorldCup(int worldCupId)</span>
+<span class="diff-add">+        .Find(match =&gt; teamIds.Contains(match.TeamOneId) || teamIds.Contains(match.TeamTwoId))</span>
+<span class="diff-add">+    public List&lt;MatchDTO&gt; GetFixturesByGroup(int groupId)</span>
+<span class="diff-add">+        .Find(match =&gt; teamIds.Contains(match.TeamOneId) &amp;&amp; teamIds.Contains(match.TeamTwoId))</span>
+<span class="diff-ctx"> </span>
+<span class="diff-add">+        [Authorize(Roles = "Admin")] [HttpPost] AddMatch</span>
+<span class="diff-add">+        [HttpGet("{worldCupId}")] GetFixturesByWorldCup</span>
+<span class="diff-add">+        [HttpGet] GetFixturesByDate([FromQuery] DateTime date)</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="goals">
+        <h3 class="section-title">GoalService + GoalController — p3-goals</h3>
+        <div class="card file-change">
+          <p class="change-desc">Goals linked to <code>TeamStats</code> via scorer's credited team. Own goals require player on opponent squad; regular goals require player on credited team. Minute stored as <code>match.Date.AddMinutes(minute)</code>.</p>
+          <div class="diff-block"><span class="diff-add">+    if (goalDto.IsOwnGoal) { if (player.TeamId != opponentId) throw ... }</span>
+<span class="diff-add">+    else if (player.TeamId != goalDto.TeamId) throw ...</span>
+<span class="diff-add">+    TimeScored = match.Date.AddMinutes(goalDto.Minute)</span>
+<span class="diff-add">+    IsOwnGoal = goalDto.IsOwnGoal ? 1 : 0</span>
+<span class="diff-ctx"> </span>
+<span class="diff-add">+        [Authorize(Roles = "Admin")] AddGoal / DeleteGoal</span>
+<span class="diff-add">+        [HttpGet("{matchId}")] GetGoalsByMatch</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="cards">
+        <h3 class="section-title">CardService + CardController — p3-cards</h3>
+        <div class="card file-change">
+          <p class="change-desc">Yellow (1) and red (2) cards with minute and team validation. Player must belong to specified team.</p>
+          <div class="diff-block"><span class="diff-add">+    [Range(1, 2, ErrorMessage = "CardType must be 1 (Yellow) or 2 (Red).")]</span>
+<span class="diff-add">+    if (player.TeamId != cardDto.TeamId) throw new InvalidOperationException(...)</span>
+<span class="diff-add">+    TimeIssued = match.Date.AddMinutes(cardDto.Minute)</span>
+<span class="diff-ctx"> </span>
+<span class="diff-add">+        [Authorize(Roles = "Admin")] AddCard / DeleteCard</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="stats">
+        <h3 class="section-title">TeamStatsService + TeamStatsController — p3-stats</h3>
+        <div class="card file-change">
+          <p class="change-desc">Read possession/shots/shots-on-target per team per match. Admin updates numeric stats; score derived from goal count on read.</p>
+          <div class="diff-block"><span class="diff-add">+    [Range(0, 100)] public int Possession { get; set; }  // UpdateTeamStatsDTO</span>
+<span class="diff-add">+    stats.Possession = teamStatsDto.Possession;</span>
+<span class="diff-add">+    Score = goals.Count(goal =&gt; goal.TeamStatsId == teamStats.Id)</span>
+<span class="diff-ctx"> </span>
+<span class="diff-add">+        [Authorize(Roles = "Admin")] UpdateTeamStats</span>
+<span class="diff-add">+        [HttpGet("{matchId}")] GetTeamStatsByMatch</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="standings">
+        <h3 class="section-title">StandingsService + StandingController — p3-standings</h3>
+        <div class="card file-change">
+          <p class="change-desc">Builds group table from intra-group matches only (both teams in group). Counts goals per <code>TeamStats</code>; awards 3/1/0 points. Sorts by points, goal difference, goals for, team name. Skips matches with <code>Date &gt; UtcNow</code>.</p>
+          <div class="diff-block"><span class="diff-add">+    List&lt;Match&gt; matches = _repository.Match</span>
+<span class="diff-add">+        .Find(match =&gt; teamIds.Contains(match.TeamOneId) &amp;&amp; teamIds.Contains(match.TeamTwoId))</span>
+<span class="diff-add">+    if (match.Date &gt; DateTime.UtcNow) continue;</span>
+<span class="diff-add">+    one.Points += 3;  // win</span>
+<span class="diff-add">+    .OrderByDescending(standing =&gt; standing.Points)</span>
+<span class="diff-add">+        .ThenByDescending(standing =&gt; standing.GoalDifference)</span>
+<span class="diff-ctx"> </span>
+<span class="diff-add">+        [HttpGet("{groupId}")] GetGroupStandings</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="dtos">
+        <h3 class="section-title">DTOs — validation annotations</h3>
+        <div class="card file-change">
+          <p class="change-desc">All mutating DTOs use <code>[Range]</code> and <code>[Required]</code> where applicable. <code>MatchDetailDTO</code> nests <code>MatchTeamStatsDTO</code> with goal/card lists for rich match view.</p>
+          <div class="diff-block"><span class="diff-add">+    public class AddMatchDTO { TeamOneId, TeamTwoId, StadiumId [Range]; Date [Required] }</span>
+<span class="diff-add">+    public class AddGoalDTO { MatchId, TeamId, PlayerId [Range]; Minute [0–130]; IsOwnGoal }</span>
+<span class="diff-add">+    public class AddCardDTO { ... CardType [1–2] }</span>
+<span class="diff-add">+    public class UpdateTeamStatsDTO { Possession [0–100]; Shots, ShotsOnTarget [≥0] }</span>
+<span class="diff-add">+    public class StandingDTO { Rank, Played, Won, Drawn, Lost, GF, GA, GD, Points }</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="file-list">
+        <h3 class="section-title">Complete File List</h3>
+        <div class="card">
+          <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;"><strong>Modified (3):</strong></p>
+          <code style="display: block; font-size: 0.78rem; line-height: 1.6;">Data/Repos/IRepositoryManager.cs · Data/Repos/RepositoryManager.cs · WorldCup-System/Program.cs</code>
+          <p style="font-size: 0.875rem; color: var(--text-muted); margin: 0.75rem 0 0.5rem;"><strong>Untracked (17 entries, ~20 files):</strong></p>
+          <code style="display: block; font-size: 0.78rem; line-height: 1.6;">Core/DTOs/Cards/CardDTO.cs · Core/DTOs/Goals/GoalDTO.cs · Core/DTOs/Matches/MatchDTO.cs · Core/DTOs/Standings/StandingDTO.cs · Core/DTOs/Stats/TeamStatsDTO.cs · Core/Services/Cards/ICardService.cs · CardService.cs · Core/Services/Goals/IGoalService.cs · GoalService.cs · Core/Services/Matches/IMatchService.cs · MatchService.cs · Core/Services/Standings/IStandingsService.cs · StandingsService.cs · Core/Services/Stats/ITeamStatsService.cs · TeamStatsService.cs · WorldCup-System/Controllers/MatchController.cs · GoalController.cs · CardController.cs · TeamStatsController.cs · StandingController.cs</code>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Suggested Next Steps</h3>
+        <div class="card">
+          <div class="flow-step">
+            <div class="flow-number">1</div>
+            <div class="flow-content">
+              <h4>Clear review gate blockers</h4>
+              <p>Stage untracked files; fix <code>GetFixturesByWorldCup</code> filter and standings date comparison; add possession pair validation.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-number">2</div>
+            <div class="flow-content">
+              <h4>Write Phase 3 unit tests</h4>
+              <p>MatchService (CRUD guards, fixtures), GoalService (own goal rules), StandingsService (points/GD ordering).</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-number">3</div>
+            <div class="flow-content">
+              <h4>Run test suite</h4>
+              <p><code>dotnet test WorldCup-System.Tests\WorldCup-System.Tests.csproj</code></p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-number">4</div>
+            <div class="flow-content">
+              <h4>Smoke test match lifecycle</h4>
+              <p>Admin: schedule match → record goals/cards → update possession → verify standings and fixture endpoints.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="../assets/app.js"></script>
+</body>
+</html>

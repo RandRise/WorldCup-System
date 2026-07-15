@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WC 2026 live data &amp; schedule import — Change Log</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h1>⚽ WorldCup System</h1>
+        <p>Project planning &amp; workflow</p>
+      </div>
+      <nav>
+        <a href="../index.html" class="nav-link"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="../overview.html" class="nav-link"><span class="nav-icon">📋</span> System Overview</a>
+        <a href="../roadmap.html" class="nav-link"><span class="nav-icon">🗺️</span> Completion Roadmap</a>
+        <a href="../workflow.html" class="nav-link"><span class="nav-icon">⚙️</span> Dev Workflow</a>
+        <a href="../api-status.html" class="nav-link"><span class="nav-icon">🔌</span> API Status</a>
+        <a href="../data-model.html" class="nav-link"><span class="nav-icon">🗄️</span> Data Model</a>
+        <a href="../changes-review.html" class="nav-link"><span class="nav-icon">🔍</span> Changes Review</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="page-header">
+        <h2>WC 2026 live data &amp; schedule import</h2>
+        <p>15 Jul 2026 — Match schema repair, 48-team group draw, finished results through SF1. <a href="../changes-review.html">← Changes Review</a> · <a href="../roadmap.html#phase-7">Roadmap Phase 7</a></p>
+      </header>
+
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <strong>Summary.</strong> Fixed admin GET failures caused by an incomplete <code>AddMatchStage</code> schema, loaded FIFA World Cup 2026 groups A–L with all 48 teams, and imported <strong>101 finished matches</strong> (group stage + knockouts through Spain 2–0 France) with dates, venues, and scores. Added <code>MatchStage.RoundOf32</code> for the 48-team format.
+      </div>
+
+      <section class="section">
+        <h3 class="section-title">Problems fixed</h3>
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>Npgsql.PostgresException</code> — <code>FeederMatchOneId</code> does not exist on login/refresh</td>
+                <td><code>AddMatchStage</code> was marked applied while Feeder* columns / nullable team FKs were missing</td>
+                <td>Idempotent ALTER in DB + startup repair in <code>Program.cs</code> after <code>MigrateAsync</code></td>
+              </tr>
+              <tr>
+                <td>Add match → <code>Group stage matches must be between teams in the same group</code></td>
+                <td>Teams sat in placeholder <code>QF1</code>–<code>QF4</code> groups, not draw groups A–L</td>
+                <td><code>scripts/seed-wc2026-groups.sql</code> — create A–L, assign 48 nations to the official draw</td>
+              </tr>
+              <tr>
+                <td>Empty / non-tournament schedule for live WC 2026</td>
+                <td>Demo CSV seed removed; no offline results load</td>
+                <td><code>scripts/import_wc2026_finished_matches.py</code> — 72 group + 29 knockout finished fixtures + goals</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Data imported (as of 15 Jul 2026)</h3>
+        <div class="card">
+          <ul>
+            <li><strong>Groups A–L</strong> — 4 teams each (official FIFA draw)</li>
+            <li><strong>72</strong> finished group-stage matches (dates, host stadiums, scores)</li>
+            <li><strong>16</strong> Round of 32 · <strong>8</strong> Round of 16 · <strong>4</strong> quarter-finals · <strong>1</strong> semi-final (France 0–2 Spain)</li>
+            <li><strong>Not imported:</strong> Argentina vs England SF (15 Jul) — still scheduled at import time</li>
+            <li>Scores materialised as <code>Goal</code> rows on placeholder <code>Tournament Scorer</code> players so standings/fixtures show FT results</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Code / schema</h3>
+        <div class="card">
+          <ul>
+            <li><code>MatchStage.RoundOf32 = 6</code> (+ admin stage option, bracket sort order)</li>
+            <li><code>Program.cs</code> — IF NOT EXISTS repair for Feeder* / nullable team columns</li>
+            <li>Migration history still records <code>20260713120000_AddMatchStage</code>; repair covers stuck local DBs</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">How to re-run (dev)</h3>
+        <div class="card">
+          <pre style="font-size: 0.85rem; overflow: auto;"><code># Groups + teams (idempotent SQL)
+psql -h localhost -U postgres -d TestDatabase -f WorldCup-System/scripts/seed-wc2026-groups.sql
+
+# Finished matches (clears Match/TeamStats/Goal/Bet rows, then reloads)
+python WorldCup-System/scripts/import_wc2026_finished_matches.py
+# Optional: set WC_DB="host=... dbname=... user=... password=..."</code></pre>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.75rem;">
+            Sources for results: FIFA schedule/results pages and published knockout scores (Yahoo Sports). Group standings were verified against published tables after import.
+          </p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Out of scope</h3>
+        <div class="card">
+          <ul>
+            <li>Live external football API poller (still deferred — no free providers)</li>
+            <li>Player-accurate goalscorers / cards (placeholder scorers only)</li>
+            <li>Penalty shoot-out winners beyond FT/ET scoreline</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

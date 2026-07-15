@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Remove demo seed &amp; CSV import — Change Log</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h1>⚽ WorldCup System</h1>
+        <p>Project planning &amp; workflow</p>
+      </div>
+      <nav>
+        <a href="../index.html" class="nav-link"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="../overview.html" class="nav-link"><span class="nav-icon">📋</span> System Overview</a>
+        <a href="../roadmap.html" class="nav-link"><span class="nav-icon">🗺️</span> Completion Roadmap</a>
+        <a href="../workflow.html" class="nav-link"><span class="nav-icon">⚙️</span> Dev Workflow</a>
+        <a href="../api-status.html" class="nav-link"><span class="nav-icon">🔌</span> API Status</a>
+        <a href="../data-model.html" class="nav-link"><span class="nav-icon">🗄️</span> Data Model</a>
+        <a href="../changes-review.html" class="nav-link"><span class="nav-icon">🔍</span> Changes Review</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="page-header">
+        <h2>Remove demo seed &amp; CSV import</h2>
+        <p>13 Jul 2026 — cleanup of unused demo tournament seeding and bulk CSV import. <a href="../changes-review.html">← Changes Review</a></p>
+      </header>
+
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <strong>Summary.</strong> Removed <code>SeedController</code>, demo/reset services, embedded CSVs, CSV upload endpoints, and Admin “Data setup” / “Reference data” pages.
+        Country/city/stadium <em>list</em> APIs remain. Populate those tables once; they are not re-imported on startup.
+        <strong>15 Jul 2026:</strong> optional offline scripts (<code>scripts/seed-wc2026-groups.sql</code>, <code>import_wc2026_finished_matches.py</code>) can load the real WC 2026 draw and finished results without restoring SeedController — see <a href="wc2026-live-data.html">wc2026-live-data.html</a>.
+      </div>
+
+      <section class="section">
+        <h3 class="section-title">Removed</h3>
+        <div class="card">
+          <ul>
+            <li>Demo seed + clear-tournament API, services, scripts, tests</li>
+            <li>Embedded <code>CitiesCsvData</code>, <code>StadiumCsvData</code>, <code>DemoSeedData</code></li>
+            <li>CSV import actions on Country / City / Stadium controllers</li>
+            <li>Admin seed and reference Angular features (both client copies)</li>
+            <li><code>DevSeed:WorldCup2026</code> config (appsettings, Docker, <code>.env.example</code>)</li>
+            <li>EPPlus package references</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Still available</h3>
+        <div class="card">
+          <ul>
+            <li><code>GET Country/GetAllCountries</code>, <code>GET City/GetAllCities</code>, <code>GET Stadium/GetStadiums</code></li>
+            <li><code>POST Stadium/AddStadium</code>, <code>POST Stadium/UpdateStadium</code> (Admin)</li>
+            <li>Admin Teams &amp; Match schedule (default admin landing: teams)</li>
+            <li>Development Identity role users + player-position startup seed</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Impact</h3>
+        <div class="card">
+          <ul>
+            <li>Other domain APIs unchanged — they only need FK rows to exist in the DB</li>
+            <li>Integration tests unaffected (countries endpoint may return an empty array)</li>
+            <li>Fresh databases need a one-time insert of countries/cities/stadiums before Teams/Schedule dropdowns work</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

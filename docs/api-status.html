@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorldCup System — API Status</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h1>⚽ WorldCup System</h1>
+        <p>Project planning &amp; workflow</p>
+      </div>
+      <nav>
+        <a href="index.html" class="nav-link"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="overview.html" class="nav-link"><span class="nav-icon">📋</span> System Overview</a>
+        <a href="roadmap.html" class="nav-link"><span class="nav-icon">🗺️</span> Completion Roadmap</a>
+        <a href="workflow.html" class="nav-link"><span class="nav-icon">⚙️</span> Dev Workflow</a>
+        <a href="api-status.html" class="nav-link"><span class="nav-icon">🔌</span> API Status</a>
+        <a href="data-model.html" class="nav-link"><span class="nav-icon">🗄️</span> Data Model</a>
+        <a href="changes-review.html" class="nav-link"><span class="nav-icon">🔍</span> Changes Review</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="page-header">
+        <h2>API Status</h2>
+        <p>All domain controllers implemented (review 15 Jul 2026). Base URL: <code>http://localhost:5055</code>. Knockout bracket API + offline WC 2026 schedule import in place. Remaining product gap: external football API (deferred).</p>
+      </header>
+
+      <section class="section">
+        <div class="grid grid-3">
+          <div class="card stat-card">
+            <div class="stat-value">18</div>
+            <div class="stat-label">Controllers</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-value">19</div>
+            <div class="stat-label">Domain Services</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-value">0</div>
+            <div class="stat-label">Missing Domains</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Implemented Controllers</h3>
+        <div class="card">
+          <table>
+            <thead>
+              <tr>
+                <th>Controller</th>
+                <th>Endpoints</th>
+                <th>Auth</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>UserController</code></td>
+                <td>
+                  <code>Login</code>, <code>CreateNewUser</code> (public);
+                  <code>GetMe</code> (JWT);
+                  Admin <code>GetAllUsers</code>, <code>UpdateUser</code>, <code>RemoveUser</code>
+                </td>
+                <td>JWT / Admin on mutators</td>
+                <td><span class="badge badge-done">Done</span></td>
+              </tr>
+              <tr>
+                <td><code>WorldCupController</code></td>
+                <td><code>GetWorldCups</code>, <code>CreateNewWorldCup</code></td>
+                <td>Admin on create</td>
+                <td><span class="badge badge-done">Done</span></td>
+              </tr>
+              <tr>
+                <td><code>GroupController</code></td>
+                <td><code>GetGroups</code>, <code>AddGroup</code></td>
+                <td>Admin on create</td>
+                <td><span class="badge badge-done">Done</span></td>
+              </tr>
+              <tr>
+                <td><code>CountryController</code></td>
+                <td><code>GetAllCountries</code></td>
+                <td>None</td>
+                <td><span class="badge badge-done">Done</span></td>
+              </tr>
+              <tr>
+                <td><code>CityController</code></td>
+                <td><code>GetAllCities</code></td>
+                <td>None</td>
+                <td><span class="badge badge-done">Done</span></td>
+              </tr>
+              <tr>
+                <td><code>StadiumController</code></td>
+                <td><code>GetStadiums</code>, <code>AddStadium</code>, <code>UpdateStadium</code></td>
+                <td>Admin on mutating</td>
+                <td><span class="badge badge-done">Done</span></td>
+              </tr>
+              <tr>
+                <td><code>TeamController</code></td>
+                <td>CRUD, assign to group, <code>GetTeams</code> (all teams — client filters by WC/group)</td>
+                <td>Admin on mutating</td>
+                <td><span class="badge badge-done">Done</span></td>
+              </tr>
+              <tr>
+                <td><code>CoachController</code></td>
+                <td>CRUD, get by team</td>
+                <td>Admin on mutating</td>
+                <td><span class="badge badge-done">Done</span></td>
+              </tr>
+              <tr>
+                <td><code>PlayerController</code></td>
+                <td>CRUD, squad list by team</td>
+                <td>Admin on mutating</td>
+                <td><span class="badge badge-done">Done</span></td>
+              </tr>
+              <tr>
+                <td><code>PlayerPositionController</code></td>
+                <td>List lookup values</td>
+                <td>None</td>
+                <td><span class="badge badge-done">Done</span></td>
+              </tr>
+              <tr>
+                <td><code>MatchController</code></td>
+                <td>
+                  <code>GetMatches</code>, <code>GetMatchById</code>, <code>GetFixturesByWorldCup</code>,
+                  <code>GetFixturesByGroup</code>, <code>GetFixturesByDate</code>,
+                  <code>GetLiveSnapshot</code>; Admin <code>AddMatch</code>,
+                  <code>UpdateMatch</code>, <code>DeleteMatch</code>
+                  (stages include <code>RoundOf32</code>)
+                </td>
+                <td>Admin on mutating</td>
+                <td><span class="badge badge-done">Done</span></td>
+              </tr>
+              <tr>
+                <td><code>KnockoutController</code></td>
+                <td><code>GetBracket</code>; Admin <code>GenerateBracket</code> (feeder auto-advance)</td>
+                <td>Admin on generate</td>
+                <td><span class="badge badge-done">Done</span></td>
+              </tr>
+              <tr>
+                <td><code>GoalController</code></td>
+                <td><code>GetGoalsByMatch</code>; Admin <code>AddGoal</code>, <code>DeleteGoal</code></td>
+                <td>Admin on mutating</td>
+                <td><span class="badge badge-done">Done</span></td>
+              </tr>
+              <tr>
+                <td><code>CardController</code></td>
+                <td><code>GetCardsByMatch</code>; Admin <code>AddCard</code>, <code>DeleteCard</code></td>
+                <td>Admin on mutating</td>
+                <td><span class="badge badge-done">Done</span></td>
+              </tr>
+              <tr>
+                <td><code>TeamStatsController</code></td>
+                <td><code>GetTeamStatsByMatch</code>; Admin <code>UpdateTeamStats</code></td>
+                <td>Admin on update</td>
+                <td><span class="badge badge-done">Done</span></td>
+              </tr>
+              <tr>
+                <td><code>StandingController</code></td>
+                <td><code>GetGroupStandings</code></td>
+                <td>None</td>
+                <td><span class="badge badge-done">Done</span></td>
+              </tr>
+              <tr>
+                <td><code>BetController</code></td>
+                <td>
+                  <code>GetScoringRules</code>, <code>GetLeaderboard</code>, <code>GetMySummary</code>;
+                  <code>GetMyBetsForWorldCup</code>, <code>GetMyBetForMatch</code>;
+                  <code>PlaceBet</code>, <code>GetMyBets</code>, <code>GetMyActiveBets</code>;
+                  Admin <code>ResolveBetsForMatch</code> (per-user +3/0 breakdown),
+                  <code>ResolveBetsForWorldCup</code>
+                </td>
+                <td>JWT on place/view; Admin on resolve</td>
+                <td><span class="badge badge-done">Done</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Missing Controllers (Schema Exists)</h3>
+        <div class="card">
+          <p style="color: var(--text-muted); font-size: 0.9rem;">All domain entities with DB tables now have controllers. <code>Bet</code> and <code>BetResult</code> are served via <code>BetController</code> (Phase 4). Demo CSV seeding and <code>SeedController</code> were removed — countries, cities, and stadiums are ordinary DB rows (populate once). <code>WeatherForecastController</code> was removed.</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Phase 8 — Live / resolve (implemented)</h3>
+        <div class="card">
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.75rem;">
+            Phase 8 closed the live-feed and SPA write gaps. Detail: <a href="changes/phase-8-dashboards.html">phase-8-dashboards.html</a> · <a href="roadmap.html#phase-8">Phase 8 checklist</a>.
+          </p>
+          <table>
+            <thead>
+              <tr><th>Capability</th><th>Status</th><th>Surface</th><th>Task</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Live snapshot</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>GET Match/GetLiveSnapshot?worldCupId=</code> — scores, minute, recentEvents; fixtures 30s poll</td>
+                <td><code>p8-live-snapshot</code></td>
+              </tr>
+              <tr>
+                <td>Live action write</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td>Client <code>goal-api</code> / <code>card-api</code> / <code>team-stats-api</code> → existing Admin controllers (no RecordLiveAction facade)</td>
+                <td><code>p8-live-action-api</code></td>
+              </tr>
+              <tr>
+                <td>Admin live UI</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>/admin/live/{matchId}</code> console + hub / schedule links</td>
+                <td><code>p8-admin-live-console</code></td>
+              </tr>
+              <tr>
+                <td>Bet resolve feedback</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>ResolveBetsResultDTO</code> per-user +3/0; DeleteGoal re-score; <code>ResolveBetsForWorldCup</code> bulk</td>
+                <td><code>p8-bet-auto-resolve</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Repository Manager Coverage</h3>
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>✅ In RepositoryManager</h3>
+            <ul>
+              <li>User</li>
+              <li>Country</li>
+              <li>City</li>
+              <li>Stadium</li>
+              <li>WorldCup</li>
+              <li>Group</li>
+              <li>Team</li>
+              <li>Coach</li>
+              <li>Player</li>
+              <li>PlayerPosition</li>
+              <li>Match</li>
+              <li>Goal</li>
+              <li>Card</li>
+              <li>TeamStats</li>
+              <li>Bet</li>
+              <li>BetResult</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>❌ Not in RepositoryManager</h3>
+            <ul>
+              <li>— (all schema entities wired)</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">API Coverage Matrix</h3>
+        <div class="card" style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Entity</th>
+                <th>DB Table</th>
+                <th>Repo</th>
+                <th>Service</th>
+                <th>Controller</th>
+                <th>DTO</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>WorldCup</td><td>WorldCups</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+              <tr><td>Group</td><td>Group</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+              <tr><td>Country</td><td>Countries</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+              <tr><td>City</td><td>City</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+              <tr><td>Stadium</td><td>Stadium</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+              <tr><td>User</td><td>Users</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+              <tr><td>Team</td><td>Team</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+              <tr><td>Coach</td><td>Coach</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+              <tr><td>Player</td><td>Player</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+              <tr><td>PlayerPosition</td><td>PlayerPositions</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+              <tr><td>Match</td><td>Match</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+              <tr><td>Goal</td><td>Goal</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+              <tr><td>Card</td><td>Card</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+              <tr><td>TeamStats</td><td>TeamStats</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+              <tr><td>Standings</td><td>— (computed)</td><td>—</td><td>✅</td><td>✅</td><td>✅</td></tr>
+              <tr><td>Bet</td><td>Bet</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+              <tr><td>BetResult</td><td>BetResult</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="assets/app.js"></script>
+</body>
+</html>

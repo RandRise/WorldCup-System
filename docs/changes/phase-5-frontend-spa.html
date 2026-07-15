@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorldCup System — Phase 5 Frontend SPA Changes</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h1>⚽ WorldCup System</h1>
+        <p>Project planning &amp; workflow</p>
+      </div>
+      <nav>
+        <a href="../index.html" class="nav-link"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="../overview.html" class="nav-link"><span class="nav-icon">📋</span> System Overview</a>
+        <a href="../roadmap.html" class="nav-link"><span class="nav-icon">🗺️</span> Completion Roadmap</a>
+        <a href="../workflow.html" class="nav-link"><span class="nav-icon">⚙️</span> Dev Workflow</a>
+        <a href="../api-status.html" class="nav-link"><span class="nav-icon">🔌</span> API Status</a>
+        <a href="../data-model.html" class="nav-link"><span class="nav-icon">🗄️</span> Data Model</a>
+        <a href="../changes-review.html" class="nav-link active"><span class="nav-icon">🔍</span> Changes Review</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="page-header">
+        <h2>Phase 5 — Frontend SPA</h2>
+        <p>Full diff detail for Angular <code>worldcup-client</code> and supporting backend seed APIs. <a href="../changes-review.html">← Back to Changes Review</a></p>
+      </header>
+
+      <div class="alert alert-info">
+        <strong>Sources (2 Jul 2026).</strong> Backend: <code>git status</code> + <code>git diff</code> in <code>WorldCup-System/</code> — branch <code>master</code>, ahead of <code>origin/master</code> by 3 commits. Working tree: <strong>3 modified</strong>, <strong>6 untracked paths</strong> (demo seed support). Frontend: <code>worldcup-client/</code> at workspace root — <strong>not tracked by git</strong> — <strong>69 source files</strong> under <code>src/</code> (Angular 19, default port 4200).
+      </div>
+
+      <section class="section">
+        <h3 class="section-title">Review Gate — Fix Before Testing</h3>
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>Blocker</th><th>Severity</th><th>File / area</th><th>Required fix</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Angular SPA outside version control</td>
+                <td><span class="badge badge-risk-high">Critical</span></td>
+                <td><code>worldcup-client/</code> in git repo</td>
+                <td><span class="badge badge-done">Cleared</span> — monorepo at <code>WorldCup-System/worldcup-client/</code></td>
+              </tr>
+              <tr>
+                <td>Demo seed backend untracked / unstaged</td>
+                <td><span class="badge badge-risk-high">Critical</span></td>
+                <td><code>DemoSeedService</code>, <code>SeedController</code>, <code>Core/DemoSeedData/</code></td>
+                <td><span class="badge badge-done">Cleared</span> — all paths staged</td>
+              </tr>
+              <tr>
+                <td>Seed unit tests not verified in gate run</td>
+                <td><span class="badge badge-risk-high">High</span></td>
+                <td><code>DemoSeedServiceTests</code>, <code>SeedControllerTests</code></td>
+                <td><span class="badge badge-done">Cleared</span> — <code>dotnet test</code> 195 passed</td>
+              </tr>
+              <tr>
+                <td>No meaningful Angular test coverage</td>
+                <td><span class="badge badge-risk-high">High</span></td>
+                <td><code>worldcup-client/src/</code></td>
+                <td><span class="badge badge-done">Cleared</span> — 13 Karma tests (auth, guards, standings)</td>
+              </tr>
+              <tr>
+                <td>Fixtures page N+1 bet lookups</td>
+                <td><span class="badge badge-risk-medium">Medium</span></td>
+                <td><code>fixtures.component.ts</code></td>
+                <td>Calls <code>GetMyBetForMatch</code> once per fixture in parallel — acceptable for demo (~48 matches) but may need batch endpoint for scale.</td>
+              </tr>
+              <tr>
+                <td>Dev auto-seed on API startup</td>
+                <td><span class="badge badge-risk-medium">Medium</span></td>
+                <td><code>Program.cs</code>, <code>DevSeed:Qatar2022</code></td>
+                <td>Development startup auto-runs <code>SeedQatar2022Async</code> when flag is true — can mask admin seed UI failures; disable flag when testing <code>AdminSeedComponent</code> manually.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Architecture — Angular SPA + Seed API</h3>
+        <div class="card">
+          <div class="diagram">worldcup-client (Angular 19, port 4200)
+─────────────────────────────────────────────────────────────
+app.config.ts       →  HttpClient + authInterceptor + session init
+app.routes.ts       →  Shell layout, public pages, admin sub-routes
+core/auth/          →  AuthService (JWT + GetMe), guards, interceptor
+core/api/           →  Typed HTTP clients for all backend controllers
+core/services/      →  WorldCupContextService (tournament selector)
+features/           →  Page components (fixtures, bets, admin, …)
+
+Backend seed support (uncommitted in WorldCup-System git)
+─────────────────────────────────────────────────────────────
+DemoSeedService     →  Idempotent Qatar 2022 import from embedded CSVs
+SeedController      →  [Admin] POST Seed/LoadQatar2022Demo
+Program.cs          →  DI + optional DevSeed:Qatar2022 on startup
+Core.csproj         →  EmbeddedResource for CitiesCsvData, StadiumCsvData, DemoSeedData
+
+CORS (already configured)
+─────────────────────────────────────────────────────────────
+Program.cs          →  WithOrigins("http://localhost:4200")</div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Phase 5 Roadmap Mapping</h3>
+        <div class="card">
+          <table>
+            <thead><tr><th>Task</th><th>Status</th><th>Evidence</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><code>p5-scaffold</code> — Angular project on port 4200</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>worldcup-client/</code> — Angular 19.2, SCSS, standalone components, <code>ng serve</code> default port 4200</td>
+              </tr>
+              <tr>
+                <td><code>p5-auth</code> — Login, JWT interceptor, route guards</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>AuthService</code>, <code>authInterceptor</code>, <code>authGuard</code>, <code>adminGuard</code>, <code>guestGuard</code>, login/register routes</td>
+              </tr>
+              <tr>
+                <td><code>p5-admin-ref</code> — Countries, cities, stadiums</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>AdminReferenceComponent</code> + <code>ReferenceApiService</code> — CRUD tabs, city CSV import</td>
+              </tr>
+              <tr>
+                <td><code>p5-admin-teams</code> — Teams, coaches, squad</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>AdminTeamsComponent</code> + <code>TournamentApiService</code> — team/coach/player management</td>
+              </tr>
+              <tr>
+                <td><code>p5-schedule</code> — Match scheduling UI</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>AdminScheduleComponent</code> + <code>MatchApiService</code> — create/edit fixtures filtered by World Cup</td>
+              </tr>
+              <tr>
+                <td><code>p5-public</code> — Fixtures, live scores, standings</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>FixturesComponent</code> (status badges), <code>StandingsComponent</code> (per-group tables), <code>WorldCupSelectorComponent</code></td>
+              </tr>
+              <tr>
+                <td><code>p5-betting-ui</code> — Betting UI and leaderboard</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>FixturesComponent.placeBet</code>, <code>MyBetsComponent</code>, <code>LeaderboardComponent</code> + <code>GetMySummary</code></td>
+              </tr>
+              <tr>
+                <td><code>p5-seed</code> — Qatar 2022 demo CSV seed</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>DemoSeedService</code>, <code>AdminSeedComponent</code>, <code>Seed/LoadQatar2022Demo</code>, embedded CSVs</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="actions" style="margin-top: 1rem;">
+            <a href="../roadmap.html#phase-5" class="btn btn-secondary btn-sm">Open Phase 5 checklist</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="backend-diff">
+        <h3 class="section-title">Backend Git Diff — Demo Seed Support</h3>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>Core/Core.csproj</h4>
+            <span class="badge badge-done">Embedded CSVs</span>
+          </div>
+          <p class="change-desc">Embeds existing city/stadium CSVs plus new <code>DemoSeedData/</code> for runtime seeding without disk paths.</p>
+          <div class="diff-block"><span class="diff-add">+    &lt;EmbeddedResource Include="CitiesCsvData\**\*" /&gt;</span>
+<span class="diff-add">+    &lt;EmbeddedResource Include="StadiumCsvData\**\*" /&gt;</span>
+<span class="diff-add">+    &lt;EmbeddedResource Include="DemoSeedData\**\*" /&gt;</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>WorldCup-System/Program.cs</h4>
+            <span class="badge badge-done">DI + dev auto-seed</span>
+          </div>
+          <p class="change-desc">Registers <code>IDemoSeedService</code>; optionally seeds Qatar 2022 on Development startup when <code>DevSeed:Qatar2022</code> is true.</p>
+          <div class="diff-block"><span class="diff-add">+using Core.Services.Seeding;</span>
+<span class="diff-add">+builder.Services.AddScoped&lt;IDemoSeedService, DemoSeedService&gt;();</span>
+<span class="diff-add">+    if (app.Environment.IsDevelopment() &amp;&amp; configuration.GetValue&lt;bool&gt;("DevSeed:Qatar2022"))</span>
+<span class="diff-add">+        await demoSeedService.SeedQatar2022Async();</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>WorldCup-System/appsettings.Development.json</h4>
+            <span class="badge badge-done">Dev flag</span>
+          </div>
+          <p class="change-desc">Enables automatic demo seed on API boot in Development.</p>
+          <div class="diff-block"><span class="diff-add">+  "DevSeed": {</span>
+<span class="diff-add">+    "Qatar2022": true</span>
+<span class="diff-add">+  }</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>Core/Services/Seeding/DemoSeedService.cs</h4>
+            <span class="badge badge-done">p5-seed</span>
+          </div>
+          <p class="change-desc">Idempotent import: countries → Qatar cities → stadiums → World Cup 2022 → groups A–H → 32 teams from <code>Qatar2022_teams.csv</code>. Skips when tournament already has teams.</p>
+          <div class="diff-block"><span class="diff-add">+    if (existingWorldCup != null &amp;&amp; hasTeams) { result.AlreadySeeded = true; return result; }</span>
+<span class="diff-add">+    result.CountriesAdded = await ImportCountriesAsync();</span>
+<span class="diff-add">+    result.TeamsAdded = await ImportTeamsAsync(groupIdsByName);</span>
+<span class="diff-add">+    Stream OpenSeedFile — embedded resource or disk fallback</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>WorldCup-System/Controllers/SeedController.cs</h4>
+            <span class="badge badge-done">Admin endpoint</span>
+          </div>
+          <p class="change-desc">Admin-only POST to trigger the same seed logic from the SPA admin panel.</p>
+          <div class="diff-block"><span class="diff-add">+    [Authorize(Roles = "Admin")]</span>
+<span class="diff-add">+    [HttpPost] LoadQatar2022Demo()</span>
+<span class="diff-add">+        DemoSeedResultDTO result = await _demoSeedService.SeedQatar2022Async();</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>WorldCup-System.Tests/Services/Seeding/DemoSeedServiceTests.cs</h4>
+            <span class="badge badge-done">New tests</span>
+          </div>
+          <p class="change-desc">Verifies all four CSV files are embedded in Core assembly; idempotency when teams already exist.</p>
+          <div class="diff-block"><span class="diff-add">+    [Theory] SeedCsvFiles_AreEmbeddedInCoreAssembly — 4 resource names</span>
+<span class="diff-add">+    [Fact] SeedQatar2022_WhenTournamentAlreadyHasTeams_ReturnsAlreadySeeded</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="spa-routing">
+        <h3 class="section-title">Angular — Routes &amp; Layout</h3>
+        <div class="card file-change">
+          <p class="change-desc"><code>ShellComponent</code> topbar with nav links; admin section behind <code>adminGuard</code>; bets behind <code>authGuard</code>; login/register behind <code>guestGuard</code>.</p>
+          <div class="diff-block"><span class="diff-add">+  { path: 'fixtures', component: FixturesComponent }</span>
+<span class="diff-add">+  { path: 'standings', component: StandingsComponent }</span>
+<span class="diff-add">+  { path: 'leaderboard', component: LeaderboardComponent }</span>
+<span class="diff-add">+  { path: 'bets', component: MyBetsComponent, canActivate: [authGuard] }</span>
+<span class="diff-add">+  { path: 'admin', children: [seed, reference, teams, schedule] }</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="spa-auth">
+        <h3 class="section-title">Angular — Auth Module (<code>p5-auth</code>)</h3>
+        <div class="card file-change">
+          <p class="change-desc">JWT stored in <code>localStorage</code>; session restored via <code>User/GetMe</code> on app init; interceptor attaches Bearer token except login/register.</p>
+          <div class="diff-block"><span class="diff-add">+  async initializeSession(): GET User/GetMe → currentUser signal</span>
+<span class="diff-add">+  async login(): POST User/Login → store token → initializeSession</span>
+<span class="diff-add">+  authInterceptor: Authorization: Bearer ${token}</span>
+<span class="diff-add">+  isAdmin = roles includes 'Admin'</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="spa-api">
+        <h3 class="section-title">Angular — API Services</h3>
+        <div class="card file-change">
+          <table>
+            <thead><tr><th>Service</th><th>Backend endpoints</th><th>Used by</th></tr></thead>
+            <tbody>
+              <tr><td><code>BetApiService</code></td><td>GetLeaderboard, GetMySummary, GetMyBets, GetMyActiveBets, GetMyBetForMatch, PlaceBet</td><td>Fixtures, Leaderboard, My Bets</td></tr>
+              <tr><td><code>MatchApiService</code></td><td>GetFixturesByWorldCup, CRUD matches</td><td>Fixtures, Admin Schedule</td></tr>
+              <tr><td><code>StandingsApiService</code></td><td>GetGroupStandings</td><td>Standings</td></tr>
+              <tr><td><code>TournamentApiService</code></td><td>WorldCups, Groups, Teams, Coaches, Players</td><td>Admin Teams, WorldCup context</td></tr>
+              <tr><td><code>ReferenceApiService</code></td><td>Countries, Cities, Stadiums, CSV import</td><td>Admin Reference</td></tr>
+              <tr><td><code>SeedService</code></td><td>Seed/LoadQatar2022Demo</td><td>Admin Seed</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section" id="spa-public">
+        <h3 class="section-title">Angular — Public Pages (<code>p5-public</code>, <code>p5-betting-ui</code>)</h3>
+
+        <div class="card file-change">
+          <div class="file-change-header"><h4>FixturesComponent</h4><span class="badge badge-done">Betting UI</span></div>
+          <p class="change-desc">Lists matches for selected World Cup; shows <code>Status</code> (Scheduled/Live/Finished); authenticated users place team/draw bets when <code>canBet</code>.</p>
+          <div class="diff-block"><span class="diff-add">+  effect(() => context.selectedWorldCupId() → loadFixtures())</span>
+<span class="diff-add">+  await betApi.getMyBetForMatch(match.id) per fixture</span>
+<span class="diff-add">+  placeBet({ matchId, isDraw, teamId })</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header"><h4>StandingsComponent</h4><span class="badge badge-done">Group tables</span></div>
+          <p class="change-desc">Group tab selector driven by <code>WorldCupContextService</code>; loads standings per group.</p>
+          <div class="diff-block"><span class="diff-add">+  standingsApi.getGroupStandings(groupId)</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header"><h4>LeaderboardComponent</h4><span class="badge badge-done">Rankings</span></div>
+          <p class="change-desc">Public leaderboard with optional World Cup filter; highlights current user row; shows personal summary when logged in.</p>
+          <div class="diff-block"><span class="diff-add">+  betApi.getLeaderboard(worldCupId)</span>
+<span class="diff-add">+  betApi.getMySummary(worldCupId) when authenticated</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header"><h4>MyBetsComponent</h4><span class="badge badge-done">Bet history</span></div>
+          <p class="change-desc">Toggle all bets vs active-only; shows resolution status and points earned.</p>
+          <div class="diff-block"><span class="diff-add">+  getMyBets() / getMyActiveBets()</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="spa-admin">
+        <h3 class="section-title">Angular — Admin Pages</h3>
+
+        <div class="card file-change">
+          <div class="file-change-header"><h4>AdminSeedComponent</h4><span class="badge badge-done">p5-seed</span></div>
+          <p class="change-desc">One-click Qatar 2022 demo load; displays counts from <code>DemoSeedResultDTO</code>.</p>
+          <div class="diff-block"><span class="diff-add">+  seedService.loadQatar2022Demo() → POST Seed/LoadQatar2022Demo</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header"><h4>AdminReferenceComponent</h4><span class="badge badge-done">p5-admin-ref</span></div>
+          <p class="change-desc">Tabbed CRUD for countries, cities (with country filter), stadiums; city CSV import by country.</p>
+          <div class="diff-block"><span class="diff-add">+  referenceApi.getCountries / getCities / getStadiums</span>
+<span class="diff-add">+  importCitiesFromCsv(countryId)</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header"><h4>AdminTeamsComponent</h4><span class="badge badge-done">p5-admin-teams</span></div>
+          <p class="change-desc">Teams scoped to selected World Cup groups; coach and player squad management.</p>
+          <div class="diff-block"><span class="diff-add">+  teamsForWorldCup computed from context.groupsForSelectedWorldCup()</span>
+<span class="diff-add">+  createTeam, createCoach, createPlayer, update/delete</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header"><h4>AdminScheduleComponent</h4><span class="badge badge-done">p5-schedule</span></div>
+          <p class="change-desc">Create and edit matches; filters teams/stadiums to selected tournament.</p>
+          <div class="diff-block"><span class="diff-add">+  matchesForWorldCup computed filter</span>
+<span class="diff-add">+  matchApi.createMatch / updateMatch</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="spa-shared">
+        <h3 class="section-title">Angular — Shared Services &amp; Components</h3>
+        <div class="card file-change">
+          <div class="file-change-header"><h4>WorldCupContextService</h4><span class="badge badge-done">Tournament selector</span></div>
+          <p class="change-desc">Loads World Cups and groups on init; auto-selects 2022 tournament when present; drives selector on public and admin pages.</p>
+          <div class="diff-block"><span class="diff-add">+  preferred = worldCups.find(year === 2022)</span>
+<span class="diff-add">+  groupsForSelectedWorldCup computed</span></div>
+        </div>
+        <div class="card file-change">
+          <div class="file-change-header"><h4>environment.development.ts</h4><span class="badge badge-done">API URL</span></div>
+          <p class="change-desc">Points SPA at local API.</p>
+          <div class="diff-block"><span class="diff-add">+  apiUrl: 'http://localhost:5055'</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="file-list">
+        <h3 class="section-title">Complete File List</h3>
+        <div class="card">
+          <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;"><strong>Backend git — modified (3):</strong></p>
+          <code style="display: block; font-size: 0.78rem; line-height: 1.6;">Core/Core.csproj · WorldCup-System/Program.cs · WorldCup-System/appsettings.Development.json</code>
+          <p style="font-size: 0.875rem; color: var(--text-muted); margin: 0.75rem 0 0.5rem;"><strong>Backend git — untracked (6 paths, 9 files):</strong></p>
+          <code style="display: block; font-size: 0.78rem; line-height: 1.6;">Core/Services/Seeding/DemoSeedService.cs · IDemoSeedService.cs · Core/DTOs/Seeding/DemoSeedResultDTO.cs · Core/DemoSeedData/Qatar2022_teams.csv · WorldCup-System/Controllers/SeedController.cs · WorldCup-System.Tests/Services/Seeding/DemoSeedServiceTests.cs</code>
+          <p style="font-size: 0.875rem; color: var(--text-muted); margin: 0.75rem 0 0.5rem;"><strong>Angular SPA — not in git (69 files under <code>src/</code>):</strong></p>
+          <code style="display: block; font-size: 0.78rem; line-height: 1.6;">app/ — routes, config, shell · core/auth/ (5) · core/api/ (6) · core/models/ (2) · core/layout/ (3) · core/services/ (1) · features/auth/ (6) · features/home/ (3) · features/fixtures/ (3) · features/standings/ (3) · features/leaderboard/ (3) · features/bets/ (3) · features/admin/ (16) · features/shared/ (7) · environments/ (2) · styles, index, main</code>
+          <p style="font-size: 0.875rem; color: var(--text-muted); margin: 0.75rem 0 0.5rem;"><strong>Prior phases (committed):</strong></p>
+          <code style="display: block; font-size: 0.78rem; line-height: 1.6;"><a href="phase-4-betting.html">Phase 4</a> · <a href="phase-3-match-lifecycle.html">Phase 3</a> · <a href="phase-2-tournament-setup.html">Phase 2</a> · <a href="phase-1-identity.html">Phase 1</a></code>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Suggested Next Steps</h3>
+        <div class="card">
+          <div class="flow-step">
+            <div class="flow-number">1</div>
+            <div class="flow-content">
+              <h4>Clear review gate blockers</h4>
+              <p>Stage backend seed files; add <code>worldcup-client</code> to version control; run <code>dotnet test</code>.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-number">2</div>
+            <div class="flow-content">
+              <h4>Smoke test full stack</h4>
+              <p>API on :5055 + <code>ng serve</code> on :4200 → Admin seed → schedule matches → user login → place bets → standings/leaderboard.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-number">3</div>
+            <div class="flow-content">
+              <h4>Commit Phase 5</h4>
+              <p>Backend seed + SPA sources after gate cleared — see <a href="../roadmap.html#phase-5">Phase 5 checklist</a>.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-number">4</div>
+            <div class="flow-content">
+              <h4>Advance to Phase 6</h4>
+              <p>Docker, CI, integration tests, and production build pipeline.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="../assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorldCup System — Phase 8 User &amp; Admin Dashboards</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h1>⚽ WorldCup System</h1>
+        <p>Project planning &amp; workflow</p>
+      </div>
+      <nav>
+        <a href="../index.html" class="nav-link"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="../overview.html" class="nav-link"><span class="nav-icon">📋</span> System Overview</a>
+        <a href="../roadmap.html" class="nav-link"><span class="nav-icon">🗺️</span> Completion Roadmap</a>
+        <a href="../workflow.html" class="nav-link"><span class="nav-icon">⚙️</span> Dev Workflow</a>
+        <a href="../api-status.html" class="nav-link"><span class="nav-icon">🔌</span> API Status</a>
+        <a href="../data-model.html" class="nav-link"><span class="nav-icon">🗄️</span> Data Model</a>
+        <a href="../changes-review.html" class="nav-link active"><span class="nav-icon">🔍</span> Changes Review</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="page-header">
+        <h2>Phase 8 — User &amp; Admin Dashboards</h2>
+        <p>Post-login navigation, user hub, bet resolve hardening, live snapshot, and admin ops (13 Jul 2026). <a href="../changes-review.html">← Back to Changes Review</a> · <a href="../roadmap.html#phase-8">Roadmap Phase 8</a></p>
+      </header>
+
+      <div class="alert alert-success">
+        <strong>Implementation complete (13 Jul 2026).</strong> All <strong>10 / 10</strong> roadmap tasks are done in code (mostly uncommitted). Scoring remains <strong>3</strong> points correct / <strong>0</strong> wrong. Demo seed &amp; CSV import were removed earlier — see <a href="remove-demo-seed.html">remove-demo-seed.html</a>.
+      </div>
+
+      <section class="section">
+        <h3 class="section-title">Review Gate — Fix before testing</h3>
+        <div class="alert alert-warning">
+          <strong>Gate open.</strong> Clear high/critical items below before running the phase test gate (<code>dotnet test</code> on <code>WorldCup-System.Tests</code>).
+        </div>
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>Blocker</th><th>Severity</th><th>Status</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Edited already-shipped migration <code>IdentityLongKeys</code></td>
+                <td><span class="badge badge-risk-high">Critical</span></td>
+                <td><span class="badge badge-partial">Open</span></td>
+                <td>Do not rewrite applied migrations on shared DBs — revert incidental edits or add a new migration; confirm local DB still migrates cleanly</td>
+              </tr>
+              <tr>
+                <td>Phase 8 suite not re-run on this diff</td>
+                <td><span class="badge badge-risk-high">High</span></td>
+                <td><span class="badge badge-partial">Open</span></td>
+                <td>After review fixes: <code>dotnet test</code> on <code>WorldCup-System.Tests</code> (new Bet/Match/Goal/Stats tests included)</td>
+              </tr>
+              <tr>
+                <td>Large uncommitted Phase 8 surface</td>
+                <td><span class="badge badge-risk-high">High</span></td>
+                <td><span class="badge badge-partial">Ops</span></td>
+                <td>37 modified + new SPA folders/API services — stage &amp; commit when asked (not a code fix blocker for local test)</td>
+              </tr>
+              <tr>
+                <td><code>TryAutoResolveFinishedMatch</code> unused in services</td>
+                <td><span class="badge badge-risk-medium">Medium</span></td>
+                <td><span class="badge badge-partial">Accepted for gate</span></td>
+                <td>AddGoal/DeleteGoal call <code>ResolveBetsForMatch</code>; scoreless FT relies on admin per-match / world-cup resolve — wire TryAuto if product wants silent 0–0 auto</td>
+              </tr>
+              <tr>
+                <td>Resolve swallows incomplete-stats errors</td>
+                <td><span class="badge badge-risk-medium">Medium</span></td>
+                <td><span class="badge badge-partial">Accepted</span></td>
+                <td>Same pattern as Phase 7 — optional Serilog later</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Git status snapshot</h3>
+        <div class="card">
+          <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+            <strong>Repo:</strong> <code>WorldCup-System/</code> (branch <code>master</code>, ahead of origin) ·
+            <strong>37 modified</strong> · <strong>6 untracked paths</strong> · tracked diff <strong>+1198 / −136</strong>
+          </p>
+          <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;"><strong>Committed already (Phase 8 seed):</strong></p>
+          <code style="display: block; font-size: 0.78rem; line-height: 1.6; margin-bottom: 0.75rem;">Program.cs — EnsureDevUserInRoleAsync for DevAdmin (Admin) + DevUser (User); Docker/README defaults Admin123! / User123!</code>
+          <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;"><strong>Modified (uncommitted):</strong></p>
+          <code style="display: block; font-size: 0.78rem; line-height: 1.6; margin-bottom: 0.75rem;">Backend: BetDTO, MatchDTO, BetService, IBetService, GoalService, MatchService, IMatchService, StandingsService, TeamStatsService, IdentityLongKeys migration, BetController, MatchController<br>
+Tests: BetController, BetService, GoalService, MatchService, Standings, TeamStats, TeamService<br>
+Client: app.routes, bet-api, match-api, guards, shell, api.models, admin-layout, admin-schedule, admin-teams (UpdateTeam), login, fixtures</code>
+          <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;"><strong>Untracked (new):</strong></p>
+          <code style="display: block; font-size: 0.78rem; line-height: 1.6;">goal-api / card-api / team-stats-api · features/dashboard/ · features/admin/hub/ · features/admin/live/</code>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Phase 8 Roadmap Mapping — 10 / 10 Done</h3>
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>Task</th><th>Status</th><th>Evidence</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>p8-dev-roles</code> — Dev Admin + User seeds</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td>Committed <code>Program.cs</code> DevAdmin / DevUser</td>
+              </tr>
+              <tr>
+                <td><code>p8-login-return</code> — return URL after login</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>auth.guard</code> / <code>admin.guard</code> pass <code>returnUrl</code>; <code>login.component</code> restores deep link; else admin → <code>/admin</code>, user → <code>/dashboard</code>; <code>guest.guard</code> same defaults</td>
+              </tr>
+              <tr>
+                <td><code>p8-user-dashboard</code> — profile / open bets / rank</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td>New <code>/dashboard</code> + <code>DashboardComponent</code> (<code>getMySummary</code> + active bets); shell nav for non-admins</td>
+              </tr>
+              <tr>
+                <td><code>p8-bet-auto-resolve</code> — FT resolve + DeleteGoal re-score</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>ResolveBetsResultDTO</code> + per-user breakdown; <code>GoalService.DeleteGoal</code> re-resolves after FT; <code>TryAutoResolveFinishedMatch</code> + world-cup bulk; force resolve kept</td>
+              </tr>
+              <tr>
+                <td><code>p8-admin-leaderboard</code> — resolve UI + points delta</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td>Schedule shows <code>userBreakdown</code> (+3 / 0); hub <code>bulkResolve</code> via <code>ResolveBetsForWorldCup</code></td>
+              </tr>
+              <tr>
+                <td><code>p8-live-snapshot</code> — batch live feed</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>GET Match/GetLiveSnapshot?worldCupId=</code> → scores, minute, recentEvents; fixtures 30s poll uses snapshot</td>
+              </tr>
+              <tr>
+                <td><code>p8-live-action-api</code> — Goal/Card/TeamStats client</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td>New <code>goal-api</code>, <code>card-api</code>, <code>team-stats-api</code> services (no RecordLiveAction facade — existing controllers)</td>
+              </tr>
+              <tr>
+                <td><code>p8-admin-live-console</code> — live match UI</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>/admin/live/:matchId</code> — goals/cards/stats + resolve; schedule links into console</td>
+              </tr>
+              <tr>
+                <td><code>p8-admin-team-import</code> — manual team entry</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td>Admin Teams <code>saveTeam</code> / <code>editTeam</code> / <code>updateTeam</code> (create + update, no CSV)</td>
+              </tr>
+              <tr>
+                <td><code>p8-admin-hub</code> — ops home</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>/admin</code> → <code>AdminHubComponent</code> cards (teams, schedule, live counts, bulk resolve)</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="actions" style="margin-top: 1rem;">
+            <a href="../roadmap.html#phase-8" class="btn btn-primary btn-sm">Open Phase 8 checklist</a>
+            <a href="../changes-review.html" class="btn btn-secondary btn-sm">Changes Review summary</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Dev accounts (Development only)</h3>
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>Role</th><th>Email</th><th>Password (local default)</th><th>SPA surface</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>Admin</code></td>
+                <td><code>admin@localhost</code></td>
+                <td><code>Admin123!</code></td>
+                <td><code>/admin</code> hub → teams / schedule / live</td>
+              </tr>
+              <tr>
+                <td><code>User</code></td>
+                <td><code>user@localhost</code></td>
+                <td><code>User123!</code></td>
+                <td><code>/dashboard</code> (default post-login) + My Bets</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Architecture — Phase 8 flow</h3>
+        <div class="card">
+          <div class="diagram">Login
+  → returnUrl? restore deep link
+  → else Admin → /admin hub · User → /dashboard
+
+User dashboard
+  → GetMySummary + GetMyBetsForWorldCup (active bets) · quick links
+
+Betting resolve
+  → ResolveBetsForMatch → ResolveBetsResultDTO (UserBreakdown +3/0)
+  → ResolveBetsForWorldCup (bulk finished matches)
+  → AddGoal / DeleteGoal after FT → re-resolve
+  → Admin schedule + hub show breakdown / bulk result
+
+Live ops (no external football API)
+  → GET Match/GetLiveSnapshot(worldCupId) — scores, minute, recentEvents
+  → Fixtures 30s poll applies snapshot
+  → Admin /admin/live/{matchId} → Goal/Card/TeamStats APIs
+  → Schedule “Live” link → console · Resolve after FT</div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Per-file detail (snippets)</h3>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>BetController + BetService (+ DTOs)</h4>
+            <span class="badge badge-done">p8-bet-auto-resolve · p8-admin-leaderboard</span>
+          </div>
+          <p class="change-desc">Resolve returns structured DTO with per-user points; new world-cup bulk resolve. Routes remain <code>[controller]/[action]</code> so match vs world-cup actions do not collide.</p>
+          <div class="diff-block"><span class="diff-add">+ResolveBetsResultDTO / BetResolveUserDTO / ResolveBetsWorldCupResultDTO</span>
+<span class="diff-add">+Task&lt;ResolveBetsResultDTO&gt; ResolveBetsForMatch</span>
+<span class="diff-add">+ResolveBetsForWorldCup / TryAutoResolveFinishedMatch</span>
+<span class="diff-add">+POST Bet/ResolveBetsForWorldCup/{worldCupId}</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>GoalService + TeamStatsService</h4>
+            <span class="badge badge-done">p8-bet-auto-resolve · p8-live-action-api</span>
+          </div>
+          <p class="change-desc">DeleteGoal re-resolves after full time. Possession update can auto-balance the other team’s 0% when one side is set mid-edit (live console UX).</p>
+          <div class="diff-block"><span class="diff-add">+DeleteGoal → ResolveBetsForMatch after FT</span>
+<span class="diff-add">+TeamStats: auto-fill other possession when other was 0</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>MatchController / MatchService — GetLiveSnapshot</h4>
+            <span class="badge badge-done">p8-live-snapshot</span>
+          </div>
+          <p class="change-desc">Batch snapshot of live/finished scores, computed minute for Live matches, and recent goal/card events for the tournament.</p>
+          <div class="diff-block"><span class="diff-add">+LiveSnapshotDTO / LiveMatchSnapshotDTO / LiveEventSnapshotDTO</span>
+<span class="diff-add">+GET Match/GetLiveSnapshot?worldCupId=</span>
+<span class="diff-add">+MatchService.GetLiveSnapshot</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>worldcup-client — dashboard / hub / live (NEW)</h4>
+            <span class="badge badge-done">p8-user-dashboard · p8-admin-hub · p8-admin-live-console</span>
+          </div>
+          <p class="change-desc">Untracked feature folders. Routes: <code>/dashboard</code>, <code>/admin</code> hub, <code>/admin/live/:matchId</code>.</p>
+          <div class="diff-block"><span class="diff-add">+features/dashboard/dashboard.component.*</span>
+<span class="diff-add">+features/admin/hub/admin-hub.component.*</span>
+<span class="diff-add">+features/admin/live/admin-live-console.component.*</span>
+<span class="diff-add">+goal-api / card-api / team-stats-api.service.ts</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>Guards + login + shell</h4>
+            <span class="badge badge-done">p8-login-return</span>
+          </div>
+          <p class="change-desc">Deep-link restore; role-based default landing; Dashboard nav for users; Admin link to hub.</p>
+          <div class="diff-block"><span class="diff-add">+returnUrl query on auth/admin guard → /login</span>
+<span class="diff-add">+login: navigateByUrl(returnUrl) | /admin | /dashboard</span>
+<span class="diff-add">+guest.guard → /admin or /dashboard</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>Admin teams — UpdateTeam wiring</h4>
+            <span class="badge badge-done">p8-admin-team-import</span>
+          </div>
+          <p class="change-desc"><code>saveTeam</code> create/update via <code>tournamentApi.updateTeam</code>; Edit loads form; Cancel resets.</p>
+          <div class="diff-block"><span class="diff-add">+teamForm.id · editTeam · resetTeamForm · saveTeam</span>
+<span class="diff-add">+HTML: Update team / Cancel / Edit buttons</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>Admin schedule + fixtures poll</h4>
+            <span class="badge badge-done">p8-admin-leaderboard · p8-live-snapshot</span>
+          </div>
+          <p class="change-desc">Schedule resolves via <code>betApi</code> and shows per-user breakdown; Live console link; fixtures apply <code>getLiveSnapshot</code> on the 30s timer.</p>
+          <div class="diff-block"><span class="diff-add">+lastResolve userBreakdown UI</span>
+<span class="diff-add">+fixtures.applyLiveSnapshot / recentEvents</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>Tests</h4>
+            <span class="badge badge-done">coverage</span>
+          </div>
+          <p class="change-desc">Expanded BetService (world-cup resolve, TryAutoResolve), MatchService GetLiveSnapshot, GoalService delete re-resolve, TeamStats possession helper, related controller/service updates.</p>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>Data/Migrations/…IdentityLongKeys.cs</h4>
+            <span class="badge badge-risk-high">review</span>
+          </div>
+          <p class="change-desc">Uncommitted edit (~+81/−54) to an existing migration. Treat as incidental / risky for already-migrated databases — see Review Gate.</p>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>Earlier: ApiHttpService text mutations (Phase 7 follow-up)</h4>
+            <span class="badge badge-done">committed context</span>
+          </div>
+          <p class="change-desc">Admin CRUD uses <code>responseType: 'text'</code> for plain-text success bodies — still required for teams/schedule/live mutations.</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Happy path</h3>
+        <div class="card">
+          <ol style="margin: 0; padding-left: 1.25rem; color: var(--text-muted); font-size: 0.9rem; line-height: 1.7;">
+            <li>Seed roles → log in as User → land on <code>/dashboard</code>; deep-link My Bets restores after login.</li>
+            <li>Admin hub → Teams (add/edit) → Schedule match → users place bets.</li>
+            <li>Admin opens Live console → record goals/cards/stats → fixtures poll shows snapshot.</li>
+            <li>After FT, auto-resolve on goal paths or use Resolve / bulk resolve → leaderboard + schedule breakdown (+3 / 0).</li>
+          </ol>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="../assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorldCup System — Project Hub</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h1>⚽ WorldCup System</h1>
+        <p>Project planning &amp; workflow</p>
+      </div>
+      <nav>
+        <a href="index.html" class="nav-link"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="overview.html" class="nav-link"><span class="nav-icon">📋</span> System Overview</a>
+        <a href="roadmap.html" class="nav-link"><span class="nav-icon">🗺️</span> Completion Roadmap</a>
+        <a href="workflow.html" class="nav-link"><span class="nav-icon">⚙️</span> Dev Workflow</a>
+        <a href="api-status.html" class="nav-link"><span class="nav-icon">🔌</span> API Status</a>
+        <a href="data-model.html" class="nav-link"><span class="nav-icon">🗄️</span> Data Model</a>
+        <a href="changes-review.html" class="nav-link"><span class="nav-icon">🔍</span> Changes Review</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="page-header">
+        <h2>Project Dashboard</h2>
+        <p>FIFA World Cup management platform — status as of code review <strong>15 Jul 2026</strong>.</p>
+      </header>
+
+      <div class="alert alert-success">
+        <strong>Ship-ready for group-stage and knockout ops.</strong> Phases 1–6 and 8 are done. WC 2026 groups + 101 finished matches loaded offline. Remaining deferred work: optional external live API. Open <a href="roadmap.html#whats-left">What's left</a> · <a href="changes/wc2026-live-data.html">WC 2026 data log</a>.
+      </div>
+
+      <div class="alert alert-info">
+        Open these pages in a browser from the <code>docs/</code> folder. Checklist progress is saved in your browser's local storage (HTML defaults reflect the review).
+      </div>
+
+      <section class="section">
+        <div class="grid grid-3">
+          <div class="card stat-card">
+            <div class="stat-value" data-global-progress>0%</div>
+            <div class="stat-label">Overall Plan Progress</div>
+            <div class="progress-bar" style="margin-top: 1rem;">
+              <div class="progress-fill" data-global-progress-bar style="width: 0%;"></div>
+            </div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-value">~98%</div>
+            <div class="stat-label">Backend API Complete</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-value">~95%</div>
+            <div class="stat-label">Frontend SPA</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Component Status</h3>
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>✅ Done</h3>
+            <ul>
+              <li>Auth &amp; Identity (JWT, roles, GetMe, CORS, secrets)</li>
+              <li>Full domain APIs — teams, coaches, players, matches, goals, cards, stats, standings, bets</li>
+              <li>Angular SPA — fixtures, standings, bets, leaderboard, user dashboard, admin hub / live console</li>
+              <li>Tests, Docker Compose, health checks, Serilog, GitHub Actions CI</li>
+              <li>MCP read-only database server</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>⏳ Remaining</h3>
+            <ul>
+              <li>External football API — deferred (no free providers); Admin live console covers manual scoring</li>
+              <li>Extend offline import after each new finished knockout match (SF2 / 3rd / Final)</li>
+              <li>Phase 8 / knockout: run <code>dotnet test</code> when approved</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Phase snapshot</h3>
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>Phase</th><th>Name</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td><a href="roadmap.html#phase-1">Foundation &amp; Auth</a></td><td><span class="badge badge-done">Done</span></td></tr>
+              <tr><td>2</td><td><a href="roadmap.html#phase-2">Tournament Setup APIs</a></td><td><span class="badge badge-done">Done</span></td></tr>
+              <tr><td>3</td><td><a href="roadmap.html#phase-3">Match Lifecycle</a></td><td><span class="badge badge-done">Done</span></td></tr>
+              <tr><td>4</td><td><a href="roadmap.html#phase-4">Betting Module</a></td><td><span class="badge badge-done">Done</span></td></tr>
+              <tr><td>5</td><td><a href="roadmap.html#phase-5">Frontend SPA</a></td><td><span class="badge badge-done">Done</span></td></tr>
+              <tr><td>6</td><td><a href="roadmap.html#phase-6">Quality &amp; Ops</a></td><td><span class="badge badge-done">Done</span></td></tr>
+              <tr><td>7</td><td><a href="roadmap.html#phase-7">Post-Launch / Live</a></td><td><span class="badge badge-partial">1 deferred</span></td></tr>
+              <tr><td>8</td><td><a href="roadmap.html#phase-8">User &amp; Admin Dashboards</a></td><td><span class="badge badge-done">Done</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Quick Navigation</h3>
+        <div class="quick-links">
+          <a href="roadmap.html" class="quick-link">
+            <h4>🗺️ Completion Roadmap</h4>
+            <p>8 phases with checklists reflecting the latest code review.</p>
+          </a>
+          <a href="workflow.html" class="quick-link">
+            <h4>⚙️ Dev Workflow</h4>
+            <p>Setup, migrations, API development, and testing steps.</p>
+          </a>
+          <a href="api-status.html" class="quick-link">
+            <h4>🔌 API Status</h4>
+            <p>All domain controllers wired — coverage matrix.</p>
+          </a>
+          <a href="data-model.html" class="quick-link">
+            <h4>🗄️ Data Model</h4>
+            <p>Entity relationships and table inventory.</p>
+          </a>
+          <a href="overview.html" class="quick-link">
+            <h4>📋 System Overview</h4>
+            <p>Tech stack, folder structure, and architecture.</p>
+          </a>
+          <a href="changes-review.html" class="quick-link">
+            <h4>🔍 Changes Review</h4>
+            <p>Phase 8 dashboards (10/10); Phase 7 bugfixes; prior phases.</p>
+          </a>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Recommended next work</h3>
+        <div class="card">
+          <div class="flow-step">
+            <div class="flow-number">1</div>
+            <div class="flow-content">
+              <h4>Run tests &amp; commit</h4>
+              <p>Approve <code>dotnet test</code> for Phase 8 + knockout, then commit when ready. External live API stays deferred.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-number">2</div>
+            <div class="flow-content">
+              <h4>Optional polish</h4>
+              <p>SQL demo fixture for WC 2026 sample data, or revisit an external live scores API if a provider becomes viable.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Local Dev URLs</h3>
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>Service</th><th>URL</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>API (Swagger)</td>
+                <td><code>http://localhost:5055/swagger</code></td>
+                <td><span class="badge badge-done">Available</span></td>
+              </tr>
+              <tr>
+                <td>Frontend (Angular)</td>
+                <td><code>http://localhost:4200</code></td>
+                <td><span class="badge badge-done">Built</span></td>
+              </tr>
+              <tr>
+                <td>Health</td>
+                <td><code>http://localhost:5055/health</code></td>
+                <td><span class="badge badge-done">Available</span></td>
+              </tr>
+              <tr>
+                <td>PostgreSQL</td>
+                <td>User Secrets / Docker Compose</td>
+                <td><span class="badge badge-done">Configured</span></td>
+              </tr>
+              <tr>
+                <td>MCP Database Tools</td>
+                <td>Cursor MCP — <code>worldcup-database</code></td>
+                <td><span class="badge badge-done">Complete</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="assets/app.js"></script>
+</body>
+</html>

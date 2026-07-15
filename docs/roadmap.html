@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorldCup System — Completion Roadmap</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h1>⚽ WorldCup System</h1>
+        <p>Project planning &amp; workflow</p>
+      </div>
+      <nav>
+        <a href="index.html" class="nav-link"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="overview.html" class="nav-link"><span class="nav-icon">📋</span> System Overview</a>
+        <a href="roadmap.html" class="nav-link"><span class="nav-icon">🗺️</span> Completion Roadmap</a>
+        <a href="workflow.html" class="nav-link"><span class="nav-icon">⚙️</span> Dev Workflow</a>
+        <a href="api-status.html" class="nav-link"><span class="nav-icon">🔌</span> API Status</a>
+        <a href="data-model.html" class="nav-link"><span class="nav-icon">🗄️</span> Data Model</a>
+        <a href="changes-review.html" class="nav-link"><span class="nav-icon">🔍</span> Changes Review</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="page-header">
+        <h2>Completion Roadmap</h2>
+        <p>Eight phases. Checkboxes below reflect a <strong>code review as of 15 Jul 2026</strong> — adjust locally if needed; progress persists in your browser.</p>
+      </header>
+
+      <div class="alert alert-info" style="margin-bottom: 1.5rem;">
+        <strong>Where you are:</strong> Phases 1–6 and 8 are complete in code. Phase 7 has only the deferred external football API left (knockout bracket + offline WC 2026 results import done). See <a href="changes/wc2026-live-data.html">WC 2026 live data</a>. Cancelled items (CSV seed UI, stadium CSV, reference admin UI) count as done.
+      </div>
+
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="progress-label">
+          <span>Overall progress: <strong data-global-done>0</strong> / <strong data-global-total>0</strong> tasks</span>
+          <span><strong data-global-progress>0%</strong></span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" data-global-progress-bar style="width: 0%;"></div>
+        </div>
+        <div class="actions">
+          <button id="reset-progress" class="btn btn-secondary btn-sm">Reset all progress</button>
+        </div>
+      </div>
+
+      <!-- Phase 1 -->
+      <section class="phase done-phase" id="phase-1">
+        <div class="phase-header">
+          <h3>Phase 1 — Foundation &amp; Auth Hardening</h3>
+          <span class="badge badge-done">Done</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.75rem;">
+          Core infrastructure — Identity, auth, CORS, secrets, cleanup.
+        </p>
+        <div class="progress-label phase-progress-label">0 / 0 tasks (0%)</div>
+        <div class="progress-bar"><div class="progress-fill phase-progress-fill" style="width: 0%;"></div></div>
+        <ul class="task-list" data-storage-key="phase-1">
+          <li class="task-item" data-task-id="p1-identity">
+            <input type="checkbox" id="p1-identity" checked><label for="p1-identity">Fix Identity integration — align <code>User : IdentityUser&lt;long&gt;</code> with controllers and role seeding<div class="task-meta">Program.cs, UserController.cs, User.cs</div></label>
+          </li>
+          <li class="task-item" data-task-id="p1-getbyid">
+            <input type="checkbox" id="p1-getbyid" checked><label for="p1-getbyid">Implement <code>Repository.GetByIdAsync</code> (remove NotImplementedException)<div class="task-meta">Data/Repos/Repository.cs</div></label>
+          </li>
+          <li class="task-item" data-task-id="p1-authorize">
+            <input type="checkbox" id="p1-authorize" checked><label for="p1-authorize">Add <code>[Authorize]</code> and role policies to mutating endpoints<div class="task-meta">All controllers</div></label>
+          </li>
+          <li class="task-item" data-task-id="p1-cors">
+            <input type="checkbox" id="p1-cors" checked><label for="p1-cors">Configure CORS for <code>http://localhost:4200</code><div class="task-meta">Program.cs — AngularDev</div></label>
+          </li>
+          <li class="task-item" data-task-id="p1-email">
+            <input type="checkbox" id="p1-email" checked><label for="p1-email">Resolve <code>RequireConfirmedAccount</code> — disable or add email confirmation<div class="task-meta">Program.cs — set to false</div></label>
+          </li>
+          <li class="task-item" data-task-id="p1-cleanup">
+            <input type="checkbox" id="p1-cleanup" checked><label for="p1-cleanup">Remove <code>WeatherForecastController</code> and fix <code>CityService.Cities</code> stub<div class="task-meta">Controllers/, Core/Services/Cities/</div></label>
+          </li>
+          <li class="task-item" data-task-id="p1-secrets">
+            <input type="checkbox" id="p1-secrets" checked><label for="p1-secrets">Move secrets to User Secrets / environment variables<div class="task-meta">UserSecretsId; no secrets in appsettings.json</div></label>
+          </li>
+          <li class="task-item" data-task-id="p1-readme">
+            <input type="checkbox" id="p1-readme" checked><label for="p1-readme">Add root README with setup, migrations, and API overview<div class="task-meta">README.md at workspace root</div></label>
+          </li>
+          <li class="task-item" data-task-id="p1-dto-ids">
+            <input type="checkbox" id="p1-dto-ids" checked><label for="p1-dto-ids">Add missing IDs to list DTOs (City, Stadium, Group, WorldCup)<div class="task-meta">Core/DTOs/</div></label>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Phase 2 -->
+      <section class="phase done-phase" id="phase-2">
+        <div class="phase-header">
+          <h3>Phase 2 — Tournament Setup APIs</h3>
+          <span class="badge badge-done">Done</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.75rem;">
+          Teams, coaches, players, validation. Bulk stadium CSV cancelled.
+        </p>
+        <div class="progress-label phase-progress-label">0 / 0 tasks (0%)</div>
+        <div class="progress-bar"><div class="progress-fill phase-progress-fill" style="width: 0%;"></div></div>
+        <ul class="task-list" data-storage-key="phase-2">
+          <li class="task-item" data-task-id="p2-repos">
+            <input type="checkbox" id="p2-repos" checked><label for="p2-repos">Extend RepositoryManager with Team, Coach, Player, PlayerPosition repos<div class="task-meta">Data/Repos/RepositoryManager.cs</div></label>
+          </li>
+          <li class="task-item" data-task-id="p2-team-dto">
+            <input type="checkbox" id="p2-team-dto" checked><label for="p2-team-dto">Create Team DTOs and TeamService<div class="task-meta">Core/DTOs/, Core/Services/Teams/</div></label>
+          </li>
+          <li class="task-item" data-task-id="p2-team-api">
+            <input type="checkbox" id="p2-team-api" checked><label for="p2-team-api">Build TeamController — CRUD + assign to group<div class="task-meta">Controllers/TeamController.cs — GetTeams returns all; client filters by WC</div></label>
+          </li>
+          <li class="task-item" data-task-id="p2-coach">
+            <input type="checkbox" id="p2-coach" checked><label for="p2-coach">Build CoachService + CoachController (linked to team)<div class="task-meta">Core/Services/Coaches/, Controllers/</div></label>
+          </li>
+          <li class="task-item" data-task-id="p2-position">
+            <input type="checkbox" id="p2-position" checked><label for="p2-position">Seed PlayerPosition lookup + list endpoint<div class="task-meta">GK/DEF/MID/FWD seeded; PlayerPositionController</div></label>
+          </li>
+          <li class="task-item" data-task-id="p2-player">
+            <input type="checkbox" id="p2-player" checked><label for="p2-player">Build PlayerService + PlayerController — squad management<div class="task-meta">GetPlayersByTeam</div></label>
+          </li>
+          <li class="task-item" data-task-id="p2-stadium-csv">
+            <input type="checkbox" id="p2-stadium-csv" checked><label for="p2-stadium-csv"><s>Add bulk stadium import from CSV</s> — cancelled; stadiums via <code>AddStadium</code><div class="task-meta">Cancelled</div></label>
+          </li>
+          <li class="task-item" data-task-id="p2-validation">
+            <input type="checkbox" id="p2-validation" checked><label for="p2-validation">Add input validation and consistent error responses<div class="task-meta">DataAnnotations + ApiErrorHelper</div></label>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Phase 3 -->
+      <section class="phase done-phase" id="phase-3">
+        <div class="phase-header">
+          <h3>Phase 3 — Match Lifecycle</h3>
+          <span class="badge badge-done">Done</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.75rem;">
+          Scheduling, goals, cards, stats, standings, fixtures, and knockout bracket progression.
+        </p>
+        <div class="progress-label phase-progress-label">0 / 0 tasks (0%)</div>
+        <div class="progress-bar"><div class="progress-fill phase-progress-fill" style="width: 0%;"></div></div>
+        <ul class="task-list" data-storage-key="phase-3">
+          <li class="task-item" data-task-id="p3-match-crud">
+            <input type="checkbox" id="p3-match-crud" checked><label for="p3-match-crud">MatchService + MatchController — create/update schedule (teams, stadium, date)<div class="task-meta">MatchStage enum supports Group → Final scheduling</div></label>
+          </li>
+          <li class="task-item" data-task-id="p3-goals">
+            <input type="checkbox" id="p3-goals" checked><label for="p3-goals">Record goals — scorer, minute, own-goal flag<div class="task-meta">GoalController / GoalService</div></label>
+          </li>
+          <li class="task-item" data-task-id="p3-cards">
+            <input type="checkbox" id="p3-cards" checked><label for="p3-cards">Record yellow/red cards<div class="task-meta">CardController / CardService</div></label>
+          </li>
+          <li class="task-item" data-task-id="p3-stats">
+            <input type="checkbox" id="p3-stats" checked><label for="p3-stats">TeamStats updates — possession, shots, points per match<div class="task-meta">TeamStatsController</div></label>
+          </li>
+          <li class="task-item" data-task-id="p3-standings">
+            <input type="checkbox" id="p3-standings" checked><label for="p3-standings">Group standings calculation from match results<div class="task-meta">StandingController — group stage only</div></label>
+          </li>
+          <li class="task-item" data-task-id="p3-fixtures">
+            <input type="checkbox" id="p3-fixtures" checked><label for="p3-fixtures">Public fixtures endpoint — list by WorldCup, group, date<div class="task-meta">+ GetLiveSnapshot</div></label>
+          </li>
+          <li class="task-item" data-task-id="p3-knockout">
+            <input type="checkbox" id="p3-knockout" checked><label for="p3-knockout">Knockout bracket progression (auto-advance winners, bracket UI)<div class="task-meta">KnockoutService + /bracket + admin GenerateBracket</div></label>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Phase 4 -->
+      <section class="phase done-phase" id="phase-4">
+        <div class="phase-header">
+          <h3>Phase 4 — Betting Module</h3>
+          <span class="badge badge-done">Done</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.75rem;">
+          Predictions, scoring (3/0), leaderboard, auto-resolve.
+        </p>
+        <div class="progress-label phase-progress-label">0 / 0 tasks (0%)</div>
+        <div class="progress-bar"><div class="progress-fill phase-progress-fill" style="width: 0%;"></div></div>
+        <ul class="task-list" data-storage-key="phase-4">
+          <li class="task-item" data-task-id="p4-place-bet">
+            <input type="checkbox" id="p4-place-bet" checked><label for="p4-place-bet">Place bet endpoint — authenticated user predicts match outcome<div class="task-meta">BetController.PlaceBet</div></label>
+          </li>
+          <li class="task-item" data-task-id="p4-view-bets">
+            <input type="checkbox" id="p4-view-bets" checked><label for="p4-view-bets">View user's bets and active predictions<div class="task-meta">GetMyBets, GetMyActiveBets, per-WC / per-match</div></label>
+          </li>
+          <li class="task-item" data-task-id="p4-resolve">
+            <input type="checkbox" id="p4-resolve" checked><label for="p4-resolve">Resolve bets after match completion → BetResult points<div class="task-meta">Auto-resolve from GoalService; Admin force resolve</div></label>
+          </li>
+          <li class="task-item" data-task-id="p4-leaderboard">
+            <input type="checkbox" id="p4-leaderboard" checked><label for="p4-leaderboard">Leaderboard / user rankings endpoint<div class="task-meta">LeaderboardService</div></label>
+          </li>
+          <li class="task-item" data-task-id="p4-rules">
+            <input type="checkbox" id="p4-rules" checked><label for="p4-rules">Define and document betting scoring rules<div class="task-meta">BetScoringRules + GetScoringRules API</div></label>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Phase 5 -->
+      <section class="phase done-phase" id="phase-5">
+        <div class="phase-header">
+          <h3>Phase 5 — Frontend SPA</h3>
+          <span class="badge badge-done">Done</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.75rem;">
+          Angular app at <code>WorldCup-System/worldcup-client</code> (port 4200). Reference admin UI and CSV seed cancelled.
+        </p>
+        <div class="progress-label phase-progress-label">0 / 0 tasks (0%)</div>
+        <div class="progress-bar"><div class="progress-fill phase-progress-fill" style="width: 0%;"></div></div>
+        <ul class="task-list" data-storage-key="phase-5">
+          <li class="task-item" data-task-id="p5-scaffold">
+            <input type="checkbox" id="p5-scaffold" checked><label for="p5-scaffold">Scaffold Angular project (<code>worldcup-client</code>)<div class="task-meta">Port 4200 — solution client under WorldCup-System/</div></label>
+          </li>
+          <li class="task-item" data-task-id="p5-auth">
+            <input type="checkbox" id="p5-auth" checked><label for="p5-auth">Auth module — login, JWT interceptor, route guards<div class="task-meta">+ register, adminGuard</div></label>
+          </li>
+          <li class="task-item" data-task-id="p5-admin-ref">
+            <input type="checkbox" id="p5-admin-ref" checked><label for="p5-admin-ref"><s>Admin: countries, cities, stadiums management UI</s> — cancelled; list APIs for dropdowns<div class="task-meta">Cancelled</div></label>
+          </li>
+          <li class="task-item" data-task-id="p5-admin-teams">
+            <input type="checkbox" id="p5-admin-teams" checked><label for="p5-admin-teams">Admin: teams, coaches, squad management<div class="task-meta">/admin/teams</div></label>
+          </li>
+          <li class="task-item" data-task-id="p5-schedule">
+            <input type="checkbox" id="p5-schedule" checked><label for="p5-schedule">Admin: match scheduling UI<div class="task-meta">/admin/schedule</div></label>
+          </li>
+          <li class="task-item" data-task-id="p5-public">
+            <input type="checkbox" id="p5-public" checked><label for="p5-public">Public: fixtures, live scores, group standings<div class="task-meta">/fixtures, /standings — 30s live poll</div></label>
+          </li>
+          <li class="task-item" data-task-id="p5-betting-ui">
+            <input type="checkbox" id="p5-betting-ui" checked><label for="p5-betting-ui">Betting UI and leaderboard page<div class="task-meta">/bets, /leaderboard</div></label>
+          </li>
+          <li class="task-item" data-task-id="p5-seed">
+            <input type="checkbox" id="p5-seed" checked><label for="p5-seed"><s>Wire CSV seed data for demo tournament</s> — cancelled<div class="task-meta">Cancelled</div></label>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Phase 6 -->
+      <section class="phase done-phase" id="phase-6">
+        <div class="phase-header">
+          <h3>Phase 6 — Quality &amp; Operations</h3>
+          <span class="badge badge-done">Done</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.75rem;">
+          Unit/integration tests, Docker, health, Serilog, GitHub Actions CI. Demo seed script cancelled.
+        </p>
+        <div class="progress-label phase-progress-label">0 / 0 tasks (0%)</div>
+        <div class="progress-bar"><div class="progress-fill phase-progress-fill" style="width: 0%;"></div></div>
+        <ul class="task-list" data-storage-key="phase-6">
+          <li class="task-item" data-task-id="p6-unit">
+            <input type="checkbox" id="p6-unit" checked><label for="p6-unit">Unit tests for Core services<div class="task-meta">WorldCup-System.Tests/Services/</div></label>
+          </li>
+          <li class="task-item" data-task-id="p6-integration">
+            <input type="checkbox" id="p6-integration" checked><label for="p6-integration">Integration tests for API controllers<div class="task-meta">WebApplicationFactory + controller tests</div></label>
+          </li>
+          <li class="task-item" data-task-id="p6-docker">
+            <input type="checkbox" id="p6-docker" checked><label for="p6-docker">Docker Compose — API + PostgreSQL<div class="task-meta">docker-compose.yml, Dockerfile</div></label>
+          </li>
+          <li class="task-item" data-task-id="p6-health">
+            <input type="checkbox" id="p6-health" checked><label for="p6-health">Health checks and structured logging<div class="task-meta">/health + Serilog JSON console</div></label>
+          </li>
+          <li class="task-item" data-task-id="p6-ci">
+            <input type="checkbox" id="p6-ci" checked><label for="p6-ci">CI pipeline — build, test, lint<div class="task-meta">.github/workflows/ci.yml</div></label>
+          </li>
+          <li class="task-item" data-task-id="p6-seed-script">
+            <input type="checkbox" id="p6-seed-script" checked><label for="p6-seed-script">Offline SQL/Python fixtures for WC 2026 groups and finished matches<div class="task-meta">scripts/ under solution — not startup auto-seed</div></label>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Phase 7 -->
+      <section class="phase active-phase" id="phase-7">
+        <div class="phase-header">
+          <h3>Phase 7 — Post-Launch Bugfixes &amp; Live Data</h3>
+          <span class="badge badge-partial">1 deferred</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.75rem;">
+          Auth/session, live refresh, knockout bracket, and offline WC 2026 groups + finished schedule import done. <strong>Still open:</strong> external football API (deferred). See <a href="changes/phase-7-bugfixes.html">Phase 7 log</a> · <a href="changes/wc2026-live-data.html">WC 2026 data</a>.
+        </p>
+        <div class="progress-label phase-progress-label">0 / 0 tasks (0%)</div>
+        <div class="progress-bar"><div class="progress-fill phase-progress-fill" style="width: 0%;"></div></div>
+        <ul class="task-list" data-storage-key="phase-7">
+          <li class="task-item" data-task-id="p7-auth-session">
+            <input type="checkbox" id="p7-auth-session" checked><label for="p7-auth-session">Fix login session — JWT <code>sub</code> claim + <code>GetMe</code> resolves user correctly<div class="task-meta">CurrentUserResolver, MapInboundClaims</div></label>
+          </li>
+          <li class="task-item" data-task-id="p7-my-bets-guard">
+            <input type="checkbox" id="p7-my-bets-guard" checked><label for="p7-my-bets-guard">Fix My Bets redirect to login (same auth root cause)<div class="task-meta">authGuard + GetMe</div></label>
+          </li>
+          <li class="task-item" data-task-id="p7-wc2026-select">
+            <input type="checkbox" id="p7-wc2026-select" checked><label for="p7-wc2026-select">Default to FIFA World Cup 2026 (June 2026) not 2022 or duplicate year<div class="task-meta">worldcup-context.service.ts</div></label>
+          </li>
+          <li class="task-item" data-task-id="p7-fixtures-seed">
+            <input type="checkbox" id="p7-fixtures-seed" checked><label for="p7-fixtures-seed">Offline WC 2026 data — groups A–L (48 teams) + finished fixtures/scores through SF1<div class="task-meta">scripts/seed-wc2026-groups.sql · import_wc2026_finished_matches.py · RoundOf32 stage</div></label>
+          </li>
+          <li class="task-item" data-task-id="p7-live-refresh">
+            <input type="checkbox" id="p7-live-refresh" checked><label for="p7-live-refresh">Auto-refresh fixtures while matches are live<div class="task-meta">fixtures — 30s polling + GetLiveSnapshot</div></label>
+          </li>
+          <li class="task-item" data-task-id="p7-leaderboard-auto">
+            <input type="checkbox" id="p7-leaderboard-auto" checked><label for="p7-leaderboard-auto">Auto-resolve bets when matches finish; show active bettors on leaderboard<div class="task-meta">GoalService, LeaderboardService</div></label>
+          </li>
+          <li class="task-item" data-task-id="p7-external-api">
+            <input type="checkbox" id="p7-external-api"><label for="p7-external-api">External football API (deferred — no free providers)<div class="task-meta">Deferred — use Admin Teams / Schedule / live console</div></label>
+          </li>
+          <li class="task-item" data-task-id="p7-knockout">
+            <input type="checkbox" id="p7-knockout" checked><label for="p7-knockout">Knockout bracket fixtures and standings tiebreakers<div class="task-meta">Feeder auto-advance + H2H standings + bracket UI</div></label>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Phase 8 -->
+      <section class="phase done-phase" id="phase-8">
+        <div class="phase-header">
+          <h3>Phase 8 — User &amp; Admin Dashboards</h3>
+          <span class="badge badge-done">Done</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.75rem;">
+          User/admin hubs, live console, bet resolve hardening. See <a href="changes-review.html">Changes Review</a> · <a href="changes/phase-8-dashboards.html">Phase 8 detail</a>.
+        </p>
+        <div class="progress-label phase-progress-label">0 / 0 tasks (0%)</div>
+        <div class="progress-bar"><div class="progress-fill phase-progress-fill" style="width: 0%;"></div></div>
+        <ul class="task-list" data-storage-key="phase-8">
+          <li class="task-item" data-task-id="p8-dev-roles">
+            <input type="checkbox" id="p8-dev-roles" checked><label for="p8-dev-roles">Dev seed Admin + User test accounts for both dashboards<div class="task-meta">Program.cs DevAdmin / DevUser</div></label>
+          </li>
+          <li class="task-item" data-task-id="p8-login-return">
+            <input type="checkbox" id="p8-login-return" checked><label for="p8-login-return">Login return URL — My Bets / deep links restore after login<div class="task-meta">auth.guard + login queryParams</div></label>
+          </li>
+          <li class="task-item" data-task-id="p8-user-dashboard">
+            <input type="checkbox" id="p8-user-dashboard" checked><label for="p8-user-dashboard">User dashboard — profile summary, open bets, points rank, quick links<div class="task-meta">/dashboard</div></label>
+          </li>
+          <li class="task-item" data-task-id="p8-bet-auto-resolve">
+            <input type="checkbox" id="p8-bet-auto-resolve" checked><label for="p8-bet-auto-resolve">Bet resolution hardening — auto-resolve at FT; re-resolve after DeleteGoal<div class="task-meta">Per-user 3/0 breakdown; bulk resolve</div></label>
+          </li>
+          <li class="task-item" data-task-id="p8-admin-leaderboard">
+            <input type="checkbox" id="p8-admin-leaderboard" checked><label for="p8-admin-leaderboard">Admin: resolve finished matches / refresh leaderboard in UI<div class="task-meta">Schedule + hub bulk resolve</div></label>
+          </li>
+          <li class="task-item" data-task-id="p8-live-snapshot">
+            <input type="checkbox" id="p8-live-snapshot" checked><label for="p8-live-snapshot">Live snapshot API — batch live/finished scores + recent events<div class="task-meta">GET Match/GetLiveSnapshot</div></label>
+          </li>
+          <li class="task-item" data-task-id="p8-live-action-api">
+            <input type="checkbox" id="p8-live-action-api" checked><label for="p8-live-action-api">Live action write path — admin records goals/cards/stats from one surface<div class="task-meta">goal-api / card-api / team-stats-api</div></label>
+          </li>
+          <li class="task-item" data-task-id="p8-admin-live-console">
+            <input type="checkbox" id="p8-admin-live-console" checked><label for="p8-admin-live-console">Admin live console — record goals/cards/stats + event timeline<div class="task-meta">/admin/live/{matchId}</div></label>
+          </li>
+          <li class="task-item" data-task-id="p8-admin-team-import">
+            <input type="checkbox" id="p8-admin-team-import" checked><label for="p8-admin-team-import">Admin: manual team entry into groups (no CSV)<div class="task-meta">Admin Teams UI</div></label>
+          </li>
+          <li class="task-item" data-task-id="p8-admin-hub">
+            <input type="checkbox" id="p8-admin-hub" checked><label for="p8-admin-hub">Admin dashboard hub — ops cards linking teams, schedule, live, resolve<div class="task-meta">/admin</div></label>
+          </li>
+        </ul>
+      </section>
+
+      <section class="section" id="whats-left">
+        <h3 class="section-title">What's left to do</h3>
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>Item</th><th>Phase</th><th>Priority</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>External football API</td>
+                <td><a href="#phase-7">7</a></td>
+                <td><span class="badge badge-todo">Deferred</span></td>
+                <td>No free providers; offline import + Admin live console cover ops for now</td>
+              </tr>
+              <tr>
+                <td>Import remaining knockout results (SF2 / 3rd / Final)</td>
+                <td><a href="#phase-7">7</a></td>
+                <td><span class="badge badge-partial">Ops</span></td>
+                <td>Re-run / extend <code>import_wc2026_finished_matches.py</code> after each finished match</td>
+              </tr>
+              <tr>
+                <td>Phase 8 + knockout <code>dotnet test</code></td>
+                <td><a href="#phase-8">8</a></td>
+                <td><span class="badge badge-partial">Ops</span></td>
+                <td>Run tests when you approve (builds as part of test)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="assets/app.js"></script>
+</body>
+</html>

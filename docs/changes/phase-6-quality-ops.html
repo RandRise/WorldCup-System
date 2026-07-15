@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorldCup System — Phase 6 Quality &amp; Operations Changes</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h1>⚽ WorldCup System</h1>
+        <p>Project planning &amp; workflow</p>
+      </div>
+      <nav>
+        <a href="../index.html" class="nav-link"><span class="nav-icon">🏠</span> Dashboard</a>
+        <a href="../overview.html" class="nav-link"><span class="nav-icon">📋</span> System Overview</a>
+        <a href="../roadmap.html" class="nav-link"><span class="nav-icon">🗺️</span> Completion Roadmap</a>
+        <a href="../workflow.html" class="nav-link"><span class="nav-icon">⚙️</span> Dev Workflow</a>
+        <a href="../api-status.html" class="nav-link"><span class="nav-icon">🔌</span> API Status</a>
+        <a href="../data-model.html" class="nav-link"><span class="nav-icon">🗄️</span> Data Model</a>
+        <a href="../changes-review.html" class="nav-link active"><span class="nav-icon">🔍</span> Changes Review</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="page-header">
+        <h2>Phase 6 — Quality &amp; Operations</h2>
+        <p>Full diff detail for health checks, Serilog, Docker, CI, integration tests, unit test expansion, and demo seed script. <a href="../changes-review.html">← Back to Changes Review</a></p>
+      </header>
+
+      <div class="alert alert-info">
+        <strong>Phase 6 complete (6 Jul 2026).</strong> All roadmap tasks done. <code>dotnet test</code> — <strong>210 passed</strong>. Docker secrets externalized; API healthcheck added; auth integration tests added.
+      </div>
+
+      <section class="section">
+        <h3 class="section-title">Review Gate — Cleared</h3>
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>Blocker</th><th>Severity</th><th>Status</th><th>Resolution</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Phase 6 source untracked / unstaged</td>
+                <td><span class="badge badge-risk-high">Critical</span></td>
+                <td><span class="badge badge-done">Cleared</span></td>
+                <td>All paths committed in gate run</td>
+              </tr>
+              <tr>
+                <td>Integration test suite not gate-verified</td>
+                <td><span class="badge badge-risk-high">High</span></td>
+                <td><span class="badge badge-done">Cleared</span></td>
+                <td>208 tests passed including 2 integration tests</td>
+              </tr>
+              <tr>
+                <td><code>BuildServiceProvider</code> in factory <code>ConfigureServices</code></td>
+                <td><span class="badge badge-risk-high">High</span></td>
+                <td><span class="badge badge-done">Cleared</span></td>
+                <td>Removed; <code>Program.cs</code> <code>EnsureCreatedAsync</code> in Testing env handles schema</td>
+              </tr>
+              <tr>
+                <td>CI lint step missing</td>
+                <td><span class="badge badge-risk-medium">Medium</span></td>
+                <td><span class="badge badge-done">Cleared</span></td>
+                <td><code>dotnet format --verify-no-changes</code> + <code>npm run lint</code> (angular-eslint) in <code>ci.yml</code></td>
+              </tr>
+              <tr>
+                <td>Docker compose dev secrets</td>
+                <td><span class="badge badge-risk-medium">Medium</span></td>
+                <td><span class="badge badge-done">Cleared</span></td>
+                <td><code>.env.example</code> + gitignored <code>.env</code>; Compose uses <code>${VAR:-default}</code> substitution</td>
+              </tr>
+              <tr>
+                <td>Minimal integration coverage</td>
+                <td><span class="badge badge-risk-medium">Medium</span></td>
+                <td><span class="badge badge-done">Cleared</span></td>
+                <td><code>AuthIntegrationTests</code> added; factory uses unique in-memory DB per instance</td>
+              </tr>
+              <tr>
+                <td>No API service healthcheck in Compose</td>
+                <td><span class="badge badge-risk-medium">Medium</span></td>
+                <td><span class="badge badge-done">Cleared</span></td>
+                <td>API service <code>curl -f http://localhost:8080/health</code>; Dockerfile installs curl</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Architecture — Operations Stack</h3>
+        <div class="card">
+          <div class="diagram">API host (Program.cs)
+─────────────────────────────────────────────────────────────
+Serilog             →  Compact JSON to console (config-driven levels)
+Health checks       →  GET /health — EF DbContext + Npgsql (prod/dev/docker)
+Testing env         →  In-memory EF, EnsureCreated, skip Npgsql check
+WebApplicationFactory → public partial class Program for integration host
+
+Docker Compose
+─────────────────────────────────────────────────────────────
+db (postgres:16)    →  WorldCupDb, pg_isready healthcheck, named volume
+api (Dockerfile)    →  :5055→:8080, curl /health healthcheck, env from .env
+.env.example        →  documented local demo secrets (copy to .env)
+
+CI (.github/workflows/ci.yml)
+─────────────────────────────────────────────────────────────
+dotnet job          →  restore → build → format verify → test
+angular job         →  npm ci → lint → Karma headless
+
+Ops script
+─────────────────────────────────────────────────────────────
+seed-worldcup-demo.ps1 → /health wait → User/Login → Seed/LoadWorldCup2026Demo</div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">Phase 6 Roadmap Mapping</h3>
+        <div class="card">
+          <table>
+            <thead><tr><th>Task</th><th>Status</th><th>Evidence</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><code>p6-unit</code> — Unit tests for Core services</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>Services/Countries/CountryServiceTests.cs</code> — 4 new facts; fills gap in country service coverage alongside existing 35 test classes</td>
+              </tr>
+              <tr>
+                <td><code>p6-integration</code> — Integration tests for API controllers</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>Integration/WorldCupWebApplicationFactory.cs</code>, <code>ApiIntegrationTests.cs</code>, <code>HealthEndpointIntegrationTests.cs</code>, <code>AuthIntegrationTests.cs</code> — 4 integration facts</td>
+              </tr>
+              <tr>
+                <td><code>p6-docker</code> — Docker Compose — API + PostgreSQL</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>Dockerfile</code> (curl for healthcheck), <code>docker-compose.yml</code> (env vars + API healthcheck), <code>.env.example</code>, <code>.dockerignore</code></td>
+              </tr>
+              <tr>
+                <td><code>p6-health</code> — Health checks and structured logging</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td>Serilog.AspNetCore + Compact formatter; AspNetCore.HealthChecks.NpgSql; EF health check; <code>/health</code> endpoint</td>
+              </tr>
+              <tr>
+                <td><code>p6-ci</code> — CI pipeline — build, test, lint</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>ci.yml</code> — dotnet restore/build/<strong>format</strong>/test + Angular <code>npm run lint</code> + headless Karma</td>
+              </tr>
+              <tr>
+                <td><code>p6-seed-script</code> — Database seed script or migration data fixtures</td>
+                <td><span class="badge badge-done">Done</span></td>
+                <td><code>scripts/seed-worldcup-demo.ps1</code></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="actions" style="margin-top: 1rem;">
+            <a href="../roadmap.html#phase-6" class="btn btn-secondary btn-sm">Open Phase 6 checklist</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="modified-diff">
+        <h3 class="section-title">Modified Files — Git Diff</h3>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>WorldCup-System/Program.cs</h4>
+            <span class="badge badge-done">p6-health · p6-integration</span>
+          </div>
+          <p class="change-desc">Serilog host configuration; health checks (EF always, Npgsql when not Testing); Testing branch uses <code>EnsureCreatedAsync</code> instead of <code>MigrateAsync</code>; exposes <code>/health</code>; <code>public partial class Program</code> for <code>WebApplicationFactory&lt;Program&gt;</code>.</p>
+          <div class="diff-block"><span class="diff-add">+using Serilog;</span>
+<span class="diff-add">+using Serilog.Formatting.Compact;</span>
+<span class="diff-add">+builder.Host.UseSerilog((context, services, loggerConfiguration) =&gt;</span>
+<span class="diff-add">+{</span>
+<span class="diff-add">+    loggerConfiguration</span>
+<span class="diff-add">+        .ReadFrom.Configuration(context.Configuration)</span>
+<span class="diff-add">+        .ReadFrom.Services(services)</span>
+<span class="diff-add">+        .Enrich.FromLogContext()</span>
+<span class="diff-add">+        .WriteTo.Console(new RenderedCompactJsonFormatter());</span>
+<span class="diff-add">+});</span>
+<span class="diff-add">+IHealthChecksBuilder healthChecksBuilder = builder.Services.AddHealthChecks()</span>
+<span class="diff-add">+    .AddDbContextCheck&lt;ApplicationDbContext&gt;("database");</span>
+<span class="diff-add">+if (!builder.Environment.IsEnvironment("Testing"))</span>
+<span class="diff-add">+    healthChecksBuilder.AddNpgSql(connectionString, name: "postgresql");</span>
+<span class="diff-add">+    if (app.Environment.IsEnvironment("Testing"))</span>
+<span class="diff-add">+        await dbContext.Database.EnsureCreatedAsync();</span>
+<span class="diff-add">+    else</span>
+<span class="diff-add">+        await dbContext.Database.MigrateAsync();</span>
+<span class="diff-add">+app.MapHealthChecks("/health");</span>
+<span class="diff-add">+public partial class Program { }</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>WorldCup-System/appsettings.json</h4>
+            <span class="badge badge-done">p6-health</span>
+          </div>
+          <p class="change-desc">Serilog minimum level configuration block added above existing Logging section.</p>
+          <div class="diff-block"><span class="diff-add">+  "Serilog": {</span>
+<span class="diff-add">+    "MinimumLevel": {</span>
+<span class="diff-add">+      "Default": "Information",</span>
+<span class="diff-add">+      "Override": {</span>
+<span class="diff-add">+        "Microsoft.AspNetCore": "Warning",</span>
+<span class="diff-add">+        "Microsoft.EntityFrameworkCore": "Warning"</span>
+<span class="diff-add">+      }</span>
+<span class="diff-add">+    }</span>
+<span class="diff-add">+  },</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>WorldCup-System/WorldCup-System.csproj</h4>
+            <span class="badge badge-done">p6-health</span>
+          </div>
+          <p class="change-desc">New NuGet packages for health checks and structured logging.</p>
+          <div class="diff-block"><span class="diff-add">+    &lt;PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="8.0.2" /&gt;</span>
+<span class="diff-add">+    &lt;PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="8.0.10" /&gt;</span>
+<span class="diff-add">+    &lt;PackageReference Include="Serilog.AspNetCore" Version="8.0.3" /&gt;</span>
+<span class="diff-add">+    &lt;PackageReference Include="Serilog.Formatting.Compact" Version="3.0.0" /&gt;</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>WorldCup-System.Tests/WorldCup-System.Tests.csproj</h4>
+            <span class="badge badge-done">p6-integration · p6-unit</span>
+          </div>
+          <p class="change-desc">Adds <code>Microsoft.AspNetCore.Mvc.Testing</code> for integration host; bumps Configuration.Binder to 8.0.2.</p>
+          <div class="diff-block"><span class="diff-add">+    &lt;PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.10" /&gt;</span>
+<span class="diff-del">-    &lt;PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.0" /&gt;</span>
+<span class="diff-add">+    &lt;PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.2" /&gt;</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="new-files">
+        <h3 class="section-title">New Files — Untracked</h3>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>Dockerfile</h4>
+            <span class="badge badge-done">p6-docker</span>
+          </div>
+          <p class="change-desc">Multi-stage build: SDK 8.0 restore/publish, aspnet 8.0 runtime, <code>ASPNETCORE_URLS=http://+:8080</code>, exposes 8080.</p>
+          <div class="diff-block"><span class="diff-add">FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build</span>
+<span class="diff-add">COPY WorldCup-System.sln ./</span>
+<span class="diff-add">RUN dotnet publish WorldCup-System/WorldCup-System.csproj -c Release -o /app/publish</span>
+<span class="diff-add">FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime</span>
+<span class="diff-add">ENV ASPNETCORE_URLS=http://+:8080</span>
+<span class="diff-add">EXPOSE 8080</span>
+<span class="diff-add">ENTRYPOINT ["dotnet", "WorldCup-System.dll"]</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>docker-compose.yml</h4>
+            <span class="badge badge-done">p6-docker</span>
+          </div>
+          <p class="change-desc">Two services: <code>db</code> (postgres:16-alpine, healthcheck, volume) and <code>api</code> (build from Dockerfile, port 5055:8080, connection string + JWT + DevAdmin + DevSeed env).</p>
+          <div class="diff-block"><span class="diff-add">  db:</span>
+<span class="diff-add">    image: postgres:16-alpine</span>
+<span class="diff-add">    healthcheck:</span>
+<span class="diff-add">      test: ["CMD-SHELL", "pg_isready -U postgres -d WorldCupDb"]</span>
+<span class="diff-add">  api:</span>
+<span class="diff-add">    build: { context: ., dockerfile: Dockerfile }</span>
+<span class="diff-add">    ports: ["5055:8080"]</span>
+<span class="diff-add">    environment:</span>
+<span class="diff-add">      ConnectionStrings__DefaultConnection: Host=db;Port=5432;...</span>
+<span class="diff-add">      DevSeed__WorldCup2026: "true"</span>
+<span class="diff-add">    depends_on:</span>
+<span class="diff-add">      db: { condition: service_healthy }</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>.dockerignore</h4>
+            <span class="badge badge-done">p6-docker</span>
+          </div>
+          <p class="change-desc">Excludes build artifacts, git, node_modules, and <code>worldcup-client/</code> from Docker build context.</p>
+          <div class="diff-block"><span class="diff-add">**/bin/</span>
+<span class="diff-add">**/obj/</span>
+<span class="diff-add">**/.git/</span>
+<span class="diff-add">worldcup-client/</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>.github/workflows/ci.yml</h4>
+            <span class="badge badge-done">p6-ci</span>
+          </div>
+          <p class="change-desc">Triggers on push/PR to <code>main</code> and <code>master</code>. Two parallel jobs: dotnet restore/build/test; Angular npm ci + headless Karma.</p>
+          <div class="diff-block"><span class="diff-add">on:</span>
+<span class="diff-add">  push: { branches: [main, master] }</span>
+<span class="diff-add">  pull_request: { branches: [main, master] }</span>
+<span class="diff-add">jobs:</span>
+<span class="diff-add">  dotnet:</span>
+<span class="diff-add">    - dotnet restore WorldCup-System.sln</span>
+<span class="diff-add">    - dotnet build WorldCup-System.sln --no-restore -c Release</span>
+<span class="diff-add">    - dotnet test WorldCup-System.Tests/WorldCup-System.Tests.csproj --no-build -c Release</span>
+<span class="diff-add">  angular:</span>
+<span class="diff-add">    working-directory: worldcup-client</span>
+<span class="diff-add">    - npm ci</span>
+<span class="diff-add">    - npm test -- --watch=false --browsers=ChromeHeadless</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>WorldCup-System.Tests/Integration/WorldCupWebApplicationFactory.cs</h4>
+            <span class="badge badge-done">p6-integration</span>
+          </div>
+          <p class="change-desc">Custom <code>WebApplicationFactory&lt;Program&gt;</code>: sets Testing environment, in-memory JWT/connection config, swaps EF for in-memory database, calls <code>EnsureCreated</code>.</p>
+          <div class="diff-block"><span class="diff-add">public class WorldCupWebApplicationFactory : WebApplicationFactory&lt;Program&gt;</span>
+<span class="diff-add">    builder.UseEnvironment("Testing");</span>
+<span class="diff-add">    services.AddDbContext&lt;ApplicationDbContext&gt;(options =&gt;</span>
+<span class="diff-add">        options.UseInMemoryDatabase("WorldCupIntegrationTests"));</span>
+<span class="diff-add">    ServiceProvider serviceProvider = services.BuildServiceProvider(); // ⚠ anti-pattern</span>
+<span class="diff-add">    dbContext.Database.EnsureCreated();</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>WorldCup-System.Tests/Integration/ApiIntegrationTests.cs</h4>
+            <span class="badge badge-done">p6-integration</span>
+          </div>
+          <p class="change-desc">End-to-end test: <code>GET /Country/GetAllCountries</code> returns 200 and JSON array of <code>CountryDTO</code>.</p>
+          <div class="diff-block"><span class="diff-add">[Fact]</span>
+<span class="diff-add">public async Task GetAllCountries_ReturnsOkWithJsonArray()</span>
+<span class="diff-add">{</span>
+<span class="diff-add">    HttpResponseMessage response = await _client.GetAsync("/Country/GetAllCountries");</span>
+<span class="diff-add">    response.EnsureSuccessStatusCode();</span>
+<span class="diff-add">    List&lt;CountryDTO&gt;? countries = await response.Content.ReadFromJsonAsync&lt;List&lt;CountryDTO&gt;&gt;();</span>
+<span class="diff-add">    Assert.NotNull(countries);</span>
+<span class="diff-add">}</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>WorldCup-System.Tests/Integration/HealthEndpointIntegrationTests.cs</h4>
+            <span class="badge badge-done">p6-health · p6-integration</span>
+          </div>
+          <p class="change-desc">Verifies <code>GET /health</code> returns 200 with body containing "Healthy".</p>
+          <div class="diff-block"><span class="diff-add">[Fact]</span>
+<span class="diff-add">public async Task Health_ReturnsHealthyStatus()</span>
+<span class="diff-add">{</span>
+<span class="diff-add">    HttpResponseMessage response = await _client.GetAsync("/health");</span>
+<span class="diff-add">    response.EnsureSuccessStatusCode();</span>
+<span class="diff-add">    Assert.Contains("Healthy", content, StringComparison.OrdinalIgnoreCase);</span>
+<span class="diff-add">}</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>WorldCup-System.Tests/Services/Countries/CountryServiceTests.cs</h4>
+            <span class="badge badge-done">p6-unit</span>
+          </div>
+          <p class="change-desc">Four Moq-based unit tests for <code>CountryService</code>: list mapping, add + save, empty Excel rejection, valid CSV import.</p>
+          <div class="diff-block"><span class="diff-add">GetAllCountries_ReturnsMappedCountryDtosWithIds</span>
+<span class="diff-add">AddCountries_CreatesCountryAndSaves</span>
+<span class="diff-add">LoadCountriesFromExcel_WhenFileIsEmpty_ThrowsException</span>
+<span class="diff-add">LoadCountriesFromExcel_WhenValidCsv_CreatesNewCountriesAndSaves</span></div>
+        </div>
+
+        <div class="card file-change">
+          <div class="file-change-header">
+            <h4>scripts/seed-worldcup-demo.ps1</h4>
+            <span class="badge badge-done">p6-seed-script</span>
+          </div>
+          <p class="change-desc">Parameterized PowerShell script: polls <code>/health</code> (30 attempts), admin login via <code>User/Login</code>, seeds via authenticated <code>POST Seed/LoadWorldCup2026Demo</code>.</p>
+          <div class="diff-block"><span class="diff-add">param(</span>
+<span class="diff-add">    [string]$ApiBaseUrl = "http://localhost:5055",</span>
+<span class="diff-add">    [string]$AdminEmail = "admin@localhost",</span>
+<span class="diff-add">    [string]$AdminPassword = "Admin123!"</span>
+<span class="diff-add">)</span>
+<span class="diff-add">Wait-ForApi -Url $ApiBaseUrl</span>
+<span class="diff-add">$loginResponse = Invoke-RestMethod -Uri "$ApiBaseUrl/User/Login" -Method Post ...</span>
+<span class="diff-add">$seedResult = Invoke-RestMethod -Uri "$ApiBaseUrl/Seed/LoadWorldCup2026Demo" -Method Post -Headers $headers</span></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title">File Inventory</h3>
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>Path</th><th>Type</th><th>Roadmap</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>WorldCup-System/Program.cs</code></td><td>Modified</td><td><code>p6-health</code>, <code>p6-integration</code></td></tr>
+              <tr><td><code>WorldCup-System/appsettings.json</code></td><td>Modified</td><td><code>p6-health</code></td></tr>
+              <tr><td><code>WorldCup-System/WorldCup-System.csproj</code></td><td>Modified</td><td><code>p6-health</code></td></tr>
+              <tr><td><code>WorldCup-System.Tests/WorldCup-System.Tests.csproj</code></td><td>Modified</td><td><code>p6-integration</code></td></tr>
+              <tr><td><code>Dockerfile</code></td><td>New</td><td><code>p6-docker</code></td></tr>
+              <tr><td><code>docker-compose.yml</code></td><td>New</td><td><code>p6-docker</code></td></tr>
+              <tr><td><code>.dockerignore</code></td><td>New</td><td><code>p6-docker</code></td></tr>
+              <tr><td><code>.github/workflows/ci.yml</code></td><td>New</td><td><code>p6-ci</code></td></tr>
+              <tr><td><code>WorldCup-System.Tests/Integration/WorldCupWebApplicationFactory.cs</code></td><td>New</td><td><code>p6-integration</code></td></tr>
+              <tr><td><code>WorldCup-System.Tests/Integration/ApiIntegrationTests.cs</code></td><td>New</td><td><code>p6-integration</code></td></tr>
+              <tr><td><code>WorldCup-System.Tests/Integration/HealthEndpointIntegrationTests.cs</code></td><td>New</td><td><code>p6-health</code>, <code>p6-integration</code></td></tr>
+              <tr><td><code>WorldCup-System.Tests/Services/Countries/CountryServiceTests.cs</code></td><td>New</td><td><code>p6-unit</code></td></tr>
+              <tr><td><code>scripts/seed-worldcup-demo.ps1</code></td><td>New</td><td><code>p6-seed-script</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="../assets/app.js"></script>
+</body>
+</html>
