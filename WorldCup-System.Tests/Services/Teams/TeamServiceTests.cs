@@ -3,6 +3,7 @@ using Core.Services.Teams;
 using Data.Entities;
 using Data.Repos;
 using Moq;
+using MatchEntity = Data.Entities.Match;
 
 namespace WorldCup_System.Tests.Services.Teams
 {
@@ -196,7 +197,7 @@ namespace WorldCup_System.Tests.Services.Teams
             Group group = new Group { Id = 1, Name = "A" };
             Team team = new Team { Id = 7, CountryId = 1, GroupId = 1, Country = country, Group = group, Coach = new List<Coach>() };
 
-            Mock<IRepository<Match>> matchRepositoryMock = new Mock<IRepository<Match>>();
+            Mock<IRepository<MatchEntity>> matchRepositoryMock = new Mock<IRepository<MatchEntity>>();
             SetupDeleteDependencies(
                 coachRepositoryMock => coachRepositoryMock
                     .Setup(coachRepository => coachRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Coach, bool>>>()))
@@ -208,10 +209,10 @@ namespace WorldCup_System.Tests.Services.Teams
 
             _teamRepositoryMock.Setup(teamRepository => teamRepository.GetByIdAsync(7)).ReturnsAsync(team);
             matchRepositoryMock
-                .Setup(matchRepository => matchRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Match, bool>>>()))
-                .Returns(new List<Match>
+                .Setup(matchRepository => matchRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<MatchEntity, bool>>>()))
+                .Returns(new List<MatchEntity>
                 {
-                    new Match
+                    new MatchEntity
                     {
                         Id = 1,
                         Date = DateTime.UtcNow,
@@ -273,13 +274,13 @@ namespace WorldCup_System.Tests.Services.Teams
         private void SetupDeleteDependencies(
             Action<Mock<IRepository<Coach>>>? configureCoachRepository = null,
             Action<Mock<IRepository<Player>>>? configurePlayerRepository = null,
-            Mock<IRepository<Match>>? matchRepositoryMock = null)
+            Mock<IRepository<MatchEntity>>? matchRepositoryMock = null)
         {
             Mock<IRepository<Coach>> coachRepositoryMock = new Mock<IRepository<Coach>>();
             Mock<IRepository<Player>> playerRepositoryMock = new Mock<IRepository<Player>>();
             Mock<IRepository<Bet>> betRepositoryMock = new Mock<IRepository<Bet>>();
             Mock<IRepository<TeamStats>> teamStatsRepositoryMock = new Mock<IRepository<TeamStats>>();
-            Mock<IRepository<Match>> resolvedMatchRepositoryMock = matchRepositoryMock ?? new Mock<IRepository<Match>>();
+            Mock<IRepository<MatchEntity>> resolvedMatchRepositoryMock = matchRepositoryMock ?? new Mock<IRepository<MatchEntity>>();
 
             configureCoachRepository?.Invoke(coachRepositoryMock);
             configurePlayerRepository?.Invoke(playerRepositoryMock);
@@ -287,8 +288,8 @@ namespace WorldCup_System.Tests.Services.Teams
             if (matchRepositoryMock == null)
             {
                 resolvedMatchRepositoryMock
-                    .Setup(matchRepository => matchRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Match, bool>>>()))
-                    .Returns(new List<Match>().AsQueryable());
+                    .Setup(matchRepository => matchRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<MatchEntity, bool>>>()))
+                    .Returns(new List<MatchEntity>().AsQueryable());
             }
 
             betRepositoryMock

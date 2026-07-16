@@ -2,7 +2,10 @@
   <header class="page-header">
     <div>
       <h1>Match schedule</h1>
-      <p>Create and manage fixtures for the selected tournament.</p>
+      <p>
+        Schedule group and knockout fixtures. Keep finished group matches — advance by adding
+        quarter-finals, semis, and the final as a new stage.
+      </p>
     </div>
     <app-world-cup-selector />
   </header>
@@ -18,8 +21,17 @@
     <h2>{{ matchForm.id > 0 ? 'Edit match' : 'Schedule match' }}</h2>
     <div class="form-grid">
       <label>
+        Stage
+        <select [(ngModel)]="matchForm.stage" name="stage" required>
+          @for (option of stageOptions; track option.value) {
+            <option [ngValue]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </label>
+      <label>
         Home team
-        <select [(ngModel)]="matchForm.teamOneId" name="teamOne" required>
+        <select [(ngModel)]="matchForm.teamOneId" name="teamOne">
+          <option [ngValue]="null">TBD</option>
           @for (team of teamsForWorldCup(); track team.id) {
             <option [ngValue]="team.id">{{ team.countryName }}</option>
           }
@@ -27,7 +39,8 @@
       </label>
       <label>
         Away team
-        <select [(ngModel)]="matchForm.teamTwoId" name="teamTwo" required>
+        <select [(ngModel)]="matchForm.teamTwoId" name="teamTwo">
+          <option [ngValue]="null">TBD</option>
           @for (team of teamsForWorldCup(); track team.id) {
             <option [ngValue]="team.id">{{ team.countryName }}</option>
           }
@@ -46,6 +59,10 @@
         <input type="datetime-local" [(ngModel)]="matchForm.date" name="kickoff" required />
       </label>
     </div>
+    <p class="form-hint">
+      Group stage: both teams must share a group. Knockout: any two teams in this World Cup
+      (cross-group allowed). Leave both teams as TBD to edit kickoff/stadium on feeder placeholders.
+    </p>
     <div class="form-actions">
       <button type="submit" class="btn btn-primary">Save match</button>
       @if (matchForm.id > 0) {
@@ -54,7 +71,25 @@
     </div>
   </form>
 
-  <h2 class="section-title">Fixtures</h2>
+  <div class="section-header">
+    <h2 class="section-title">Fixtures</h2>
+    <div class="stage-filters" role="group" aria-label="Filter by stage">
+      <button
+        type="button"
+        class="btn btn-secondary btn-sm"
+        [class.active]="stageFilter() === 'all'"
+        (click)="setStageFilter('all')"
+      >All</button>
+      @for (option of stageOptions; track option.value) {
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          [class.active]="stageFilter() === option.value"
+          (click)="setStageFilter(option.value)"
+        >{{ option.label }}</button>
+      }
+    </div>
+  </div>
   @if (isLoading()) {
     <p class="muted">Loading…</p>
   } @else if (matchesForWorldCup().length === 0) {
@@ -65,6 +100,7 @@
         <thead>
           <tr>
             <th>Date</th>
+            <th>Stage</th>
             <th>Match</th>
             <th>Stadium</th>
             <th>Status</th>
@@ -75,6 +111,7 @@
           @for (match of matchesForWorldCup(); track match.id) {
             <tr>
               <td>{{ match.date | date: 'medium' }}</td>
+              <td>{{ match.stageName || 'Group' }}</td>
               <td>
                 {{ match.teamOneName }} vs {{ match.teamTwoName }}
                 @if (typeof match.teamOneScore === 'number' && typeof match.teamTwoScore === 'number') {
@@ -84,16 +121,39 @@
               <td>{{ match.stadiumName }}</td>
               <td><span class="status-pill" [class]="statusClass(match.status)">{{ match.status }}</span></td>
               <td class="actions">
+                <a [routerLink]="['/admin/live', match.id]" class="btn btn-secondary btn-sm">Live</a>
                 <button type="button" class="btn btn-secondary btn-sm" (click)="editMatch(match)">Edit</button>
                 <button type="button" class="btn btn-secondary btn-sm" (click)="deleteMatch(match.id)">Delete</button>
                 @if (match.status === 'Finished') {
                   <button type="button" class="btn btn-primary btn-sm" (click)="resolveBets(match.id)">Resolve bets</button>
+                }
+                @if (canAdvanceWinner(match)) {
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="advanceWinner(match.id)">
+                    Advance winner
+                  </button>
                 }
               </td>
             </tr>
           }
         </tbody>
       </table>
+    </div>
+  }
+
+  @if (lastResolve(); as result) {
+    <div class="resolve-breakdown">
+      <h3>Resolve: match #{{ result.matchId }}</h3>
+      <p>{{ result.message }}</p>
+      @if (result.userBreakdown.length > 0) {
+        <ul>
+          @for (user of result.userBreakdown; track user.userId) {
+            <li>
+              {{ user.userName }} — {{ user.predictedOutcome }}:
+              <strong [class.points-correct]="user.pointsAwarded === 3">+{{ user.pointsAwarded }}</strong>
+            </li>
+          }
+        </ul>
+      }
     </div>
   }
 </section>

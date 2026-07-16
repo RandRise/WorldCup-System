@@ -56,11 +56,26 @@ namespace Core.Services.Stats
                 .Find(teamStats => teamStats.MatchId == teamStatsDto.MatchId && teamStats.TeamId != teamStatsDto.TeamId)
                 .FirstOrDefault();
             int otherPossession = otherStats?.Possession ?? 0;
-            if ((teamStatsDto.Possession > 0 || otherPossession > 0) &&
-                teamStatsDto.Possession + otherPossession != 100)
+
+            if (teamStatsDto.Possession < 0 || teamStatsDto.Possession > 100)
             {
-                throw new InvalidOperationException(
-                    "Possession for both teams in a match must sum to 100%.");
+                throw new InvalidOperationException("Possession must be between 0 and 100.");
+            }
+
+            // Keep complementary possession in sync so admin live console can change splits
+            // with one or two writes (parallel updates included).
+            if (teamStatsDto.Possession > 0 || otherPossession > 0)
+            {
+                if (otherStats != null)
+                {
+                    otherStats.Possession = 100 - teamStatsDto.Possession;
+                    _repository.TeamStats.Update(otherStats);
+                }
+                else if (teamStatsDto.Possession != 0 && teamStatsDto.Possession != 100)
+                {
+                    throw new InvalidOperationException(
+                        "Possession for both teams in a match must sum to 100%.");
+                }
             }
 
             stats.Possession = teamStatsDto.Possession;

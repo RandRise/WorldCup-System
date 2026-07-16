@@ -30,10 +30,14 @@ export class ReferenceApiService {
   }
 
   addStadium(request: AddStadiumRequest): Promise<void> {
-    return this.apiHttp.postCommand(`${this.baseUrl}/Stadium/AddStadium`, request);
+    return this.apiHttp
+      .postCommand(`${this.baseUrl}/Stadium/AddStadium`, request)
+      .then(() => undefined);
   }
 
   updateStadium(request: UpdateStadiumRequest): Promise<void> {
-    return this.apiHttp.postCommand(`${this.baseUrl}/Stadium/UpdateStadium`, request);
+    return this.apiHttp
+      .postCommand(`${this.baseUrl}/Stadium/UpdateStadium`, request)
+      .then(() => undefined);
   }
 }

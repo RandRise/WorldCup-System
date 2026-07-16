@@ -108,7 +108,40 @@ namespace WorldCup_System.Tests.Services.Stats
         }
 
         [Fact]
-        public async Task UpdateTeamStats_WhenPossessionDoesNotSumTo100_ThrowsInvalidOperationException()
+        public async Task UpdateTeamStats_WhenBothPossessionZeroAndSettingSplit_AutoBalancesOpponent()
+        {
+            MatchEntity match = new MatchEntity
+            {
+                Id = 1,
+                Date = DateTime.UtcNow,
+                StadiumId = 5,
+                TeamOneId = 10,
+                TeamTwoId = 20
+            };
+            TeamStats teamOneStats = new TeamStats { Id = 100, MatchId = 1, TeamId = 10, Possession = 0, Shots = 0, ShotsOnTarget = 0 };
+            TeamStats teamTwoStats = new TeamStats { Id = 101, MatchId = 1, TeamId = 20, Possession = 0, Shots = 0, ShotsOnTarget = 0 };
+            UpdateTeamStatsDTO updateDto = new UpdateTeamStatsDTO
+            {
+                MatchId = 1,
+                TeamId = 10,
+                Possession = 50,
+                Shots = 8,
+                ShotsOnTarget = 3
+            };
+
+            _matchRepositoryMock.Setup(matchRepository => matchRepository.GetByIdAsync(1)).ReturnsAsync(match);
+            SetupFind(_teamStatsRepositoryMock, new List<TeamStats> { teamOneStats, teamTwoStats });
+            _repositoryManagerMock.Setup(repositoryManager => repositoryManager.SaveAsync()).Returns(Task.CompletedTask);
+
+            await _teamStatsService.UpdateTeamStats(updateDto);
+
+            Assert.Equal(50, teamOneStats.Possession);
+            Assert.Equal(50, teamTwoStats.Possession);
+            _teamStatsRepositoryMock.Verify(teamStatsRepository => teamStatsRepository.Update(teamTwoStats), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateTeamStats_WhenChangingSplit_AutoBalancesOpponent()
         {
             MatchEntity match = new MatchEntity
             {
@@ -124,7 +157,40 @@ namespace WorldCup_System.Tests.Services.Stats
             {
                 MatchId = 1,
                 TeamId = 10,
-                Possession = 55,
+                Possession = 70,
+                Shots = 10,
+                ShotsOnTarget = 4
+            };
+
+            _matchRepositoryMock.Setup(matchRepository => matchRepository.GetByIdAsync(1)).ReturnsAsync(match);
+            SetupFind(_teamStatsRepositoryMock, new List<TeamStats> { teamOneStats, teamTwoStats });
+            _repositoryManagerMock.Setup(repositoryManager => repositoryManager.SaveAsync()).Returns(Task.CompletedTask);
+
+            await _teamStatsService.UpdateTeamStats(updateDto);
+
+            Assert.Equal(70, teamOneStats.Possession);
+            Assert.Equal(30, teamTwoStats.Possession);
+            _teamStatsRepositoryMock.Verify(teamStatsRepository => teamStatsRepository.Update(teamTwoStats), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateTeamStats_WhenPossessionOutOfRange_ThrowsInvalidOperationException()
+        {
+            MatchEntity match = new MatchEntity
+            {
+                Id = 1,
+                Date = DateTime.UtcNow,
+                StadiumId = 5,
+                TeamOneId = 10,
+                TeamTwoId = 20
+            };
+            TeamStats teamOneStats = new TeamStats { Id = 100, MatchId = 1, TeamId = 10, Possession = 50 };
+            TeamStats teamTwoStats = new TeamStats { Id = 101, MatchId = 1, TeamId = 20, Possession = 50 };
+            UpdateTeamStatsDTO updateDto = new UpdateTeamStatsDTO
+            {
+                MatchId = 1,
+                TeamId = 10,
+                Possession = 120,
                 Shots = 10,
                 ShotsOnTarget = 4
             };
@@ -135,7 +201,7 @@ namespace WorldCup_System.Tests.Services.Stats
             InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
                 () => _teamStatsService.UpdateTeamStats(updateDto));
 
-            Assert.Contains("must sum to 100%", exception.Message);
+            Assert.Contains("between 0 and 100", exception.Message);
         }
 
         [Fact]

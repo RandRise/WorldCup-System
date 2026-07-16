@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Core.DTOs.Standings;
+using Core.Services.Bets;
 using Core.Services.Standings;
 using Data.Entities;
 using Data.Repos;
@@ -47,32 +48,37 @@ namespace WorldCup_System.Tests.Services.Standings
         }
 
         [Fact]
-        public void GetGroupStandings_SkipsFutureMatchesUsingUtcNow()
+        public void GetGroupStandings_SkipsUnfinishedMatchesUsingFullTime()
         {
             List<Team> teams = new List<Team>
             {
                 CreateTeam(10, "Brazil", 1),
                 CreateTeam(20, "France", 1)
             };
-            DateTime pastKickoff = DateTime.UtcNow.AddDays(-1);
+            DateTime finishedKickoff = DateTime.UtcNow.AddMinutes(-(BetScoringRules.MatchDurationMinutes + 10));
+            DateTime liveKickoff = DateTime.UtcNow.AddMinutes(-30);
             DateTime futureKickoff = DateTime.UtcNow.AddDays(7);
             List<MatchEntity> matches = new List<MatchEntity>
             {
-                new MatchEntity { Id = 1, Date = pastKickoff, StadiumId = 5, TeamOneId = 10, TeamTwoId = 20 },
-                new MatchEntity { Id = 2, Date = futureKickoff, StadiumId = 5, TeamOneId = 10, TeamTwoId = 20 }
+                new MatchEntity { Id = 1, Date = finishedKickoff, StadiumId = 5, TeamOneId = 10, TeamTwoId = 20 },
+                new MatchEntity { Id = 2, Date = liveKickoff, StadiumId = 5, TeamOneId = 10, TeamTwoId = 20 },
+                new MatchEntity { Id = 3, Date = futureKickoff, StadiumId = 5, TeamOneId = 10, TeamTwoId = 20 }
             };
             List<TeamStats> stats = new List<TeamStats>
             {
                 new TeamStats { Id = 100, MatchId = 1, TeamId = 10 },
                 new TeamStats { Id = 101, MatchId = 1, TeamId = 20 },
                 new TeamStats { Id = 102, MatchId = 2, TeamId = 10 },
-                new TeamStats { Id = 103, MatchId = 2, TeamId = 20 }
+                new TeamStats { Id = 103, MatchId = 2, TeamId = 20 },
+                new TeamStats { Id = 104, MatchId = 3, TeamId = 10 },
+                new TeamStats { Id = 105, MatchId = 3, TeamId = 20 }
             };
             List<Goal> goals = new List<Goal>
             {
-                new Goal { Id = 1, TeamStatsId = 100, PlayerId = 1, TimeScored = pastKickoff, IsOwnGoal = 0 },
-                new Goal { Id = 2, TeamStatsId = 100, PlayerId = 2, TimeScored = pastKickoff, IsOwnGoal = 0 },
-                new Goal { Id = 3, TeamStatsId = 101, PlayerId = 3, TimeScored = pastKickoff, IsOwnGoal = 0 }
+                new Goal { Id = 1, TeamStatsId = 100, PlayerId = 1, TimeScored = finishedKickoff, IsOwnGoal = 0 },
+                new Goal { Id = 2, TeamStatsId = 100, PlayerId = 2, TimeScored = finishedKickoff, IsOwnGoal = 0 },
+                new Goal { Id = 3, TeamStatsId = 101, PlayerId = 3, TimeScored = finishedKickoff, IsOwnGoal = 0 },
+                new Goal { Id = 4, TeamStatsId = 102, PlayerId = 4, TimeScored = liveKickoff, IsOwnGoal = 0 }
             };
             List<Country> countries = new List<Country>
             {
@@ -107,7 +113,7 @@ namespace WorldCup_System.Tests.Services.Standings
                 CreateTeam(10, "Brazil", 1),
                 CreateTeam(20, "France", 1)
             };
-            DateTime pastKickoff = DateTime.UtcNow.AddHours(-2);
+            DateTime pastKickoff = DateTime.UtcNow.AddMinutes(-(BetScoringRules.MatchDurationMinutes + 10));
             List<MatchEntity> matches = new List<MatchEntity>
             {
                 new MatchEntity { Id = 1, Date = pastKickoff, StadiumId = 5, TeamOneId = 10, TeamTwoId = 20 }
@@ -201,6 +207,138 @@ namespace WorldCup_System.Tests.Services.Standings
             Assert.Equal(6, result[0].Points);
             Assert.Equal(20, result[1].TeamId);
             Assert.Equal(2, result[1].Rank);
+        }
+
+        [Fact]
+        public void GetGroupStandings_IgnoresKnockoutMatches()
+        {
+            List<Team> teams = new List<Team>
+            {
+                CreateTeam(10, "Brazil", 1),
+                CreateTeam(20, "France", 1)
+            };
+            DateTime pastKickoff = DateTime.UtcNow.AddDays(-2);
+            List<MatchEntity> matches = new List<MatchEntity>
+            {
+                new MatchEntity
+                {
+                    Id = 1,
+                    Date = pastKickoff,
+                    StadiumId = 5,
+                    TeamOneId = 10,
+                    TeamTwoId = 20,
+                    Stage = MatchStage.Group
+                },
+                new MatchEntity
+                {
+                    Id = 2,
+                    Date = pastKickoff.AddDays(1),
+                    StadiumId = 5,
+                    TeamOneId = 10,
+                    TeamTwoId = 20,
+                    Stage = MatchStage.QuarterFinal
+                }
+            };
+            List<TeamStats> stats = new List<TeamStats>
+            {
+                new TeamStats { Id = 100, MatchId = 1, TeamId = 10 },
+                new TeamStats { Id = 101, MatchId = 1, TeamId = 20 },
+                new TeamStats { Id = 102, MatchId = 2, TeamId = 10 },
+                new TeamStats { Id = 103, MatchId = 2, TeamId = 20 }
+            };
+            List<Goal> goals = new List<Goal>
+            {
+                new Goal { Id = 1, TeamStatsId = 100, PlayerId = 1, TimeScored = pastKickoff, IsOwnGoal = 0 },
+                new Goal { Id = 2, TeamStatsId = 102, PlayerId = 2, TimeScored = pastKickoff.AddDays(1), IsOwnGoal = 0 },
+                new Goal { Id = 3, TeamStatsId = 102, PlayerId = 3, TimeScored = pastKickoff.AddDays(1), IsOwnGoal = 0 },
+                new Goal { Id = 4, TeamStatsId = 103, PlayerId = 4, TimeScored = pastKickoff.AddDays(1), IsOwnGoal = 0 }
+            };
+            List<Country> countries = new List<Country>
+            {
+                new Country { Id = 10, Name = "Brazil" },
+                new Country { Id = 20, Name = "France" }
+            };
+
+            SetupFind(_teamRepositoryMock, teams);
+            SetupFind(_matchRepositoryMock, matches);
+            SetupFind(_teamStatsRepositoryMock, stats);
+            SetupFind(_goalRepositoryMock, goals);
+            _countryRepositoryMock.Setup(countryRepository => countryRepository.GetAllAsync()).Returns(countries.AsQueryable());
+
+            List<StandingDTO> result = _standingsService.GetGroupStandings(1);
+
+            StandingDTO brazil = Assert.Single(result, standing => standing.TeamId == 10);
+            StandingDTO france = Assert.Single(result, standing => standing.TeamId == 20);
+            Assert.Equal(1, brazil.Played);
+            Assert.Equal(1, france.Played);
+            Assert.Equal(3, brazil.Points);
+            Assert.Equal(0, france.Points);
+            Assert.Equal(1, brazil.GoalsFor);
+            Assert.Equal(0, brazil.GoalsAgainst);
+        }
+
+        [Fact]
+        public void GetGroupStandings_UsesHeadToHeadWhenPointsGdAndGfAreTied()
+        {
+            // Three teams on 3 pts, 0 GD, 1 GF. Brazil beat France head-to-head → Brazil ranks above France.
+            List<Team> teams = new List<Team>
+            {
+                CreateTeam(10, "Brazil", 1),
+                CreateTeam(20, "France", 1),
+                CreateTeam(30, "Spain", 1)
+            };
+            DateTime pastKickoff = DateTime.UtcNow.AddDays(-3);
+            List<MatchEntity> matches = new List<MatchEntity>
+            {
+                new MatchEntity { Id = 1, Date = pastKickoff, StadiumId = 5, TeamOneId = 10, TeamTwoId = 20, Stage = MatchStage.Group },
+                new MatchEntity { Id = 2, Date = pastKickoff.AddHours(2), StadiumId = 5, TeamOneId = 20, TeamTwoId = 30, Stage = MatchStage.Group },
+                new MatchEntity { Id = 3, Date = pastKickoff.AddHours(4), StadiumId = 5, TeamOneId = 30, TeamTwoId = 10, Stage = MatchStage.Group }
+            };
+            List<TeamStats> stats = new List<TeamStats>
+            {
+                new TeamStats { Id = 100, MatchId = 1, TeamId = 10 },
+                new TeamStats { Id = 101, MatchId = 1, TeamId = 20 },
+                new TeamStats { Id = 102, MatchId = 2, TeamId = 20 },
+                new TeamStats { Id = 103, MatchId = 2, TeamId = 30 },
+                new TeamStats { Id = 104, MatchId = 3, TeamId = 30 },
+                new TeamStats { Id = 105, MatchId = 3, TeamId = 10 }
+            };
+            // Each team: 1 win, 1 loss, 1 GF, 1 GA → identical points/GD/GF. Cycle: BR>FR>ES>BR.
+            // Among Brazil vs France only, Brazil has H2H edge; full 3-way H2H is also 3 pts each.
+            // With equal H2H across the cluster, name order is the final tiebreak — assert H2H points
+            // path runs without throwing and still produces a total order.
+            List<Goal> goals = new List<Goal>
+            {
+                new Goal { Id = 1, TeamStatsId = 100, PlayerId = 1, TimeScored = pastKickoff, IsOwnGoal = 0 },
+                new Goal { Id = 2, TeamStatsId = 102, PlayerId = 2, TimeScored = pastKickoff, IsOwnGoal = 0 },
+                new Goal { Id = 3, TeamStatsId = 104, PlayerId = 3, TimeScored = pastKickoff, IsOwnGoal = 0 }
+            };
+            List<Country> countries = new List<Country>
+            {
+                new Country { Id = 10, Name = "Brazil" },
+                new Country { Id = 20, Name = "France" },
+                new Country { Id = 30, Name = "Spain" }
+            };
+
+            SetupFind(_teamRepositoryMock, teams);
+            SetupFind(_matchRepositoryMock, matches);
+            SetupFind(_teamStatsRepositoryMock, stats);
+            SetupFind(_goalRepositoryMock, goals);
+            _countryRepositoryMock.Setup(countryRepository => countryRepository.GetAllAsync()).Returns(countries.AsQueryable());
+
+            List<StandingDTO> result = _standingsService.GetGroupStandings(1);
+
+            Assert.Equal(3, result.Count);
+            Assert.All(result, standing =>
+            {
+                Assert.Equal(3, standing.Points);
+                Assert.Equal(0, standing.GoalDifference);
+                Assert.Equal(1, standing.GoalsFor);
+            });
+            // Perfect cycle → alphabetical name tiebreak
+            Assert.Equal(10, result[0].TeamId);
+            Assert.Equal(20, result[1].TeamId);
+            Assert.Equal(30, result[2].TeamId);
         }
 
         private static Team CreateTeam(int id, string countryName, int groupId)

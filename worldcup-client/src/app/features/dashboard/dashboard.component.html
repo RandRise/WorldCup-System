@@ -1,0 +1,57 @@
+<section class="card">
+  <header class="page-header">
+    <div>
+      <h1>Your dashboard</h1>
+      <p>Welcome back, {{ auth.currentUser()?.name }}.</p>
+    </div>
+  </header>
+
+  @if (errorMessage()) {
+    <p class="alert alert-error" role="alert">{{ errorMessage() }}</p>
+  }
+
+  @if (isLoading()) {
+    <p class="muted">Loading…</p>
+  } @else {
+    <div class="stats-grid">
+      <article class="stat-card">
+        <span class="stat-label">Rank</span>
+        <strong class="stat-value">{{ summary()?.rank ?? '—' }}</strong>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Points</span>
+        <strong class="stat-value">{{ summary()?.totalPoints ?? 0 }}</strong>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Open bets</span>
+        <strong class="stat-value">{{ summary()?.activeBets ?? 0 }}</strong>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Resolved</span>
+        <strong class="stat-value">{{ summary()?.resolvedBets ?? 0 }}</strong>
+      </article>
+    </div>
+
+    <h2 class="section-title">Quick links</h2>
+    <div class="quick-links">
+      <a routerLink="/fixtures" class="btn btn-primary">View fixtures</a>
+      <a routerLink="/bets" class="btn btn-secondary">My bets</a>
+      <a routerLink="/leaderboard" class="btn btn-secondary">Leaderboard</a>
+      <a routerLink="/standings" class="btn btn-secondary">Standings</a>
+    </div>
+
+    <h2 class="section-title">Open predictions</h2>
+    @if (activeBets().length === 0) {
+      <p class="muted">No open bets for this tournament. <a routerLink="/fixtures">Place a prediction</a>.</p>
+    } @else {
+      <ul class="bet-list">
+        @for (bet of activeBets(); track bet.id) {
+          <li>
+            <span class="match">{{ bet.teamOneName }} vs {{ bet.teamTwoName }}</span>
+            <span class="prediction">{{ bet.predictedOutcome }}</span>
+          </li>
+        }
+      </ul>
+    }
+  }
+</section>

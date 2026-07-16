@@ -19,11 +19,27 @@
   } @else if (matches().length === 0) {
     <p class="muted">No fixtures yet. An admin can schedule matches from the admin panel.</p>
   } @else {
+    @if (recentEvents().length > 0) {
+      <aside class="live-feed">
+        <h2>Recent events</h2>
+        <ul>
+          @for (event of recentEvents(); track event.matchId + event.minute + event.eventType) {
+            <li>
+              <span class="minute">{{ event.minute }}'</span>
+              {{ event.teamName }} — {{ event.eventType }}
+              @if (event.playerName) { ({{ event.playerName }}) }
+            </li>
+          }
+        </ul>
+      </aside>
+    }
+
     <div class="fixture-list">
       @for (match of matches(); track match.id) {
         <article class="fixture card">
           <div class="fixture-meta">
             <span>{{ match.date | date: 'EEE, MMM d · HH:mm' }} UTC</span>
+            <span class="stage-label">{{ match.stageName || 'Group' }}</span>
             <span class="status-pill" [class]="statusClass(match.status)">{{ match.status }}</span>
           </div>
           <div class="fixture-teams">

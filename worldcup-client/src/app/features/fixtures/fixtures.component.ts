@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
-import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';import { RouterLink } from '@angular/router';
+import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { MatchApiService } from '../../core/api/match-api.service';
 import { BetApiService } from '../../core/api/bet-api.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -24,6 +25,7 @@ export class FixturesComponent implements OnInit, OnDestroy {
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly message = signal<string | null>(null);
   protected readonly matches = signal<Match[]>([]);
+  protected readonly recentEvents = signal<{ matchId: number; eventType: string; minute: number; playerName?: string | null; teamName?: string | null }[]>([]);
   protected readonly userBets = signal<Map<number, Bet>>(new Map());
   protected readonly placingMatchId = signal<number | null>(null);
 
@@ -38,7 +40,7 @@ export class FixturesComponent implements OnInit, OnDestroy {
     await this.loadFixtures();
     this.refreshTimer = setInterval(() => {
       if (this.shouldAutoRefresh()) {
-        void this.loadFixtures();
+        void this.refreshLiveData();
       }
     }, 30_000);
   }
@@ -67,11 +69,49 @@ export class FixturesComponent implements OnInit, OnDestroy {
         }
         this.userBets.set(betMap);
       }
+
+      // Always pull snapshot on load so finished matches can auto-resolve bets
+      // even when nothing is live (polling alone would never start).
+      await this.applyLiveSnapshot(worldCupId);
     } catch {
       this.errorMessage.set('Failed to load fixtures.');
     } finally {
       this.isLoading.set(false);
     }
+  }
+
+  async refreshLiveData(): Promise<void> {
+    const worldCupId = this.context.selectedWorldCupId();
+    if (worldCupId == null) {
+      return;
+    }
+
+    try {
+      await this.applyLiveSnapshot(worldCupId);
+    } catch {
+      // Keep showing last known scores on transient poll failures.
+    }
+  }
+
+  private async applyLiveSnapshot(worldCupId: number): Promise<void> {
+    const snapshot = await this.matchApi.getLiveSnapshot(worldCupId);
+    this.recentEvents.set(snapshot.recentEvents);
+
+    const snapshotByMatch = new Map(snapshot.matches.map((item) => [item.matchId, item]));
+    this.matches.update((current) =>
+      current.map((match) => {
+        const live = snapshotByMatch.get(match.id);
+        if (!live) {
+          return match;
+        }
+        return {
+          ...match,
+          teamOneScore: live.teamOneScore,
+          teamTwoScore: live.teamTwoScore,
+          status: live.status,
+        };
+      }),
+    );
   }
 
   userBet(matchId: number): Bet | undefined {

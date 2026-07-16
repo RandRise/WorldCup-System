@@ -3,12 +3,16 @@
 
   <nav class="nav-links" aria-label="Main navigation">
     <a routerLink="/fixtures" routerLinkActive="active">Fixtures</a>
+    <a routerLink="/bracket" routerLinkActive="active">Bracket</a>
     <a routerLink="/standings" routerLinkActive="active">Standings</a>
     <a routerLink="/leaderboard" routerLinkActive="active">Leaderboard</a>
+    @if (auth.isAuthenticated() && !auth.isAdmin()) {
+      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+    }
     <a routerLink="/bets" routerLinkActive="active">My Bets</a>
 
     @if (auth.isAdmin()) {
-      <a routerLink="/admin/teams" routerLinkActive="active" class="admin-link">Admin</a>
+      <a routerLink="/admin" routerLinkActive="active" class="admin-link">Admin</a>
     }
   </nav>
 

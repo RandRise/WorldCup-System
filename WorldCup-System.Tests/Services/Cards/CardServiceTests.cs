@@ -112,6 +112,30 @@ namespace WorldCup_System.Tests.Services.Cards
         }
 
         [Fact]
+        public async Task AddCard_WhenTeamsTbd_ThrowsInvalidOperationException()
+        {
+            DateTime kickoff = new DateTime(2026, 6, 15, 18, 0, 0);
+            MatchEntity match = new MatchEntity
+            {
+                Id = 1,
+                Date = kickoff,
+                StadiumId = 5,
+                TeamOneId = null,
+                TeamTwoId = null,
+                Stage = MatchStage.SemiFinal
+            };
+            AddCardDTO addCardDto = new AddCardDTO { MatchId = 1, TeamId = 10, PlayerId = 1, Minute = 10, CardType = 1 };
+
+            _matchRepositoryMock.Setup(matchRepository => matchRepository.GetByIdAsync(1)).ReturnsAsync(match);
+
+            InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _cardService.AddCard(addCardDto));
+
+            Assert.Contains("Cannot record cards until both teams are set", exception.Message);
+            _cardRepositoryMock.Verify(cardRepository => cardRepository.Create(It.IsAny<Card>()), Times.Never);
+        }
+
+        [Fact]
         public async Task AddCard_WhenTeamNotInMatch_ThrowsInvalidOperationException()
         {
             DateTime kickoff = new DateTime(2026, 6, 15, 18, 0, 0);

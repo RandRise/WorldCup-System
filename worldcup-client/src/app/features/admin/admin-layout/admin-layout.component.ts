@@ -9,6 +9,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 })
 export class AdminLayoutComponent {
   protected readonly links = [
+    { path: '/admin', label: 'Dashboard' },
     { path: '/admin/teams', label: 'Teams & squads' },
     { path: '/admin/schedule', label: 'Match schedule' },
   ];

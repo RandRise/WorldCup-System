@@ -9,18 +9,55 @@
   gap: 0.75rem;
 }
 
+.live-feed {
+  margin-bottom: 1rem;
+  padding: 0.875rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+
+  h2 {
+    margin: 0 0 0.5rem;
+    font-size: 0.95rem;
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+  }
+
+  .minute {
+    font-weight: 700;
+    color: var(--text);
+    margin-right: 0.35rem;
+  }
+}
+
 .fixture {
   padding: 1rem;
 }
 
 .fixture-meta {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.5rem;
   font-size: 0.85rem;
   color: var(--text-muted);
+}
+
+.stage-label {
+  margin-right: auto;
+  font-weight: 600;
+  color: var(--text);
 }
 
 .fixture-teams {

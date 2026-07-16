@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 
 @Component({
@@ -12,6 +12,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 export class LoginComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly formBuilder = inject(FormBuilder);
 
   protected readonly errorMessage = signal<string | null>(null);
@@ -33,11 +34,34 @@ export class LoginComponent {
 
     try {
       await this.auth.login(this.form.getRawValue());
-      await this.router.navigate(['/']);
+      const returnUrl = this.sanitizeReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl'));
+      if (returnUrl) {
+        await this.router.navigateByUrl(returnUrl);
+      } else if (this.auth.isAdmin()) {
+        await this.router.navigate(['/admin']);
+      } else {
+        await this.router.navigate(['/dashboard']);
+      }
     } catch {
       this.errorMessage.set('Invalid email or password. Please try again.');
     } finally {
       this.isSubmitting.set(false);
     }
+  }
+
+  private sanitizeReturnUrl(returnUrl: string | null): string | null {
+    if (!returnUrl) {
+      return null;
+    }
+
+    if (!returnUrl.startsWith('/') || returnUrl.startsWith('//')) {
+      return null;
+    }
+
+    if (returnUrl === '/login' || returnUrl === '/register' || returnUrl.startsWith('/login?') || returnUrl.startsWith('/register?')) {
+      return null;
+    }
+
+    return returnUrl;
   }
 }

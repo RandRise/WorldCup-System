@@ -1,0 +1,108 @@
+<section class="card">
+  <header class="page-header">
+    <div>
+      <h1>Admin dashboard</h1>
+      <p>Tournament operations — teams, schedule, live match console, and bet resolution.</p>
+    </div>
+    <app-world-cup-selector />
+  </header>
+
+  @if (message()) {
+    <p class="alert alert-success" role="status">{{ message() }}</p>
+  }
+  @if (errorMessage()) {
+    <p class="alert alert-error" role="alert">{{ errorMessage() }}</p>
+  }
+
+  <div class="ops-grid">
+    <a routerLink="/admin/teams" class="ops-card">
+      <h2>Teams &amp; squads</h2>
+      <p>Add teams to groups and manage coaches and players.</p>
+    </a>
+    <a routerLink="/admin/schedule" class="ops-card">
+      <h2>Match schedule</h2>
+      <p>Create fixtures and resolve bets per match.</p>
+    </a>
+    <a routerLink="/admin/schedule" class="ops-card" [class.highlight]="liveMatchCount() > 0">
+      <h2>Live console</h2>
+      <p>
+        @if (liveMatchCount() > 0) {
+          {{ liveMatchCount() }} live match(es) — open schedule to record events.
+        } @else {
+          No live matches right now. Schedule a match first.
+        }
+      </p>
+    </a>
+    <article class="ops-card action-card">
+      <h2>Generate knockout bracket</h2>
+      <p>
+        Classic 8-group seeding (A–H): Round of 16 through Final with auto-advance feeders.
+        Group stage must be finished. Requires exactly 8 groups.
+      </p>
+      <label class="field">
+        Stadium
+        <select
+          [ngModel]="bracketStadiumId()"
+          (ngModelChange)="bracketStadiumId.set($event)"
+          name="bracketStadium"
+        >
+          @for (stadium of stadiums(); track stadium.id) {
+            <option [ngValue]="stadium.id">{{ stadium.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        First R16 kickoff (UTC)
+        <input
+          type="datetime-local"
+          [ngModel]="bracketKickoff()"
+          (ngModelChange)="bracketKickoff.set($event)"
+          name="bracketKickoff"
+        />
+      </label>
+      <button type="button" class="btn btn-primary btn-sm" (click)="generateBracket()">
+        Generate bracket
+      </button>
+      <a routerLink="/bracket" class="inline-link">View public bracket</a>
+    </article>
+    <article class="ops-card action-card">
+      <h2>Resolve bets</h2>
+      <p>
+        Auto-score all finished matches for this tournament.
+        @if (finishedMatchCount() > 0) {
+          <strong>{{ finishedMatchCount() }} finished</strong> match(es) eligible.
+        }
+      </p>
+      <button type="button" class="btn btn-primary btn-sm" (click)="bulkResolve()">
+        Resolve all finished
+      </button>
+    </article>
+    <a routerLink="/leaderboard" class="ops-card">
+      <h2>Leaderboard</h2>
+      <p>View updated rankings after bet resolution.</p>
+    </a>
+  </div>
+
+  @if (lastBulkResolve(); as result) {
+    <div class="resolve-summary">
+      <h3>Last bulk resolve</h3>
+      @for (matchResult of result.matchResults; track matchResult.matchId) {
+        <div class="match-resolve">
+          <strong>Match #{{ matchResult.matchId }}</strong> — {{ matchResult.message }}
+          @if (matchResult.userBreakdown.length > 0) {
+            <ul>
+              @for (user of matchResult.userBreakdown; track user.userId) {
+                <li>
+                  {{ user.userName ?? 'User' }}: {{ user.predictedOutcome }} →
+                  <span [class.points-correct]="user.pointsAwarded === 3" [class.points-wrong]="user.pointsAwarded === 0">
+                    +{{ user.pointsAwarded }}
+                  </span>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      }
+    </div>
+  }
+</section>

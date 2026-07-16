@@ -16,7 +16,7 @@
 
   <div class="layout">
     <div class="panel">
-      <h2>Add team</h2>
+      <h2>{{ teamForm.id > 0 ? 'Update team' : 'Add team' }}</h2>
       <div class="form-grid">
         <label>
           Country
@@ -35,7 +35,14 @@
           </select>
         </label>
       </div>
-      <button type="button" class="btn btn-primary" (click)="addTeam()">Add team</button>
+      <div class="form-actions">
+        <button type="button" class="btn btn-primary" (click)="saveTeam()">
+          {{ teamForm.id > 0 ? 'Update team' : 'Add team' }}
+        </button>
+        @if (teamForm.id > 0) {
+          <button type="button" class="btn btn-secondary" (click)="resetTeamForm()">Cancel</button>
+        }
+      </div>
 
       <h2 class="section-title">Teams</h2>
       @if (isLoading()) {
@@ -48,6 +55,7 @@
                 <strong>{{ team.countryName }}</strong>
                 <span>Group {{ team.groupName }}</span>
               </button>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="editTeam(team)">Edit</button>
               <button type="button" class="btn btn-secondary btn-sm" (click)="deleteTeam(team.id)">Delete</button>
             </li>
           }

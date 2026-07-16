@@ -55,6 +55,11 @@ namespace Core.Services.Cards
         {
             Match match = await _repository.Match.GetByIdAsync(cardDto.MatchId);
 
+            if (!match.TeamOneId.HasValue || !match.TeamTwoId.HasValue)
+            {
+                throw new InvalidOperationException("Cannot record cards until both teams are set for this match.");
+            }
+
             if (cardDto.TeamId != match.TeamOneId && cardDto.TeamId != match.TeamTwoId)
             {
                 throw new InvalidOperationException("The specified team is not part of this match.");

@@ -41,15 +41,15 @@ export class TournamentApiService {
   }
 
   addTeam(request: AddTeamRequest): Promise<void> {
-    return this.apiHttp.postCommand(`${this.baseUrl}/Team/AddTeam`, request);
+    return this.apiHttp.postCommand(`${this.baseUrl}/Team/AddTeam`, request).then(() => undefined);
   }
 
   updateTeam(request: UpdateTeamRequest): Promise<void> {
-    return this.apiHttp.postCommand(`${this.baseUrl}/Team/UpdateTeam`, request);
+    return this.apiHttp.postCommand(`${this.baseUrl}/Team/UpdateTeam`, request).then(() => undefined);
   }
 
   deleteTeam(id: number): Promise<void> {
-    return this.apiHttp.deleteCommand(`${this.baseUrl}/Team/DeleteTeam/${id}`);
+    return this.apiHttp.deleteCommand(`${this.baseUrl}/Team/DeleteTeam/${id}`).then(() => undefined);
   }
 
   getCoaches(): Promise<Coach[]> {
@@ -61,15 +61,15 @@ export class TournamentApiService {
   }
 
   addCoach(request: AddCoachRequest): Promise<void> {
-    return this.apiHttp.postCommand(`${this.baseUrl}/Coach/AddCoach`, request);
+    return this.apiHttp.postCommand(`${this.baseUrl}/Coach/AddCoach`, request).then(() => undefined);
   }
 
   updateCoach(request: UpdateCoachRequest): Promise<void> {
-    return this.apiHttp.postCommand(`${this.baseUrl}/Coach/UpdateCoach`, request);
+    return this.apiHttp.postCommand(`${this.baseUrl}/Coach/UpdateCoach`, request).then(() => undefined);
   }
 
   deleteCoach(id: number): Promise<void> {
-    return this.apiHttp.deleteCommand(`${this.baseUrl}/Coach/DeleteCoach/${id}`);
+    return this.apiHttp.deleteCommand(`${this.baseUrl}/Coach/DeleteCoach/${id}`).then(() => undefined);
   }
 
   getPlayers(): Promise<Player[]> {
@@ -87,14 +87,18 @@ export class TournamentApiService {
   }
 
   addPlayer(request: AddPlayerRequest): Promise<void> {
-    return this.apiHttp.postCommand(`${this.baseUrl}/Player/AddPlayer`, request);
+    return this.apiHttp.postCommand(`${this.baseUrl}/Player/AddPlayer`, request).then(() => undefined);
   }
 
   updatePlayer(request: UpdatePlayerRequest): Promise<void> {
-    return this.apiHttp.postCommand(`${this.baseUrl}/Player/UpdatePlayer`, request);
+    return this.apiHttp
+      .postCommand(`${this.baseUrl}/Player/UpdatePlayer`, request)
+      .then(() => undefined);
   }
 
   deletePlayer(id: number): Promise<void> {
-    return this.apiHttp.deleteCommand(`${this.baseUrl}/Player/DeletePlayer/${id}`);
+    return this.apiHttp
+      .deleteCommand(`${this.baseUrl}/Player/DeletePlayer/${id}`)
+      .then(() => undefined);
   }
 }

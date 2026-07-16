@@ -11,11 +11,11 @@ import { firstValueFrom } from 'rxjs';
 export class ApiHttpService {
   private readonly http = inject(HttpClient);
 
-  postCommand(url: string, body: unknown = {}): Promise<void> {
-    return firstValueFrom(this.http.post(url, body, { responseType: 'text' })).then(() => undefined);
+  postCommand(url: string, body: unknown = {}): Promise<string> {
+    return firstValueFrom(this.http.post(url, body, { responseType: 'text' }));
   }
 
-  deleteCommand(url: string): Promise<void> {
-    return firstValueFrom(this.http.delete(url, { responseType: 'text' })).then(() => undefined);
+  deleteCommand(url: string): Promise<string> {
+    return firstValueFrom(this.http.delete(url, { responseType: 'text' }));
   }
 }

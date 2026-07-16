@@ -180,7 +180,11 @@ namespace Core.Services.Bets
             }
 
             return _repository.Match
-                .Find(match => teamIds.Contains(match.TeamOneId) && teamIds.Contains(match.TeamTwoId))
+                .Find(match =>
+                    match.TeamOneId.HasValue
+                    && match.TeamTwoId.HasValue
+                    && teamIds.Contains(match.TeamOneId.Value)
+                    && teamIds.Contains(match.TeamTwoId.Value))
                 .Select(match => match.Id)
                 .ToHashSet();
         }

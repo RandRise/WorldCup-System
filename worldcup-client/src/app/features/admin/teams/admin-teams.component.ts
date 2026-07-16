@@ -34,7 +34,7 @@ export class AdminTeamsComponent implements OnInit {
     return this.teams().filter((team) => groupIds.has(team.groupId));
   });
 
-  protected teamForm = { countryId: 0, groupId: 0 };
+  protected teamForm = { id: 0, countryId: 0, groupId: 0 };
   protected coachForm = { id: 0, name: '', teamId: 0 };
   protected playerForm = { id: 0, name: '', number: 1, teamId: 0, positionId: 0 };
 
@@ -79,18 +79,47 @@ export class AdminTeamsComponent implements OnInit {
     await this.loadSquad(teamId);
   }
 
-  async addTeam(): Promise<void> {
+  async saveTeam(): Promise<void> {
     this.clearMessages();
     try {
-      await this.tournamentApi.addTeam({
-        countryId: this.teamForm.countryId,
-        groupId: this.teamForm.groupId,
-      });
-      this.message.set('Team added.');
+      if (this.teamForm.id > 0) {
+        await this.tournamentApi.updateTeam({
+          id: this.teamForm.id,
+          countryId: this.teamForm.countryId,
+          groupId: this.teamForm.groupId,
+        });
+        this.message.set('Team updated.');
+      } else {
+        await this.tournamentApi.addTeam({
+          countryId: this.teamForm.countryId,
+          groupId: this.teamForm.groupId,
+        });
+        this.message.set('Team added.');
+      }
+      this.resetTeamForm();
       await this.reload();
     } catch (error: unknown) {
-      this.errorMessage.set(this.readApiError(error, 'Failed to add team.'));
+      this.errorMessage.set(
+        this.readApiError(error, this.teamForm.id > 0 ? 'Failed to update team.' : 'Failed to add team.'),
+      );
     }
+  }
+
+  editTeam(team: Team): void {
+    this.teamForm = {
+      id: team.id,
+      countryId: team.countryId,
+      groupId: team.groupId,
+    };
+  }
+
+  resetTeamForm(): void {
+    const groups = this.context.groupsForSelectedWorldCup();
+    this.teamForm = {
+      id: 0,
+      countryId: this.countries()[0]?.id ?? 0,
+      groupId: groups[0]?.id ?? 0,
+    };
   }
 
   async deleteTeam(teamId: number): Promise<void> {
@@ -104,6 +133,9 @@ export class AdminTeamsComponent implements OnInit {
         this.selectedTeamId.set(null);
         this.coaches.set([]);
         this.players.set([]);
+      }
+      if (this.teamForm.id === teamId) {
+        this.resetTeamForm();
       }
       this.message.set('Team deleted.');
       await this.reload();
@@ -213,11 +245,13 @@ export class AdminTeamsComponent implements OnInit {
 
   private initForms(): void {
     const groups = this.context.groupsForSelectedWorldCup();
-    if (this.teamForm.groupId === 0 && groups.length > 0) {
-      this.teamForm.groupId = groups[0].id;
-    }
-    if (this.teamForm.countryId === 0 && this.countries().length > 0) {
-      this.teamForm.countryId = this.countries()[0].id;
+    if (this.teamForm.id === 0) {
+      if (this.teamForm.groupId === 0 && groups.length > 0) {
+        this.teamForm.groupId = groups[0].id;
+      }
+      if (this.teamForm.countryId === 0 && this.countries().length > 0) {
+        this.teamForm.countryId = this.countries()[0].id;
+      }
     }
     if (this.playerForm.positionId === 0 && this.positions().length > 0) {
       this.playerForm.positionId = this.positions()[0].id;

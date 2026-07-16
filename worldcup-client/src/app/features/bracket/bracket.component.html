@@ -1,0 +1,51 @@
+<section class="card">
+  <header class="page-header">
+    <div>
+      <h1>Knockout bracket</h1>
+      <p>
+        Round of 16 through the Final. TBD slots fill automatically when feeder matches finish
+        with a winner.
+      </p>
+    </div>
+    <app-world-cup-selector />
+  </header>
+
+  @if (errorMessage()) {
+    <p class="alert alert-error" role="alert">{{ errorMessage() }}</p>
+  }
+
+  @if (isLoading()) {
+    <p class="muted">Loading bracket…</p>
+  } @else if (rounds().length === 0) {
+    <p class="muted">
+      No knockout matches yet. An admin can generate a classic 8-group bracket from the
+      <a routerLink="/admin">admin hub</a>, or schedule knockout fixtures manually.
+    </p>
+  } @else {
+    <div class="bracket-board">
+      @for (round of rounds(); track round.stage) {
+        <section class="bracket-round">
+          <h2>{{ round.stageName }}</h2>
+          <div class="round-matches">
+            @for (match of round.matches; track match.id) {
+              <article class="bracket-match" [attr.data-status]="match.status">
+                <div class="match-meta">
+                  <span>{{ match.date | date: 'mediumDate' }}</span>
+                  <span class="status">{{ match.status }}</span>
+                </div>
+                <div class="side">
+                  <span class="team">{{ teamLabel(match, 'one') }}</span>
+                  <span class="score">{{ scoreLabel(match, 'one') }}</span>
+                </div>
+                <div class="side">
+                  <span class="team">{{ teamLabel(match, 'two') }}</span>
+                  <span class="score">{{ scoreLabel(match, 'two') }}</span>
+                </div>
+              </article>
+            }
+          </div>
+        </section>
+      }
+    </div>
+  }
+</section>

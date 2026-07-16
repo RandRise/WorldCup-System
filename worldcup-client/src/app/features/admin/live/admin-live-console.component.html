@@ -1,0 +1,164 @@
+<section class="card">
+  <header class="page-header">
+    <div>
+      <a routerLink="/admin/schedule" class="back-link">← Schedule</a>
+      @if (match(); as m) {
+        <h1>{{ m.teamOneName }} vs {{ m.teamTwoName }}</h1>
+        <p>
+          {{ m.date | date: 'medium' }} · {{ m.stadiumName }}
+          <span class="status-pill" [class]="m.status.toLowerCase()">{{ m.status }}</span>
+          @if (typeof m.teamOneScore === 'number' && typeof m.teamTwoScore === 'number') {
+            <strong class="score">{{ m.teamOneScore }} – {{ m.teamTwoScore }}</strong>
+          }
+        </p>
+      } @else {
+        <h1>Live match console</h1>
+      }
+    </div>
+  </header>
+
+  @if (message()) {
+    <p class="alert alert-success" role="status">{{ message() }}</p>
+  }
+  @if (warningMessage()) {
+    <p class="alert alert-warning" role="status">{{ warningMessage() }}</p>
+  }
+  @if (errorMessage()) {
+    <p class="alert alert-error" role="alert">{{ errorMessage() }}</p>
+  }
+
+  @if (isLoading()) {
+    <p class="muted">Loading…</p>
+  } @else if (match(); as m) {
+    <div class="console-grid">
+      <section class="panel">
+        <h2>Record goal</h2>
+        <form class="inline-form" (ngSubmit)="addGoal()">
+          <label>
+            Team
+            <select [(ngModel)]="goalForm.teamId" name="goalTeam" (ngModelChange)="onGoalTeamChange()">
+              <option [ngValue]="m.teamOneId">{{ m.teamOneName }}</option>
+              <option [ngValue]="m.teamTwoId">{{ m.teamTwoName }}</option>
+            </select>
+          </label>
+          <label>
+            Scorer
+            <select [(ngModel)]="goalForm.playerId" name="goalPlayer">
+              @for (player of playersForTeam(goalForm.teamId); track player.id) {
+                <option [ngValue]="player.id">#{{ player.number }} {{ player.name }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            Minute
+            <input type="number" [(ngModel)]="goalForm.minute" name="goalMinute" min="0" max="130" />
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" [(ngModel)]="goalForm.isOwnGoal" name="ownGoal" />
+            Own goal
+          </label>
+          <button type="submit" class="btn btn-primary btn-sm">Add goal</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Record card</h2>
+        <form class="inline-form" (ngSubmit)="addCard()">
+          <label>
+            Team
+            <select [(ngModel)]="cardForm.teamId" name="cardTeam" (ngModelChange)="onCardTeamChange()">
+              <option [ngValue]="m.teamOneId">{{ m.teamOneName }}</option>
+              <option [ngValue]="m.teamTwoId">{{ m.teamTwoName }}</option>
+            </select>
+          </label>
+          <label>
+            Player
+            <select [(ngModel)]="cardForm.playerId" name="cardPlayer">
+              @for (player of playersForTeam(cardForm.teamId); track player.id) {
+                <option [ngValue]="player.id">#{{ player.number }} {{ player.name }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            Minute
+            <input type="number" [(ngModel)]="cardForm.minute" name="cardMinute" min="0" max="130" />
+          </label>
+          <label>
+            Type
+            <select [(ngModel)]="cardForm.cardType" name="cardType">
+              <option [ngValue]="1">Yellow</option>
+              <option [ngValue]="2">Red</option>
+            </select>
+          </label>
+          <button type="submit" class="btn btn-primary btn-sm">Add card</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Team stats</h2>
+        <form class="stats-form" (ngSubmit)="saveStats()">
+          <div class="stats-row">
+            <h3>{{ m.teamOneName }}</h3>
+            <label>Possession % <input type="number" [(ngModel)]="statsForm.teamOnePossession" name="p1" min="0" max="100" /></label>
+            <label>Shots <input type="number" [(ngModel)]="statsForm.teamOneShots" name="s1" min="0" /></label>
+            <label>On target <input type="number" [(ngModel)]="statsForm.teamOneShotsOnTarget" name="ot1" min="0" /></label>
+          </div>
+          <div class="stats-row">
+            <h3>{{ m.teamTwoName }}</h3>
+            <label>Possession % <input type="number" [(ngModel)]="statsForm.teamTwoPossession" name="p2" min="0" max="100" /></label>
+            <label>Shots <input type="number" [(ngModel)]="statsForm.teamTwoShots" name="s2" min="0" /></label>
+            <label>On target <input type="number" [(ngModel)]="statsForm.teamTwoShotsOnTarget" name="ot2" min="0" /></label>
+          </div>
+          <button type="submit" class="btn btn-secondary btn-sm">Save stats</button>
+        </form>
+      </section>
+
+      <section class="panel timeline">
+        <h2>Event timeline</h2>
+        @if (allEvents().length === 0) {
+          <p class="muted">No events recorded yet.</p>
+        } @else {
+          <ul>
+            @for (event of allEvents(); track event.id + event.type) {
+              <li>
+                <span class="minute">{{ event.minute }}'</span>
+                <span class="event-label">{{ event.teamName }} — {{ event.label }}</span>
+                @if (event.type === 'goal') {
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="deleteGoal(event.id)">Remove</button>
+                } @else {
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="deleteCard(event.id)">Remove</button>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    </div>
+
+    @if (m.status === 'Finished') {
+      <div class="resolve-bar">
+        <button type="button" class="btn btn-primary" (click)="tryResolve()">Resolve bets</button>
+        <span class="muted">Auto-resolves on goal add/delete; use for 0–0 or corrections.</span>
+      </div>
+
+      @if (lastResolve(); as result) {
+        <div class="resolve-breakdown">
+          <h3>{{ result.message }}</h3>
+          @if (result.userBreakdown.length > 0) {
+            <ul>
+              @for (user of result.userBreakdown; track user.userId) {
+                <li>
+                  {{ user.userName }} — {{ user.predictedOutcome }}:
+                  <strong [class.points-correct]="user.pointsAwarded === 3">{{ user.pointsAwarded }} pts</strong>
+                  @if (user.previousPoints != null && user.previousPoints !== user.pointsAwarded) {
+                    <span class="delta">(was {{ user.previousPoints }})</span>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      }
+    }
+  }
+</section>
