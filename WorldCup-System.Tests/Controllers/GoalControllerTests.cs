@@ -39,12 +39,29 @@ namespace WorldCup_System.Tests.Controllers
         {
             AddGoalDTO addGoalDto = new AddGoalDTO { MatchId = 1, TeamId = 10, PlayerId = 1, Minute = 42 };
 
-            _goalServiceMock.Setup(goalService => goalService.AddGoal(addGoalDto)).Returns(Task.CompletedTask);
+            _goalServiceMock.Setup(goalService => goalService.AddGoal(addGoalDto)).ReturnsAsync((string?)null);
 
             IActionResult actionResult = await _goalController.AddGoal(addGoalDto);
 
             OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
             Assert.Equal("Goal recorded successfully.", okResult.Value);
+        }
+
+        [Fact]
+        public async Task AddGoal_WhenAdvanceConflict_ReturnsOkWithWarning()
+        {
+            AddGoalDTO addGoalDto = new AddGoalDTO { MatchId = 1, TeamId = 10, PlayerId = 1, Minute = 42 };
+
+            _goalServiceMock
+                .Setup(goalService => goalService.AddGoal(addGoalDto))
+                .ReturnsAsync("Cannot advance into match 20: goals or cards are already recorded.");
+
+            IActionResult actionResult = await _goalController.AddGoal(addGoalDto);
+
+            OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
+            Assert.Equal(
+                "Goal recorded successfully. Warning: Cannot advance into match 20: goals or cards are already recorded.",
+                okResult.Value);
         }
 
         [Fact]
@@ -65,12 +82,27 @@ namespace WorldCup_System.Tests.Controllers
         [Fact]
         public async Task DeleteGoal_WhenServiceSucceeds_ReturnsOk()
         {
-            _goalServiceMock.Setup(goalService => goalService.DeleteGoal(1)).Returns(Task.CompletedTask);
+            _goalServiceMock.Setup(goalService => goalService.DeleteGoal(1)).ReturnsAsync((string?)null);
 
             IActionResult actionResult = await _goalController.DeleteGoal(1);
 
             OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
             Assert.Equal("Goal deleted successfully.", okResult.Value);
+        }
+
+        [Fact]
+        public async Task DeleteGoal_WhenAdvanceConflict_ReturnsOkWithWarning()
+        {
+            _goalServiceMock
+                .Setup(goalService => goalService.DeleteGoal(1))
+                .ReturnsAsync("Cannot advance into match 20: goals or cards are already recorded.");
+
+            IActionResult actionResult = await _goalController.DeleteGoal(1);
+
+            OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
+            Assert.Equal(
+                "Goal deleted successfully. Warning: Cannot advance into match 20: goals or cards are already recorded.",
+                okResult.Value);
         }
 
         [Fact]

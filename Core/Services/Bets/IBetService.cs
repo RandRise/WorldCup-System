@@ -9,7 +9,9 @@ namespace Core.Services.Bets
         List<BetDTO> GetActiveBets(long userId);
         BetDTO? GetMyBetForMatch(long userId, int matchId);
         List<BetDTO> GetMyBetsForWorldCup(long userId, int worldCupId);
-        Task<int> ResolveBetsForMatch(int matchId);
+        Task<ResolveBetsResultDTO> ResolveBetsForMatch(int matchId);
+        Task<ResolveBetsWorldCupResultDTO> ResolveBetsForWorldCup(int worldCupId);
+        Task TryAutoResolveFinishedMatch(int matchId);
         BettingRulesResponseDTO GetScoringRules();
     }
 }

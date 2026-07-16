@@ -1,5 +1,6 @@
 using Core.DTOs.Goals;
 using Core.Services.Bets;
+using Core.Services.Knockout;
 using Data.Entities;
 using Data.Repos;
 
@@ -9,11 +10,16 @@ namespace Core.Services.Goals
     {
         private readonly IRepositoryManager _repository;
         private readonly IBetService _betService;
+        private readonly IKnockoutService _knockoutService;
 
-        public GoalService(IRepositoryManager repository, IBetService betService)
+        public GoalService(
+            IRepositoryManager repository,
+            IBetService betService,
+            IKnockoutService knockoutService)
         {
             _repository = repository;
             _betService = betService;
+            _knockoutService = knockoutService;
         }
 
         public List<GoalDTO> GetGoalsByMatch(int matchId)
@@ -53,9 +59,14 @@ namespace Core.Services.Goals
             .ToList();
         }
 
-        public async Task AddGoal(AddGoalDTO goalDto)
+        public async Task<string?> AddGoal(AddGoalDTO goalDto)
         {
             Match match = await _repository.Match.GetByIdAsync(goalDto.MatchId);
+
+            if (!match.TeamOneId.HasValue || !match.TeamTwoId.HasValue)
+            {
+                throw new InvalidOperationException("Cannot record goals until both teams are set for this match.");
+            }
 
             if (goalDto.TeamId != match.TeamOneId && goalDto.TeamId != match.TeamTwoId)
             {
@@ -63,7 +74,7 @@ namespace Core.Services.Goals
             }
 
             Player player = await _repository.Player.GetByIdAsync(goalDto.PlayerId);
-            int opponentId = goalDto.TeamId == match.TeamOneId ? match.TeamTwoId : match.TeamOneId;
+            int opponentId = goalDto.TeamId == match.TeamOneId ? match.TeamTwoId.Value : match.TeamOneId.Value;
 
             if (goalDto.IsOwnGoal)
             {
@@ -91,25 +102,49 @@ namespace Core.Services.Goals
             _repository.Goal.Create(goal);
             await _repository.SaveAsync();
 
-            DateTime fullTime = match.Date.AddMinutes(BetScoringRules.MatchDurationMinutes);
-            if (fullTime <= DateTime.UtcNow)
-            {
-                try
-                {
-                    await _betService.ResolveBetsForMatch(goalDto.MatchId);
-                }
-                catch (InvalidOperationException)
-                {
-                    // Resolution may fail until both team stats rows exist with a complete result.
-                }
-            }
+            return await TryResolveAndAdvance(goalDto.MatchId, match);
         }
 
-        public async Task DeleteGoal(int id)
+        public async Task<string?> DeleteGoal(int id)
         {
             Goal goal = await _repository.Goal.GetByIdAsync(id);
+            TeamStats stats = await _repository.TeamStats.GetByIdAsync(goal.TeamStatsId);
+            int matchId = stats.MatchId;
+
             _repository.Goal.Delete(goal);
             await _repository.SaveAsync();
+
+            Match match = await _repository.Match.GetByIdAsync(matchId);
+            return await TryResolveAndAdvance(matchId, match);
+        }
+
+        private async Task<string?> TryResolveAndAdvance(int matchId, Match match)
+        {
+            DateTime fullTime = match.Date.AddMinutes(BetScoringRules.MatchDurationMinutes);
+            if (fullTime > DateTime.UtcNow)
+            {
+                return null;
+            }
+
+            try
+            {
+                await _betService.ResolveBetsForMatch(matchId);
+            }
+            catch (InvalidOperationException)
+            {
+                // Resolution may fail until both team stats rows exist with a complete result.
+            }
+
+            try
+            {
+                await _knockoutService.TryAdvanceFromMatch(matchId);
+                return null;
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Advancement may fail if the destination match already has events recorded.
+                return ex.Message;
+            }
         }
 
         private TeamStats ResolveStats(int matchId, int teamId)

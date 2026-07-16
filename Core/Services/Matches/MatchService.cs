@@ -8,10 +8,12 @@ namespace Core.Services.Matches
     public class MatchService : IMatchService
     {
         private readonly IRepositoryManager _repository;
+        private readonly IBetService _betService;
 
-        public MatchService(IRepositoryManager repository)
+        public MatchService(IRepositoryManager repository, IBetService betService)
         {
             _repository = repository;
+            _betService = betService;
         }
 
         public List<MatchDTO> GetMatches()
@@ -38,24 +40,37 @@ namespace Core.Services.Matches
                 ? _repository.Card.Find(card => statIds.Contains(card.TeamStatsId)).ToList()
                 : new List<Card>();
 
-            TeamStats? teamOneStats = stats.FirstOrDefault(teamStats => teamStats.TeamId == match.TeamOneId);
-            TeamStats? teamTwoStats = stats.FirstOrDefault(teamStats => teamStats.TeamId == match.TeamTwoId);
-            (string status, bool canBet) = ResolveMatchStatus(match.Date);
+            TeamStats? teamOneStats = match.TeamOneId.HasValue
+                ? stats.FirstOrDefault(teamStats => teamStats.TeamId == match.TeamOneId.Value)
+                : null;
+            TeamStats? teamTwoStats = match.TeamTwoId.HasValue
+                ? stats.FirstOrDefault(teamStats => teamStats.TeamId == match.TeamTwoId.Value)
+                : null;
+            (string status, bool canBet) = ResolveMatchStatus(match);
 
             return new MatchDetailDTO
             {
                 Id = match.Id,
                 Date = match.Date,
+                Stage = match.Stage,
+                StageName = FormatStageName(match.Stage),
                 StadiumId = match.StadiumId,
                 StadiumName = stadium.Name,
                 TeamOneId = match.TeamOneId,
-                TeamOneName = ResolveTeamName(match.TeamOneId, teams, countries),
+                TeamOneName = match.TeamOneId.HasValue
+                    ? ResolveTeamName(match.TeamOneId.Value, teams, countries)
+                    : "TBD",
                 TeamTwoId = match.TeamTwoId,
-                TeamTwoName = ResolveTeamName(match.TeamTwoId, teams, countries),
+                TeamTwoName = match.TeamTwoId.HasValue
+                    ? ResolveTeamName(match.TeamTwoId.Value, teams, countries)
+                    : "TBD",
+                FeederMatchOneId = match.FeederMatchOneId,
+                FeederMatchTwoId = match.FeederMatchTwoId,
                 TeamOneScore = teamOneStats == null ? 0 : goals.Count(goal => goal.TeamStatsId == teamOneStats.Id),
                 TeamTwoScore = teamTwoStats == null ? 0 : goals.Count(goal => goal.TeamStatsId == teamTwoStats.Id),
                 Status = status,
                 CanBet = canBet,
+                ExternalMatchId = match.ExternalMatchId,
                 TeamOneStats = BuildTeamStatsDto(teamOneStats, match, teams, countries, players, goals, cards),
                 TeamTwoStats = BuildTeamStatsDto(teamTwoStats, match, teams, countries, players, goals, cards)
             };
@@ -68,13 +83,20 @@ namespace Core.Services.Matches
                 throw new InvalidOperationException("A match must be between two different teams.");
             }
 
-            await _repository.Team.GetByIdAsync(matchDto.TeamOneId);
-            await _repository.Team.GetByIdAsync(matchDto.TeamTwoId);
+            if (!Enum.IsDefined(typeof(MatchStage), matchDto.Stage))
+            {
+                throw new InvalidOperationException("Stage must be a valid match stage.");
+            }
+
+            Team teamOne = await _repository.Team.GetByIdAsync(matchDto.TeamOneId);
+            Team teamTwo = await _repository.Team.GetByIdAsync(matchDto.TeamTwoId);
             await _repository.Stadium.GetByIdAsync(matchDto.StadiumId);
+            await EnsureTeamsEligibleForStage(teamOne, teamTwo, matchDto.Stage);
 
             Match match = new Match
             {
                 Date = matchDto.Date,
+                Stage = matchDto.Stage,
                 StadiumId = matchDto.StadiumId,
                 TeamOneId = matchDto.TeamOneId,
                 TeamTwoId = matchDto.TeamTwoId,
@@ -91,9 +113,27 @@ namespace Core.Services.Matches
 
         public async Task UpdateMatch(UpdateMatchDTO matchDto)
         {
-            if (matchDto.TeamOneId == matchDto.TeamTwoId)
+            if (!Enum.IsDefined(typeof(MatchStage), matchDto.Stage))
+            {
+                throw new InvalidOperationException("Stage must be a valid match stage.");
+            }
+
+            bool bothTeamsSet = matchDto.TeamOneId.HasValue && matchDto.TeamTwoId.HasValue;
+            bool bothTeamsTbd = !matchDto.TeamOneId.HasValue && !matchDto.TeamTwoId.HasValue;
+            if (!bothTeamsSet && !bothTeamsTbd)
+            {
+                throw new InvalidOperationException(
+                    "Set both teams, or leave both empty for a knockout TBD slot.");
+            }
+
+            if (bothTeamsSet && matchDto.TeamOneId == matchDto.TeamTwoId)
             {
                 throw new InvalidOperationException("A match must be between two different teams.");
+            }
+
+            if (matchDto.Stage == MatchStage.Group && !bothTeamsSet)
+            {
+                throw new InvalidOperationException("Group stage matches require both teams.");
             }
 
             Match match = await _repository.Match.GetByIdAsync(matchDto.Id);
@@ -102,30 +142,37 @@ namespace Core.Services.Matches
             List<TeamStats> stats = _repository.TeamStats.Find(teamStats => teamStats.MatchId == match.Id).ToList();
             bool hasRecordedEvents = MatchHasRecordedEvents(stats);
 
+            bool stageChanged = match.Stage != matchDto.Stage;
+            if (stageChanged && hasRecordedEvents)
+            {
+                throw new InvalidOperationException(
+                    "Cannot change the match stage after goals or cards have been recorded.");
+            }
+
             bool teamsChanged = match.TeamOneId != matchDto.TeamOneId || match.TeamTwoId != matchDto.TeamTwoId;
             if (teamsChanged)
             {
-                await _repository.Team.GetByIdAsync(matchDto.TeamOneId);
-                await _repository.Team.GetByIdAsync(matchDto.TeamTwoId);
-
                 if (hasRecordedEvents)
                 {
                     throw new InvalidOperationException(
                         "Cannot change the participating teams after goals or cards have been recorded.");
                 }
 
-                TeamStats? teamOneStats = stats.FirstOrDefault(teamStats => teamStats.TeamId == match.TeamOneId);
-                if (teamOneStats != null)
+                if (bothTeamsSet)
                 {
-                    teamOneStats.TeamId = matchDto.TeamOneId;
-                    _repository.TeamStats.Update(teamOneStats);
-                }
+                    TeamStats? teamOneStats = stats.FirstOrDefault(teamStats => teamStats.TeamId == match.TeamOneId);
+                    if (teamOneStats != null)
+                    {
+                        teamOneStats.TeamId = matchDto.TeamOneId!.Value;
+                        _repository.TeamStats.Update(teamOneStats);
+                    }
 
-                TeamStats? teamTwoStats = stats.FirstOrDefault(teamStats => teamStats.TeamId == match.TeamTwoId);
-                if (teamTwoStats != null)
-                {
-                    teamTwoStats.TeamId = matchDto.TeamTwoId;
-                    _repository.TeamStats.Update(teamTwoStats);
+                    TeamStats? teamTwoStats = stats.FirstOrDefault(teamStats => teamStats.TeamId == match.TeamTwoId);
+                    if (teamTwoStats != null)
+                    {
+                        teamTwoStats.TeamId = matchDto.TeamTwoId!.Value;
+                        _repository.TeamStats.Update(teamTwoStats);
+                    }
                 }
 
                 match.TeamOneId = matchDto.TeamOneId;
@@ -139,7 +186,15 @@ namespace Core.Services.Matches
                     "Cannot reschedule a match after goals or cards have been recorded.");
             }
 
+            if (bothTeamsSet)
+            {
+                Team teamOne = await _repository.Team.GetByIdAsync(matchDto.TeamOneId!.Value);
+                Team teamTwo = await _repository.Team.GetByIdAsync(matchDto.TeamTwoId!.Value);
+                await EnsureTeamsEligibleForStage(teamOne, teamTwo, matchDto.Stage);
+            }
+
             match.Date = matchDto.Date;
+            match.Stage = matchDto.Stage;
             match.StadiumId = matchDto.StadiumId;
 
             _repository.Match.Update(match);
@@ -196,8 +251,41 @@ namespace Core.Services.Matches
                 return new List<MatchDTO>();
             }
 
-            List<Match> matches = _repository.Match
-                .Find(match => teamIds.Contains(match.TeamOneId) && teamIds.Contains(match.TeamTwoId))
+            List<Match> allMatches = _repository.Match.GetAllAsync().ToList();
+            HashSet<int> matchIds = allMatches
+                .Where(match =>
+                    match.TeamOneId.HasValue
+                    && match.TeamTwoId.HasValue
+                    && teamIds.Contains(match.TeamOneId.Value)
+                    && teamIds.Contains(match.TeamTwoId.Value))
+                .Select(match => match.Id)
+                .ToHashSet();
+
+            bool expanded;
+            do
+            {
+                expanded = false;
+                foreach (Match match in allMatches)
+                {
+                    if (matchIds.Contains(match.Id))
+                    {
+                        continue;
+                    }
+
+                    bool linkedByFeeder =
+                        (match.FeederMatchOneId.HasValue && matchIds.Contains(match.FeederMatchOneId.Value))
+                        || (match.FeederMatchTwoId.HasValue && matchIds.Contains(match.FeederMatchTwoId.Value));
+                    if (linkedByFeeder)
+                    {
+                        matchIds.Add(match.Id);
+                        expanded = true;
+                    }
+                }
+            }
+            while (expanded);
+
+            List<Match> matches = allMatches
+                .Where(match => matchIds.Contains(match.Id))
                 .OrderBy(match => match.Date)
                 .ToList();
 
@@ -216,7 +304,12 @@ namespace Core.Services.Matches
             }
 
             List<Match> matches = _repository.Match
-                .Find(match => teamIds.Contains(match.TeamOneId) && teamIds.Contains(match.TeamTwoId))
+                .Find(match =>
+                    match.Stage == MatchStage.Group
+                    && match.TeamOneId.HasValue
+                    && match.TeamTwoId.HasValue
+                    && teamIds.Contains(match.TeamOneId.Value)
+                    && teamIds.Contains(match.TeamTwoId.Value))
                 .OrderBy(match => match.Date)
                 .ToList();
 
@@ -234,6 +327,119 @@ namespace Core.Services.Matches
                 .ToList();
 
             return BuildMatchDtos(matches);
+        }
+
+        public async Task<LiveSnapshotDTO> GetLiveSnapshot(int worldCupId)
+        {
+            List<MatchDTO> fixtures = GetFixturesByWorldCup(worldCupId);
+            List<LiveMatchSnapshotDTO> matchSnapshots = new List<LiveMatchSnapshotDTO>();
+            List<LiveEventSnapshotDTO> recentEvents = new List<LiveEventSnapshotDTO>();
+
+            if (fixtures.Count == 0)
+            {
+                return new LiveSnapshotDTO
+                {
+                    Matches = matchSnapshots,
+                    RecentEvents = recentEvents
+                };
+            }
+
+            List<int> matchIds = fixtures.Select(match => match.Id).ToList();
+            List<Match> matches = _repository.Match
+                .Find(match => matchIds.Contains(match.Id))
+                .ToList();
+            List<Team> teams = _repository.Team.GetAllAsync().ToList();
+            List<Country> countries = _repository.Country.GetAllAsync().ToList();
+            List<Player> players = _repository.Player.GetAllAsync().ToList();
+            List<TeamStats> stats = _repository.TeamStats
+                .Find(teamStats => matchIds.Contains(teamStats.MatchId))
+                .ToList();
+            List<int> statIds = stats.Select(teamStats => teamStats.Id).ToList();
+            List<Goal> goals = statIds.Count > 0
+                ? _repository.Goal.Find(goal => statIds.Contains(goal.TeamStatsId)).ToList()
+                : new List<Goal>();
+            List<Card> cards = statIds.Count > 0
+                ? _repository.Card.Find(card => statIds.Contains(card.TeamStatsId)).ToList()
+                : new List<Card>();
+
+            DateTime now = DateTime.UtcNow;
+            foreach (MatchDTO fixture in fixtures)
+            {
+                Match? match = matches.FirstOrDefault(existingMatch => existingMatch.Id == fixture.Id);
+                if (match == null)
+                {
+                    continue;
+                }
+
+                if (fixture.Status == "Finished")
+                {
+                    await _betService.TryAutoResolveFinishedMatch(fixture.Id);
+                }
+
+                int? currentMinute = null;
+                if (fixture.Status == "Live")
+                {
+                    currentMinute = ToMinute(now, match.Date);
+                }
+
+                matchSnapshots.Add(new LiveMatchSnapshotDTO
+                {
+                    MatchId = fixture.Id,
+                    Status = fixture.Status,
+                    TeamOneScore = fixture.TeamOneScore,
+                    TeamTwoScore = fixture.TeamTwoScore,
+                    CurrentMinute = currentMinute
+                });
+            }
+
+            foreach (Goal goal in goals)
+            {
+                TeamStats? owningStats = stats.FirstOrDefault(teamStats => teamStats.Id == goal.TeamStatsId);
+                Match? match = matches.FirstOrDefault(existingMatch => existingMatch.Id == owningStats?.MatchId);
+                if (match == null || owningStats == null)
+                {
+                    continue;
+                }
+
+                recentEvents.Add(new LiveEventSnapshotDTO
+                {
+                    MatchId = match.Id,
+                    EventType = goal.IsOwnGoal != 0 ? "OwnGoal" : "Goal",
+                    Minute = ToMinute(goal.TimeScored, match.Date),
+                    PlayerName = players.FirstOrDefault(player => player.Id == goal.PlayerId)?.Name,
+                    TeamName = ResolveTeamName(owningStats.TeamId, teams, countries)
+                });
+            }
+
+            foreach (Card card in cards)
+            {
+                TeamStats? owningStats = stats.FirstOrDefault(teamStats => teamStats.Id == card.TeamStatsId);
+                Match? match = matches.FirstOrDefault(existingMatch => existingMatch.Id == owningStats?.MatchId);
+                if (match == null || owningStats == null)
+                {
+                    continue;
+                }
+
+                recentEvents.Add(new LiveEventSnapshotDTO
+                {
+                    MatchId = match.Id,
+                    EventType = CardTypeName(card.Type),
+                    Minute = ToMinute(card.TimeIssued, match.Date),
+                    PlayerName = players.FirstOrDefault(player => player.Id == card.PlayerId)?.Name,
+                    TeamName = ResolveTeamName(owningStats.TeamId, teams, countries)
+                });
+            }
+
+            recentEvents = recentEvents
+                .OrderByDescending(evt => evt.Minute)
+                .Take(30)
+                .ToList();
+
+            return new LiveSnapshotDTO
+            {
+                Matches = matchSnapshots,
+                RecentEvents = recentEvents
+            };
         }
 
         private List<MatchDTO> BuildMatchDtos(List<Match> matches)
@@ -255,29 +461,79 @@ namespace Core.Services.Matches
 
             return matches.Select(match =>
             {
-                TeamStats? teamOneStats = stats.FirstOrDefault(teamStats =>
-                    teamStats.MatchId == match.Id && teamStats.TeamId == match.TeamOneId);
-                TeamStats? teamTwoStats = stats.FirstOrDefault(teamStats =>
-                    teamStats.MatchId == match.Id && teamStats.TeamId == match.TeamTwoId);
+                TeamStats? teamOneStats = match.TeamOneId.HasValue
+                    ? stats.FirstOrDefault(teamStats =>
+                        teamStats.MatchId == match.Id && teamStats.TeamId == match.TeamOneId.Value)
+                    : null;
+                TeamStats? teamTwoStats = match.TeamTwoId.HasValue
+                    ? stats.FirstOrDefault(teamStats =>
+                        teamStats.MatchId == match.Id && teamStats.TeamId == match.TeamTwoId.Value)
+                    : null;
 
-                (string status, bool canBet) = ResolveMatchStatus(match.Date);
+                (string status, bool canBet) = ResolveMatchStatus(match);
 
                 return new MatchDTO
                 {
                     Id = match.Id,
                     Date = match.Date,
+                    Stage = match.Stage,
+                    StageName = FormatStageName(match.Stage),
                     StadiumId = match.StadiumId,
                     StadiumName = stadiums.FirstOrDefault(stadium => stadium.Id == match.StadiumId)?.Name,
                     TeamOneId = match.TeamOneId,
-                    TeamOneName = ResolveTeamName(match.TeamOneId, teams, countries),
+                    TeamOneName = match.TeamOneId.HasValue
+                        ? ResolveTeamName(match.TeamOneId.Value, teams, countries)
+                        : "TBD",
                     TeamTwoId = match.TeamTwoId,
-                    TeamTwoName = ResolveTeamName(match.TeamTwoId, teams, countries),
+                    TeamTwoName = match.TeamTwoId.HasValue
+                        ? ResolveTeamName(match.TeamTwoId.Value, teams, countries)
+                        : "TBD",
+                    FeederMatchOneId = match.FeederMatchOneId,
+                    FeederMatchTwoId = match.FeederMatchTwoId,
                     TeamOneScore = teamOneStats == null ? 0 : goals.Count(goal => goal.TeamStatsId == teamOneStats.Id),
                     TeamTwoScore = teamTwoStats == null ? 0 : goals.Count(goal => goal.TeamStatsId == teamTwoStats.Id),
                     Status = status,
-                    CanBet = canBet
+                    CanBet = canBet,
+                    ExternalMatchId = match.ExternalMatchId
                 };
             }).ToList();
+        }
+
+        private async Task EnsureTeamsEligibleForStage(Team teamOne, Team teamTwo, MatchStage stage)
+        {
+            if (stage == MatchStage.Group)
+            {
+                if (teamOne.GroupId != teamTwo.GroupId)
+                {
+                    throw new InvalidOperationException(
+                        "Group stage matches must be between teams in the same group.");
+                }
+
+                return;
+            }
+
+            Group groupOne = await _repository.Group.GetByIdAsync(teamOne.GroupId);
+            Group groupTwo = await _repository.Group.GetByIdAsync(teamTwo.GroupId);
+            if (groupOne.WorldCupId != groupTwo.WorldCupId)
+            {
+                throw new InvalidOperationException(
+                    "Knockout matches must be between teams in the same World Cup.");
+            }
+        }
+
+        internal static string FormatStageName(MatchStage stage)
+        {
+            return stage switch
+            {
+                MatchStage.Group => "Group",
+                MatchStage.RoundOf32 => "Round of 32",
+                MatchStage.RoundOf16 => "Round of 16",
+                MatchStage.QuarterFinal => "Quarter-final",
+                MatchStage.SemiFinal => "Semi-final",
+                MatchStage.ThirdPlace => "Third place",
+                MatchStage.Final => "Final",
+                _ => stage.ToString()
+            };
         }
 
         private static MatchTeamStatsDTO? BuildTeamStatsDto(
@@ -374,21 +630,36 @@ namespace Core.Services.Matches
             };
         }
 
-        private static (string Status, bool CanBet) ResolveMatchStatus(DateTime kickoff)
+        private static (string Status, bool CanBet) ResolveMatchStatus(Match match)
         {
+            if (!match.TeamOneId.HasValue || !match.TeamTwoId.HasValue)
+            {
+                return ("Scheduled", false);
+            }
+
             DateTime now = DateTime.UtcNow;
-            if (kickoff > now)
+            if (match.Date > now)
             {
                 return ("Scheduled", true);
             }
 
-            DateTime fullTime = kickoff.AddMinutes(BetScoringRules.MatchDurationMinutes);
+            DateTime fullTime = match.Date.AddMinutes(BetScoringRules.MatchDurationMinutes);
             if (fullTime > now)
             {
                 return ("Live", false);
             }
 
             return ("Finished", false);
+        }
+
+        private static (string Status, bool CanBet) ResolveMatchStatus(DateTime kickoff)
+        {
+            return ResolveMatchStatus(new Match
+            {
+                Date = kickoff,
+                TeamOneId = 1,
+                TeamTwoId = 2
+            });
         }
     }
 }

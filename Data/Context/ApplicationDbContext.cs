@@ -108,7 +108,22 @@ namespace Data.Context
             modelBuilder.Entity<Match>(e =>
             {
                 e.ToTable("Match");
+                e.Property(match => match.Stage)
+                    .HasConversion<int>()
+                    .HasDefaultValue(MatchStage.Group);
+                e.Property(match => match.FeederOneTakesLoser)
+                    .HasDefaultValue(false);
+                e.Property(match => match.FeederTwoTakesLoser)
+                    .HasDefaultValue(false);
+                e.HasIndex(p => p.Stage);
                 e.HasIndex(p => p.StadiumId);
+                e.HasIndex(p => p.FeederMatchOneId);
+                e.HasIndex(p => p.FeederMatchTwoId);
+                e.Property(match => match.ExternalMatchId)
+                    .HasMaxLength(64);
+                e.HasIndex(match => match.ExternalMatchId)
+                    .IsUnique()
+                    .HasFilter("\"ExternalMatchId\" IS NOT NULL");
                 e.HasOne(e => e.Stadium)
                 .WithMany(p => p.Match)
                 .HasForeignKey(e => e.StadiumId)
@@ -118,12 +133,14 @@ namespace Data.Context
                 e.HasOne(e => e.TeamOne)
                 .WithMany(t => t.TeamOneMatches)
                 .HasForeignKey(e => e.TeamOneId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_TeamOne_Match");
                 e.HasIndex(p => p.TeamTwoId);
                 e.HasOne(e => e.TeamTwo)
                 .WithMany(t => t.TeamTwoMatches)
                 .HasForeignKey(e => e.TeamTwoId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_TeamTwo_Match");
             });

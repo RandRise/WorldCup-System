@@ -1,5 +1,6 @@
 using Core.DTOs.Matches;
 using Core.Services.Matches;
+using Core.Services.MatchSync;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,10 +11,12 @@ namespace WorldCup_System.Controllers
     public class MatchController : Controller
     {
         private readonly IMatchService _matchService;
+        private readonly IMatchResultSyncService _matchResultSyncService;
 
-        public MatchController(IMatchService matchService)
+        public MatchController(IMatchService matchService, IMatchResultSyncService matchResultSyncService)
         {
             _matchService = matchService;
+            _matchResultSyncService = matchResultSyncService;
         }
 
         [HttpGet]
@@ -52,6 +55,20 @@ namespace WorldCup_System.Controllers
         public List<MatchDTO> GetFixturesByDate([FromQuery] DateTime date)
         {
             return _matchService.GetFixturesByDate(date);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetLiveSnapshot([FromQuery] int worldCupId)
+        {
+            try
+            {
+                LiveSnapshotDTO snapshot = await _matchService.GetLiveSnapshot(worldCupId);
+                return Ok(snapshot);
+            }
+            catch (Exception ex)
+            {
+                return ApiErrorHelper.FromException(ex);
+            }
         }
 
         [Authorize(Roles = "Admin")]
@@ -102,6 +119,59 @@ namespace WorldCup_System.Controllers
             {
                 await _matchService.DeleteMatch(id);
                 return Ok("Match deleted successfully.");
+            }
+            catch (Exception ex)
+            {
+                return ApiErrorHelper.FromException(ex);
+            }
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost]
+        public async Task<IActionResult> SetExternalMatchId([FromBody] SetExternalMatchIdDTO request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                await _matchResultSyncService.SetExternalMatchId(request);
+                return Ok("External match id saved.");
+            }
+            catch (Exception ex)
+            {
+                return ApiErrorHelper.FromException(ex);
+            }
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost("{matchId}")]
+        public async Task<IActionResult> SyncResult(int matchId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                SyncMatchResultDTO result = await _matchResultSyncService.SyncResult(matchId, cancellationToken);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return ApiErrorHelper.FromException(ex);
+            }
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost]
+        public async Task<IActionResult> SyncFinishedResults(
+            [FromQuery] int worldCupId,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                SyncFinishedResultsDTO result =
+                    await _matchResultSyncService.SyncFinishedResults(worldCupId, cancellationToken);
+                return Ok(result);
             }
             catch (Exception ex)
             {

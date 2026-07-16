@@ -103,14 +103,115 @@ namespace WorldCup_System.Tests.Controllers
         }
 
         [Fact]
-        public async Task ResolveBetsForMatch_WhenServiceSucceeds_ReturnsOkWithCount()
+        public async Task ResolveBetsForMatch_WhenServiceSucceeds_ReturnsResolveResultDto()
         {
-            _betServiceMock.Setup(betService => betService.ResolveBetsForMatch(1)).ReturnsAsync(3);
+            ResolveBetsResultDTO resolveResult = new ResolveBetsResultDTO
+            {
+                MatchId = 1,
+                ResolvedCount = 3,
+                Message = "3 bet(s) resolved.",
+                UserBreakdown = new List<BetResolveUserDTO>
+                {
+                    new BetResolveUserDTO
+                    {
+                        UserId = 42,
+                        UserName = "Alice",
+                        PredictedOutcome = "Brazil",
+                        PointsAwarded = 3,
+                        PreviousPoints = null
+                    }
+                }
+            };
+            _betServiceMock.Setup(betService => betService.ResolveBetsForMatch(1))
+                .ReturnsAsync(resolveResult);
 
             IActionResult actionResult = await _betController.ResolveBetsForMatch(1);
 
             OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
-            Assert.NotNull(okResult.Value);
+            ResolveBetsResultDTO result = Assert.IsType<ResolveBetsResultDTO>(okResult.Value);
+            Assert.Equal(1, result.MatchId);
+            Assert.Equal(3, result.ResolvedCount);
+            Assert.Equal("3 bet(s) resolved.", result.Message);
+            Assert.Single(result.UserBreakdown);
+            Assert.Equal(42, result.UserBreakdown[0].UserId);
+            Assert.Equal(3, result.UserBreakdown[0].PointsAwarded);
+        }
+
+        [Fact]
+        public async Task ResolveBetsForMatch_WhenServiceThrows_ReturnsBadRequest()
+        {
+            _betServiceMock
+                .Setup(betService => betService.ResolveBetsForMatch(1))
+                .ThrowsAsync(new InvalidOperationException("Match has not finished yet."));
+
+            IActionResult actionResult = await _betController.ResolveBetsForMatch(1);
+
+            BadRequestObjectResult badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult);
+            Assert.Contains("not finished", badRequestResult.Value?.ToString());
+        }
+
+        [Fact]
+        public async Task ResolveBetsForWorldCup_WhenServiceSucceeds_ReturnsWorldCupResultDto()
+        {
+            ResolveBetsWorldCupResultDTO worldCupResult = new ResolveBetsWorldCupResultDTO
+            {
+                WorldCupId = 2026,
+                MatchesProcessed = 2,
+                TotalResolvedCount = 5,
+                Message = "5 bet(s) resolved across 2 match(es).",
+                MatchResults = new List<ResolveBetsResultDTO>
+                {
+                    new ResolveBetsResultDTO { MatchId = 1, ResolvedCount = 3, Message = "3 bet(s) resolved." },
+                    new ResolveBetsResultDTO { MatchId = 2, ResolvedCount = 2, Message = "2 bet(s) resolved." }
+                }
+            };
+            _betServiceMock.Setup(betService => betService.ResolveBetsForWorldCup(2026))
+                .ReturnsAsync(worldCupResult);
+
+            IActionResult actionResult = await _betController.ResolveBetsForWorldCup(2026);
+
+            OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
+            ResolveBetsWorldCupResultDTO result = Assert.IsType<ResolveBetsWorldCupResultDTO>(okResult.Value);
+            Assert.Equal(2026, result.WorldCupId);
+            Assert.Equal(2, result.MatchesProcessed);
+            Assert.Equal(5, result.TotalResolvedCount);
+            Assert.Equal(2, result.MatchResults.Count);
+            Assert.Equal(1, result.MatchResults[0].MatchId);
+            Assert.Equal(3, result.MatchResults[0].ResolvedCount);
+        }
+
+        [Fact]
+        public async Task ResolveBetsForWorldCup_WhenServiceThrows_ReturnsBadRequest()
+        {
+            _betServiceMock
+                .Setup(betService => betService.ResolveBetsForWorldCup(2026))
+                .ThrowsAsync(new InvalidOperationException("No finished matches found."));
+
+            IActionResult actionResult = await _betController.ResolveBetsForWorldCup(2026);
+
+            BadRequestObjectResult badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult);
+            Assert.Contains("No finished matches", badRequestResult.Value?.ToString());
+        }
+
+        [Fact]
+        public async Task GetMyActiveBets_WhenAuthenticated_ReturnsActiveBetsFromService()
+        {
+            User user = new User { Id = 42, Email = "user@test.com", UserName = "user@test.com", Name = "User" };
+            SetUserClaims(new Claim(ClaimTypes.Email, "user@test.com"));
+            _userManagerMock.Setup(userManager => userManager.FindByEmailAsync("user@test.com")).ReturnsAsync(user);
+
+            List<BetDTO> activeBets = new List<BetDTO>
+            {
+                new BetDTO { Id = 1, UserId = 42, MatchId = 1, IsDraw = false, PredictedTeamId = 10, IsActive = true }
+            };
+            _betServiceMock.Setup(betService => betService.GetActiveBets(42)).Returns(activeBets);
+
+            IActionResult actionResult = await _betController.GetMyActiveBets();
+
+            OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
+            List<BetDTO> result = Assert.IsType<List<BetDTO>>(okResult.Value);
+            Assert.Single(result);
+            Assert.True(result[0].IsActive);
         }
 
         [Fact]

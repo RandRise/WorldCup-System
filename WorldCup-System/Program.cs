@@ -1,5 +1,6 @@
 using Serilog;
 using Serilog.Formatting.Compact;
+using Core.Options;
 using Core.Services.Bets;
 using Core.Services.Cards;
 using Core.Services.Cities;
@@ -7,7 +8,9 @@ using Core.Services.Coaches;
 using Core.Services.Countries;
 using Core.Services.Goals;
 using Core.Services.Groups;
+using Core.Services.Knockout;
 using Core.Services.Matches;
+using Core.Services.MatchSync;
 using Core.Services.PlayerPositions;
 using Core.Services.Players;
 using Core.Services.Stadiums;
@@ -108,12 +111,25 @@ builder.Services.AddScoped<ICoachService, CoachService>();
 builder.Services.AddScoped<IPlayerService, PlayerService>();
 builder.Services.AddScoped<IPlayerPositionService, PlayerPositionService>();
 builder.Services.AddScoped<IMatchService, MatchService>();
+builder.Services.AddScoped<IKnockoutService, KnockoutService>();
 builder.Services.AddScoped<IGoalService, GoalService>();
 builder.Services.AddScoped<ICardService, CardService>();
 builder.Services.AddScoped<ITeamStatsService, TeamStatsService>();
 builder.Services.AddScoped<IStandingsService, StandingsService>();
 builder.Services.AddScoped<IBetService, BetService>();
 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
+builder.Services.AddScoped<IMatchResultSyncService, MatchResultSyncService>();
+builder.Services.Configure<MatchResultSyncOptions>(
+    builder.Configuration.GetSection(MatchResultSyncOptions.SectionName));
+builder.Services.AddHttpClient<IExternalMatchResultProvider, FifaCalendarMatchResultProvider>((serviceProvider, client) =>
+{
+    MatchResultSyncOptions options = serviceProvider
+        .GetRequiredService<Microsoft.Extensions.Options.IOptions<MatchResultSyncOptions>>()
+        .Value;
+    client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(30);
+    client.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "application/json");
+});
 
 builder.Services.AddDbContext<ApplicationDbContext>(option =>
 {
@@ -213,6 +229,21 @@ using (var scope = app.Services.CreateScope())
     else
     {
         await dbContext.Database.MigrateAsync();
+        // Some local DBs recorded AddMatchStage as applied before Feeder* columns existed.
+        await dbContext.Database.ExecuteSqlRawAsync(
+            """
+            ALTER TABLE "Match" ADD COLUMN IF NOT EXISTS "FeederMatchOneId" integer NULL;
+            ALTER TABLE "Match" ADD COLUMN IF NOT EXISTS "FeederMatchTwoId" integer NULL;
+            ALTER TABLE "Match" ADD COLUMN IF NOT EXISTS "FeederOneTakesLoser" boolean NOT NULL DEFAULT FALSE;
+            ALTER TABLE "Match" ADD COLUMN IF NOT EXISTS "FeederTwoTakesLoser" boolean NOT NULL DEFAULT FALSE;
+            ALTER TABLE "Match" ALTER COLUMN "TeamOneId" DROP NOT NULL;
+            ALTER TABLE "Match" ALTER COLUMN "TeamTwoId" DROP NOT NULL;
+            CREATE INDEX IF NOT EXISTS "IX_Match_FeederMatchOneId" ON "Match" ("FeederMatchOneId");
+            CREATE INDEX IF NOT EXISTS "IX_Match_FeederMatchTwoId" ON "Match" ("FeederMatchTwoId");
+            CREATE INDEX IF NOT EXISTS "IX_Match_Stage" ON "Match" ("Stage");
+            ALTER TABLE "Match" ADD COLUMN IF NOT EXISTS "ExternalMatchId" character varying(64) NULL;
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_Match_ExternalMatchId" ON "Match" ("ExternalMatchId") WHERE "ExternalMatchId" IS NOT NULL;
+            """);
     }
 
     string[] playerPositions = { "Goalkeeper", "Defender", "Midfielder", "Forward" };

@@ -33,7 +33,12 @@ namespace WorldCup_System.Controllers
 
             try
             {
-                await _goalService.AddGoal(goal);
+                string? advanceWarning = await _goalService.AddGoal(goal);
+                if (!string.IsNullOrWhiteSpace(advanceWarning))
+                {
+                    return Ok($"Goal recorded successfully. Warning: {advanceWarning}");
+                }
+
                 return Ok("Goal recorded successfully.");
             }
             catch (Exception ex)
@@ -48,7 +53,12 @@ namespace WorldCup_System.Controllers
         {
             try
             {
-                await _goalService.DeleteGoal(id);
+                string? advanceWarning = await _goalService.DeleteGoal(id);
+                if (!string.IsNullOrWhiteSpace(advanceWarning))
+                {
+                    return Ok($"Goal deleted successfully. Warning: {advanceWarning}");
+                }
+
                 return Ok("Goal deleted successfully.");
             }
             catch (Exception ex)

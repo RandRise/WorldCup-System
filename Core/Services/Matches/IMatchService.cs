@@ -12,5 +12,6 @@ namespace Core.Services.Matches
         List<MatchDTO> GetFixturesByWorldCup(int worldCupId);
         List<MatchDTO> GetFixturesByGroup(int groupId);
         List<MatchDTO> GetFixturesByDate(DateTime date);
+        Task<LiveSnapshotDTO> GetLiveSnapshot(int worldCupId);
     }
 }

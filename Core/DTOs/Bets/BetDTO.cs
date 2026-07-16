@@ -58,4 +58,30 @@ namespace Core.DTOs.Bets
         public required string Summary { get; set; }
         public required IReadOnlyList<BettingRuleDTO> Rules { get; set; }
     }
+
+    public class BetResolveUserDTO
+    {
+        public long UserId { get; set; }
+        public string? UserName { get; set; }
+        public string? PredictedOutcome { get; set; }
+        public int PointsAwarded { get; set; }
+        public int? PreviousPoints { get; set; }
+    }
+
+    public class ResolveBetsResultDTO
+    {
+        public int MatchId { get; set; }
+        public int ResolvedCount { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public List<BetResolveUserDTO> UserBreakdown { get; set; } = new();
+    }
+
+    public class ResolveBetsWorldCupResultDTO
+    {
+        public int WorldCupId { get; set; }
+        public int MatchesProcessed { get; set; }
+        public int TotalResolvedCount { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public List<ResolveBetsResultDTO> MatchResults { get; set; } = new();
+    }
 }

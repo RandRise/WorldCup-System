@@ -1,8 +1,8 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { AddMatchRequest, Match, UpdateMatchRequest } from '../models/api.models';
+import { AddMatchRequest, LiveSnapshot, Match, MatchDetail, SetExternalMatchIdRequest, SyncFinishedResults, SyncMatchResult, UpdateMatchRequest } from '../models/api.models';
 import { ApiHttpService } from './api-http.service';
 
 @Injectable({ providedIn: 'root' })
@@ -13,6 +13,17 @@ export class MatchApiService {
 
   getMatches(): Promise<Match[]> {
     return firstValueFrom(this.http.get<Match[]>(`${this.baseUrl}/Match/GetMatches`));
+  }
+
+  getMatchById(id: number): Promise<MatchDetail> {
+    return firstValueFrom(this.http.get<MatchDetail>(`${this.baseUrl}/Match/GetMatchById/${id}`));
+  }
+
+  getLiveSnapshot(worldCupId: number): Promise<LiveSnapshot> {
+    const params = new HttpParams().set('worldCupId', String(worldCupId));
+    return firstValueFrom(
+      this.http.get<LiveSnapshot>(`${this.baseUrl}/Match/GetLiveSnapshot`, { params }),
+    );
   }
 
   getFixturesByWorldCup(worldCupId: number): Promise<Match[]> {
@@ -28,23 +39,35 @@ export class MatchApiService {
   }
 
   addMatch(request: AddMatchRequest): Promise<void> {
-    return this.apiHttp.postCommand(`${this.baseUrl}/Match/AddMatch`, request);
+    return this.apiHttp.postCommand(`${this.baseUrl}/Match/AddMatch`, request).then(() => undefined);
   }
 
   updateMatch(request: UpdateMatchRequest): Promise<void> {
-    return this.apiHttp.postCommand(`${this.baseUrl}/Match/UpdateMatch`, request);
+    return this.apiHttp
+      .postCommand(`${this.baseUrl}/Match/UpdateMatch`, request)
+      .then(() => undefined);
   }
 
   deleteMatch(id: number): Promise<void> {
-    return this.apiHttp.deleteCommand(`${this.baseUrl}/Match/DeleteMatch/${id}`);
+    return this.apiHttp.deleteCommand(`${this.baseUrl}/Match/DeleteMatch/${id}`).then(() => undefined);
   }
 
-  resolveBetsForMatch(matchId: number): Promise<{ resolvedCount: number; message: string }> {
+  setExternalMatchId(request: SetExternalMatchIdRequest): Promise<void> {
+    return this.apiHttp
+      .postCommand(`${this.baseUrl}/Match/SetExternalMatchId`, request)
+      .then(() => undefined);
+  }
+
+  syncResult(matchId: number): Promise<SyncMatchResult> {
     return firstValueFrom(
-      this.http.post<{ resolvedCount: number; message: string }>(
-        `${this.baseUrl}/Bet/ResolveBetsForMatch/${matchId}`,
-        {},
-      ),
+      this.http.post<SyncMatchResult>(`${this.baseUrl}/Match/SyncResult/${matchId}`, {}),
+    );
+  }
+
+  syncFinishedResults(worldCupId: number): Promise<SyncFinishedResults> {
+    const params = new HttpParams().set('worldCupId', String(worldCupId));
+    return firstValueFrom(
+      this.http.post<SyncFinishedResults>(`${this.baseUrl}/Match/SyncFinishedResults`, {}, { params }),
     );
   }
 }

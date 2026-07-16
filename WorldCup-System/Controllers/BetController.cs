@@ -146,8 +146,23 @@ namespace WorldCup_System.Controllers
         {
             try
             {
-                int resolvedCount = await _betService.ResolveBetsForMatch(matchId);
-                return Ok(new { resolvedCount, message = $"{resolvedCount} bet(s) resolved." });
+                ResolveBetsResultDTO result = await _betService.ResolveBetsForMatch(matchId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return ApiErrorHelper.FromException(ex);
+            }
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost("{worldCupId}")]
+        public async Task<IActionResult> ResolveBetsForWorldCup(int worldCupId)
+        {
+            try
+            {
+                ResolveBetsWorldCupResultDTO result = await _betService.ResolveBetsForWorldCup(worldCupId);
+                return Ok(result);
             }
             catch (Exception ex)
             {

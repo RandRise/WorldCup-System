@@ -1,5 +1,6 @@
 using Core.DTOs.Matches;
 using Core.Services.Matches;
+using Core.Services.MatchSync;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using WorldCup_System.Controllers;
@@ -9,12 +10,16 @@ namespace WorldCup_System.Tests.Controllers
     public class MatchControllerTests
     {
         private readonly Mock<IMatchService> _matchServiceMock;
+        private readonly Mock<IMatchResultSyncService> _matchResultSyncServiceMock;
         private readonly MatchController _matchController;
 
         public MatchControllerTests()
         {
             _matchServiceMock = new Mock<IMatchService>();
-            _matchController = new MatchController(_matchServiceMock.Object);
+            _matchResultSyncServiceMock = new Mock<IMatchResultSyncService>();
+            _matchController = new MatchController(
+                _matchServiceMock.Object,
+                _matchResultSyncServiceMock.Object);
         }
 
         [Fact]
@@ -110,6 +115,72 @@ namespace WorldCup_System.Tests.Controllers
             List<MatchDTO> result = _matchController.GetFixturesByDate(date);
 
             Assert.Single(result);
+        }
+
+        [Fact]
+        public async Task GetLiveSnapshot_WhenServiceSucceeds_ReturnsOkWithSnapshot()
+        {
+            LiveSnapshotDTO snapshot = new LiveSnapshotDTO
+            {
+                Matches = new List<LiveMatchSnapshotDTO>
+                {
+                    new LiveMatchSnapshotDTO
+                    {
+                        MatchId = 1,
+                        Status = "Live",
+                        TeamOneScore = 1,
+                        TeamTwoScore = 0,
+                        CurrentMinute = 32
+                    },
+                    new LiveMatchSnapshotDTO
+                    {
+                        MatchId = 2,
+                        Status = "Finished",
+                        TeamOneScore = 2,
+                        TeamTwoScore = 1,
+                        CurrentMinute = null
+                    }
+                },
+                RecentEvents = new List<LiveEventSnapshotDTO>
+                {
+                    new LiveEventSnapshotDTO
+                    {
+                        MatchId = 1,
+                        EventType = "Goal",
+                        Minute = 25,
+                        PlayerName = "Neymar",
+                        TeamName = "Brazil"
+                    }
+                }
+            };
+
+            _matchServiceMock
+                .Setup(matchService => matchService.GetLiveSnapshot(2026))
+                .ReturnsAsync(snapshot);
+
+            IActionResult actionResult = await _matchController.GetLiveSnapshot(2026);
+
+            OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
+            LiveSnapshotDTO result = Assert.IsType<LiveSnapshotDTO>(okResult.Value);
+            Assert.Equal(2, result.Matches.Count);
+            Assert.Equal("Live", result.Matches[0].Status);
+            Assert.Equal(32, result.Matches[0].CurrentMinute);
+            Assert.Single(result.RecentEvents);
+            Assert.Equal("Goal", result.RecentEvents[0].EventType);
+            _matchServiceMock.Verify(matchService => matchService.GetLiveSnapshot(2026), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetLiveSnapshot_WhenServiceThrows_ReturnsBadRequest()
+        {
+            _matchServiceMock
+                .Setup(matchService => matchService.GetLiveSnapshot(999))
+                .ThrowsAsync(new InvalidOperationException("World Cup not found."));
+
+            IActionResult actionResult = await _matchController.GetLiveSnapshot(999);
+
+            BadRequestObjectResult badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult);
+            Assert.Contains("World Cup not found", badRequestResult.Value?.ToString());
         }
 
         [Fact]
@@ -218,6 +289,134 @@ namespace WorldCup_System.Tests.Controllers
 
             BadRequestObjectResult badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult);
             Assert.Contains("bets are placed", badRequestResult.Value?.ToString());
+        }
+
+        [Fact]
+        public async Task SetExternalMatchId_WhenServiceSucceeds_ReturnsOk()
+        {
+            SetExternalMatchIdDTO request = new SetExternalMatchIdDTO
+            {
+                MatchId = 1,
+                ExternalMatchId = "FIFA-100"
+            };
+            _matchResultSyncServiceMock
+                .Setup(syncService => syncService.SetExternalMatchId(request))
+                .Returns(Task.CompletedTask);
+
+            IActionResult actionResult = await _matchController.SetExternalMatchId(request);
+
+            OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
+            Assert.Equal("External match id saved.", okResult.Value);
+            _matchResultSyncServiceMock.Verify(syncService => syncService.SetExternalMatchId(request), Times.Once);
+        }
+
+        [Fact]
+        public async Task SetExternalMatchId_WhenDuplicate_ReturnsBadRequest()
+        {
+            SetExternalMatchIdDTO request = new SetExternalMatchIdDTO
+            {
+                MatchId = 1,
+                ExternalMatchId = "FIFA-DUPE"
+            };
+            _matchResultSyncServiceMock
+                .Setup(syncService => syncService.SetExternalMatchId(request))
+                .ThrowsAsync(new InvalidOperationException(
+                    "ExternalMatchId 'FIFA-DUPE' is already mapped to match 99."));
+
+            IActionResult actionResult = await _matchController.SetExternalMatchId(request);
+
+            BadRequestObjectResult badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult);
+            Assert.Contains("already mapped", badRequestResult.Value?.ToString());
+        }
+
+        [Fact]
+        public async Task SyncResult_WhenServiceSucceeds_ReturnsOkWithResult()
+        {
+            SyncMatchResultDTO syncResult = new SyncMatchResultDTO
+            {
+                MatchId = 1,
+                ExternalMatchId = "FIFA-100",
+                Applied = true,
+                ScoreChanged = true,
+                TeamOneScore = 2,
+                TeamTwoScore = 1,
+                BetsResolved = 4,
+                Message = "Applied FT score 2-1 from external feed."
+            };
+            _matchResultSyncServiceMock
+                .Setup(syncService => syncService.SyncResult(1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(syncResult);
+
+            IActionResult actionResult = await _matchController.SyncResult(1, CancellationToken.None);
+
+            OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
+            SyncMatchResultDTO result = Assert.IsType<SyncMatchResultDTO>(okResult.Value);
+            Assert.True(result.Applied);
+            Assert.Equal(2, result.TeamOneScore);
+            Assert.Equal(4, result.BetsResolved);
+            _matchResultSyncServiceMock.Verify(
+                syncService => syncService.SyncResult(1, It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task SyncResult_WhenServiceThrows_ReturnsBadRequest()
+        {
+            _matchResultSyncServiceMock
+                .Setup(syncService => syncService.SyncResult(1, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("Match 1 has no ExternalMatchId."));
+
+            IActionResult actionResult = await _matchController.SyncResult(1, CancellationToken.None);
+
+            BadRequestObjectResult badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult);
+            Assert.Contains("ExternalMatchId", badRequestResult.Value?.ToString());
+        }
+
+        [Fact]
+        public async Task SyncFinishedResults_WhenServiceSucceeds_ReturnsOkWithBatchResult()
+        {
+            SyncFinishedResultsDTO batchResult = new SyncFinishedResultsDTO
+            {
+                WorldCupId = 2026,
+                MatchesAttempted = 2,
+                MatchesApplied = 1,
+                TotalBetsResolved = 3,
+                Message = "Attempted 2 mapped match(es); applied 1; resolved 3 bet update(s).",
+                Results = new List<SyncMatchResultDTO>
+                {
+                    new SyncMatchResultDTO { MatchId = 1, Applied = true, BetsResolved = 3 },
+                    new SyncMatchResultDTO { MatchId = 2, Applied = false, Message = "not finished" }
+                }
+            };
+            _matchResultSyncServiceMock
+                .Setup(syncService => syncService.SyncFinishedResults(2026, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(batchResult);
+
+            IActionResult actionResult =
+                await _matchController.SyncFinishedResults(2026, CancellationToken.None);
+
+            OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
+            SyncFinishedResultsDTO result = Assert.IsType<SyncFinishedResultsDTO>(okResult.Value);
+            Assert.Equal(2, result.MatchesAttempted);
+            Assert.Equal(1, result.MatchesApplied);
+            Assert.Equal(3, result.TotalBetsResolved);
+            _matchResultSyncServiceMock.Verify(
+                syncService => syncService.SyncFinishedResults(2026, It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task SyncFinishedResults_WhenServiceThrows_ReturnsBadRequest()
+        {
+            _matchResultSyncServiceMock
+                .Setup(syncService => syncService.SyncFinishedResults(999, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("World Cup not found."));
+
+            IActionResult actionResult =
+                await _matchController.SyncFinishedResults(999, CancellationToken.None);
+
+            BadRequestObjectResult badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult);
+            Assert.Contains("World Cup not found", badRequestResult.Value?.ToString());
         }
     }
 }

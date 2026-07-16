@@ -1,7 +1,9 @@
 using System.Linq.Expressions;
+using Core.DTOs.Bets;
 using Core.DTOs.Goals;
 using Core.Services.Bets;
 using Core.Services.Goals;
+using Core.Services.Knockout;
 using Data.Entities;
 using Data.Repos;
 using Moq;
@@ -17,6 +19,7 @@ namespace WorldCup_System.Tests.Services.Goals
         private readonly Mock<IRepository<Goal>> _goalRepositoryMock;
         private readonly Mock<IRepository<Player>> _playerRepositoryMock;
         private readonly Mock<IBetService> _betServiceMock;
+        private readonly Mock<IKnockoutService> _knockoutServiceMock;
         private readonly GoalService _goalService;
 
         public GoalServiceTests()
@@ -27,6 +30,7 @@ namespace WorldCup_System.Tests.Services.Goals
             _goalRepositoryMock = new Mock<IRepository<Goal>>();
             _playerRepositoryMock = new Mock<IRepository<Player>>();
             _betServiceMock = new Mock<IBetService>();
+            _knockoutServiceMock = new Mock<IKnockoutService>();
 
             _repositoryManagerMock.Setup(repositoryManager => repositoryManager.Match).Returns(_matchRepositoryMock.Object);
             _repositoryManagerMock.Setup(repositoryManager => repositoryManager.TeamStats).Returns(_teamStatsRepositoryMock.Object);
@@ -34,9 +38,15 @@ namespace WorldCup_System.Tests.Services.Goals
             _repositoryManagerMock.Setup(repositoryManager => repositoryManager.Player).Returns(_playerRepositoryMock.Object);
             _betServiceMock
                 .Setup(betService => betService.ResolveBetsForMatch(It.IsAny<int>()))
-                .ReturnsAsync(0);
+                .ReturnsAsync(new ResolveBetsResultDTO { ResolvedCount = 0 });
+            _knockoutServiceMock
+                .Setup(knockoutService => knockoutService.TryAdvanceFromMatch(It.IsAny<int>()))
+                .Returns(Task.CompletedTask);
 
-            _goalService = new GoalService(_repositoryManagerMock.Object, _betServiceMock.Object);
+            _goalService = new GoalService(
+                _repositoryManagerMock.Object,
+                _betServiceMock.Object,
+                _knockoutServiceMock.Object);
         }
 
         [Fact]
@@ -142,11 +152,77 @@ namespace WorldCup_System.Tests.Services.Goals
             SetupFind(_teamStatsRepositoryMock, new List<TeamStats> { stats });
             _goalRepositoryMock.Setup(goalRepository => goalRepository.Create(It.IsAny<Goal>()));
             _repositoryManagerMock.Setup(repositoryManager => repositoryManager.SaveAsync()).Returns(Task.CompletedTask);
-            _betServiceMock.Setup(betService => betService.ResolveBetsForMatch(1)).ReturnsAsync(2);
+            _betServiceMock.Setup(betService => betService.ResolveBetsForMatch(1))
+                .ReturnsAsync(new ResolveBetsResultDTO { MatchId = 1, ResolvedCount = 2 });
 
-            await _goalService.AddGoal(addGoalDto);
+            string? warning = await _goalService.AddGoal(addGoalDto);
 
+            Assert.Null(warning);
             _betServiceMock.Verify(betService => betService.ResolveBetsForMatch(1), Times.Once);
+            _knockoutServiceMock.Verify(knockoutService => knockoutService.TryAdvanceFromMatch(1), Times.Once);
+        }
+
+        [Fact]
+        public async Task AddGoal_WhenMatchFinishedAndAdvanceThrows_ReturnsWarning()
+        {
+            DateTime kickoff = DateTime.UtcNow.AddMinutes(-(BetScoringRules.MatchDurationMinutes + 5));
+            MatchEntity match = new MatchEntity { Id = 1, Date = kickoff, StadiumId = 5, TeamOneId = 10, TeamTwoId = 20 };
+            TeamStats stats = new TeamStats { Id = 100, MatchId = 1, TeamId = 10 };
+            Player player = new Player { Id = 1, Name = "Neymar", Number = 10, TeamId = 10, PositionId = 1 };
+            AddGoalDTO addGoalDto = new AddGoalDTO
+            {
+                MatchId = 1,
+                TeamId = 10,
+                PlayerId = 1,
+                Minute = 42,
+                IsOwnGoal = false
+            };
+
+            _matchRepositoryMock.Setup(matchRepository => matchRepository.GetByIdAsync(1)).ReturnsAsync(match);
+            _playerRepositoryMock.Setup(playerRepository => playerRepository.GetByIdAsync(1)).ReturnsAsync(player);
+            SetupFind(_teamStatsRepositoryMock, new List<TeamStats> { stats });
+            _goalRepositoryMock.Setup(goalRepository => goalRepository.Create(It.IsAny<Goal>()));
+            _repositoryManagerMock.Setup(repositoryManager => repositoryManager.SaveAsync()).Returns(Task.CompletedTask);
+            _knockoutServiceMock
+                .Setup(knockoutService => knockoutService.TryAdvanceFromMatch(1))
+                .ThrowsAsync(new InvalidOperationException(
+                    "Cannot advance into match 20: goals or cards are already recorded."));
+
+            string? warning = await _goalService.AddGoal(addGoalDto);
+
+            Assert.Equal("Cannot advance into match 20: goals or cards are already recorded.", warning);
+            _goalRepositoryMock.Verify(goalRepository => goalRepository.Create(It.IsAny<Goal>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task AddGoal_WhenTeamsTbd_ThrowsInvalidOperationException()
+        {
+            DateTime kickoff = DateTime.UtcNow.AddDays(1);
+            MatchEntity match = new MatchEntity
+            {
+                Id = 1,
+                Date = kickoff,
+                StadiumId = 5,
+                TeamOneId = null,
+                TeamTwoId = null,
+                Stage = MatchStage.QuarterFinal
+            };
+            AddGoalDTO addGoalDto = new AddGoalDTO
+            {
+                MatchId = 1,
+                TeamId = 10,
+                PlayerId = 1,
+                Minute = 10,
+                IsOwnGoal = false
+            };
+
+            _matchRepositoryMock.Setup(matchRepository => matchRepository.GetByIdAsync(1)).ReturnsAsync(match);
+
+            InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _goalService.AddGoal(addGoalDto));
+
+            Assert.Contains("Cannot record goals until both teams are set", exception.Message);
+            _goalRepositoryMock.Verify(goalRepository => goalRepository.Create(It.IsAny<Goal>()), Times.Never);
         }
 
         [Fact]
@@ -174,9 +250,11 @@ namespace WorldCup_System.Tests.Services.Goals
                 .Setup(betService => betService.ResolveBetsForMatch(1))
                 .ThrowsAsync(new InvalidOperationException("Incomplete match stats."));
 
-            await _goalService.AddGoal(addGoalDto);
+            string? warning = await _goalService.AddGoal(addGoalDto);
 
+            Assert.Null(warning);
             _betServiceMock.Verify(betService => betService.ResolveBetsForMatch(1), Times.Once);
+            _knockoutServiceMock.Verify(knockoutService => knockoutService.TryAdvanceFromMatch(1), Times.Once);
         }
 
         [Fact]
@@ -269,15 +347,105 @@ namespace WorldCup_System.Tests.Services.Goals
         [Fact]
         public async Task DeleteGoal_DeletesAndSaves()
         {
-            Goal goal = new Goal { Id = 1, TeamStatsId = 100, PlayerId = 1, TimeScored = DateTime.UtcNow, IsOwnGoal = 0 };
+            DateTime kickoff = DateTime.UtcNow.AddHours(-2);
+            Goal goal = new Goal { Id = 1, TeamStatsId = 100, PlayerId = 1, TimeScored = kickoff.AddMinutes(30), IsOwnGoal = 0 };
+            TeamStats stats = new TeamStats { Id = 100, MatchId = 1, TeamId = 10 };
+            MatchEntity match = new MatchEntity { Id = 1, Date = kickoff, StadiumId = 5, TeamOneId = 10, TeamTwoId = 20 };
 
             _goalRepositoryMock.Setup(goalRepository => goalRepository.GetByIdAsync(1)).ReturnsAsync(goal);
+            _teamStatsRepositoryMock.Setup(teamStatsRepository => teamStatsRepository.GetByIdAsync(100)).ReturnsAsync(stats);
+            _matchRepositoryMock.Setup(matchRepository => matchRepository.GetByIdAsync(1)).ReturnsAsync(match);
             _repositoryManagerMock.Setup(repositoryManager => repositoryManager.SaveAsync()).Returns(Task.CompletedTask);
 
             await _goalService.DeleteGoal(1);
 
             _goalRepositoryMock.Verify(goalRepository => goalRepository.Delete(goal), Times.Once);
             _repositoryManagerMock.Verify(repositoryManager => repositoryManager.SaveAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task DeleteGoal_WhenMatchFinished_ReResolvesBets()
+        {
+            DateTime kickoff = DateTime.UtcNow.AddMinutes(-(BetScoringRules.MatchDurationMinutes + 5));
+            Goal goal = new Goal { Id = 1, TeamStatsId = 100, PlayerId = 1, TimeScored = kickoff.AddMinutes(30), IsOwnGoal = 0 };
+            TeamStats stats = new TeamStats { Id = 100, MatchId = 1, TeamId = 10 };
+            MatchEntity match = new MatchEntity { Id = 1, Date = kickoff, StadiumId = 5, TeamOneId = 10, TeamTwoId = 20 };
+
+            _goalRepositoryMock.Setup(goalRepository => goalRepository.GetByIdAsync(1)).ReturnsAsync(goal);
+            _teamStatsRepositoryMock.Setup(teamStatsRepository => teamStatsRepository.GetByIdAsync(100)).ReturnsAsync(stats);
+            _matchRepositoryMock.Setup(matchRepository => matchRepository.GetByIdAsync(1)).ReturnsAsync(match);
+            _repositoryManagerMock.Setup(repositoryManager => repositoryManager.SaveAsync()).Returns(Task.CompletedTask);
+            _betServiceMock.Setup(betService => betService.ResolveBetsForMatch(1))
+                .ReturnsAsync(new ResolveBetsResultDTO { MatchId = 1, ResolvedCount = 3 });
+
+            string? warning = await _goalService.DeleteGoal(1);
+
+            Assert.Null(warning);
+            _betServiceMock.Verify(betService => betService.ResolveBetsForMatch(1), Times.Once);
+            _knockoutServiceMock.Verify(knockoutService => knockoutService.TryAdvanceFromMatch(1), Times.Once);
+        }
+
+        [Fact]
+        public async Task DeleteGoal_WhenMatchFinishedAndAdvanceThrows_ReturnsWarning()
+        {
+            DateTime kickoff = DateTime.UtcNow.AddMinutes(-(BetScoringRules.MatchDurationMinutes + 5));
+            Goal goal = new Goal { Id = 1, TeamStatsId = 100, PlayerId = 1, TimeScored = kickoff.AddMinutes(30), IsOwnGoal = 0 };
+            TeamStats stats = new TeamStats { Id = 100, MatchId = 1, TeamId = 10 };
+            MatchEntity match = new MatchEntity { Id = 1, Date = kickoff, StadiumId = 5, TeamOneId = 10, TeamTwoId = 20 };
+
+            _goalRepositoryMock.Setup(goalRepository => goalRepository.GetByIdAsync(1)).ReturnsAsync(goal);
+            _teamStatsRepositoryMock.Setup(teamStatsRepository => teamStatsRepository.GetByIdAsync(100)).ReturnsAsync(stats);
+            _matchRepositoryMock.Setup(matchRepository => matchRepository.GetByIdAsync(1)).ReturnsAsync(match);
+            _repositoryManagerMock.Setup(repositoryManager => repositoryManager.SaveAsync()).Returns(Task.CompletedTask);
+            _knockoutServiceMock
+                .Setup(knockoutService => knockoutService.TryAdvanceFromMatch(1))
+                .ThrowsAsync(new InvalidOperationException(
+                    "Cannot advance into match 20: goals or cards are already recorded."));
+
+            string? warning = await _goalService.DeleteGoal(1);
+
+            Assert.Equal("Cannot advance into match 20: goals or cards are already recorded.", warning);
+            _goalRepositoryMock.Verify(goalRepository => goalRepository.Delete(goal), Times.Once);
+        }
+
+        [Fact]
+        public async Task DeleteGoal_WhenMatchInProgress_DoesNotReResolveBets()
+        {
+            DateTime kickoff = DateTime.UtcNow.AddMinutes(-30);
+            Goal goal = new Goal { Id = 1, TeamStatsId = 100, PlayerId = 1, TimeScored = kickoff.AddMinutes(10), IsOwnGoal = 0 };
+            TeamStats stats = new TeamStats { Id = 100, MatchId = 1, TeamId = 10 };
+            MatchEntity match = new MatchEntity { Id = 1, Date = kickoff, StadiumId = 5, TeamOneId = 10, TeamTwoId = 20 };
+
+            _goalRepositoryMock.Setup(goalRepository => goalRepository.GetByIdAsync(1)).ReturnsAsync(goal);
+            _teamStatsRepositoryMock.Setup(teamStatsRepository => teamStatsRepository.GetByIdAsync(100)).ReturnsAsync(stats);
+            _matchRepositoryMock.Setup(matchRepository => matchRepository.GetByIdAsync(1)).ReturnsAsync(match);
+            _repositoryManagerMock.Setup(repositoryManager => repositoryManager.SaveAsync()).Returns(Task.CompletedTask);
+
+            await _goalService.DeleteGoal(1);
+
+            _betServiceMock.Verify(betService => betService.ResolveBetsForMatch(It.IsAny<int>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task DeleteGoal_WhenMatchFinishedAndResolveThrows_SwallowsInvalidOperationException()
+        {
+            DateTime kickoff = DateTime.UtcNow.AddMinutes(-(BetScoringRules.MatchDurationMinutes + 5));
+            Goal goal = new Goal { Id = 1, TeamStatsId = 100, PlayerId = 1, TimeScored = kickoff.AddMinutes(30), IsOwnGoal = 0 };
+            TeamStats stats = new TeamStats { Id = 100, MatchId = 1, TeamId = 10 };
+            MatchEntity match = new MatchEntity { Id = 1, Date = kickoff, StadiumId = 5, TeamOneId = 10, TeamTwoId = 20 };
+
+            _goalRepositoryMock.Setup(goalRepository => goalRepository.GetByIdAsync(1)).ReturnsAsync(goal);
+            _teamStatsRepositoryMock.Setup(teamStatsRepository => teamStatsRepository.GetByIdAsync(100)).ReturnsAsync(stats);
+            _matchRepositoryMock.Setup(matchRepository => matchRepository.GetByIdAsync(1)).ReturnsAsync(match);
+            _repositoryManagerMock.Setup(repositoryManager => repositoryManager.SaveAsync()).Returns(Task.CompletedTask);
+            _betServiceMock
+                .Setup(betService => betService.ResolveBetsForMatch(1))
+                .ThrowsAsync(new InvalidOperationException("Incomplete match stats."));
+
+            await _goalService.DeleteGoal(1);
+
+            _goalRepositoryMock.Verify(goalRepository => goalRepository.Delete(goal), Times.Once);
+            _betServiceMock.Verify(betService => betService.ResolveBetsForMatch(1), Times.Once);
         }
 
         private static void SetupFind<T>(Mock<IRepository<T>> repositoryMock, List<T> entities) where T : class

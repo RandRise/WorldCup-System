@@ -7,6 +7,8 @@ import {
   LeaderboardEntry,
   LeaderboardSummary,
   PlaceBetRequest,
+  ResolveBetsResult,
+  ResolveBetsWorldCupResult,
 } from '../models/api.models';
 import { ApiHttpService } from './api-http.service';
 
@@ -56,6 +58,21 @@ export class BetApiService {
   }
 
   placeBet(request: PlaceBetRequest): Promise<void> {
-    return this.apiHttp.postCommand(`${this.baseUrl}/Bet/PlaceBet`, request);
+    return this.apiHttp.postCommand(`${this.baseUrl}/Bet/PlaceBet`, request).then(() => undefined);
+  }
+
+  resolveBetsForMatch(matchId: number): Promise<ResolveBetsResult> {
+    return firstValueFrom(
+      this.http.post<ResolveBetsResult>(`${this.baseUrl}/Bet/ResolveBetsForMatch/${matchId}`, {}),
+    );
+  }
+
+  resolveBetsForWorldCup(worldCupId: number): Promise<ResolveBetsWorldCupResult> {
+    return firstValueFrom(
+      this.http.post<ResolveBetsWorldCupResult>(
+        `${this.baseUrl}/Bet/ResolveBetsForWorldCup/${worldCupId}`,
+        {},
+      ),
+    );
   }
 }
