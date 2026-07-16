@@ -139,7 +139,7 @@ Ship the Phase 7–8 working tree, keep WC 2026 data current through the Final, 
 - [ ] Record Final result after FT — *Admin live console or extend `import_wc2026_finished_matches.py` (after 19 Jul)*
 - [x] Optional ThirdPlace match — *Skipped for this tournament path*
 - [x] Apply `AddMatchStage` migration + Feeder* repair on API start — *`MigrateAsync` + IF NOT EXISTS in `Program.cs`; Feeder* columns confirmed*
-- [ ] Commit Phase 7–8 working tree — *knockout/sync core in `dcb322b`; leftover SPA/scripts/services still unstaged*
+- [x] Commit Phase 7–8 working tree — *`dcb322b` (sync/knockout) + `7886b40` (SPA/scripts/standings)*
 - [x] Knockout re-advance UX when destination already has events — *Goal Add/Delete returns Warning; Admin Schedule Advance winner*
 
 <a id="phase-10"></a>
