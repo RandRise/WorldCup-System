@@ -33,8 +33,6 @@ FIFA World Cup management platform — status as of **17 Jul 2026**.
 ### ⏳ Phase 9 — Remaining
 
 - Record **Final** result after FT (19 Jul) — Admin live console, sync API, or extend import
-- Finish committing any leftover Phase 7–8 UI/scripts if still unstaged
-
 ### 🔄 Phase 10 — In progress
 
 | # | Item | Status | Doc |
