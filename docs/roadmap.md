@@ -9,7 +9,7 @@
 
 Ten phases. Checkboxes below reflect a **code audit as of 17 Jul 2026** — checkboxes use Markdown task lists (`[x]` / `[ ]`).
 
-> **Success:** **Where you are:** Phases 1–8 complete in code. Review + test gate passed (16 Jul 2026). **Phase 9** — Final scheduled; Final FT + remaining tree commit still open. **Phase 10 Task 1 done** — FIFA post-match sync + bet resolve shipped, reviewed, and tested (**268** tests green, 17 Jul 2026); Tasks 2–3 (fixtures UX, WC styling) still open. See [Phase 10 sync detail](changes/phase-10-match-sync.md) · [plan](changes/phase-10-planned.md) · [Changes Review](changes-review.md).
+> **Success:** **Where you are:** Phases 1–8 complete in code. **Phase 9** — Final scheduled; Final FT after 19 Jul still open (working tree commit done). **Phase 10 Task 1 done** — FIFA post-match sync + bet resolve shipped, reviewed, and tested (**268** tests green, 17 Jul 2026); Tasks 2–3 (fixtures UX, WC styling) still open. See [Phase 10 sync detail](changes/phase-10-match-sync.md) · [plan](changes/phase-10-planned.md) · [Changes Review](changes-review.md).
 
 <a id="phase-1"></a>
 
