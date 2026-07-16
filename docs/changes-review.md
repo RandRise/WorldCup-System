@@ -7,35 +7,30 @@
 ---
 ## Changes Review
 
-Latest: **Phase 10 Task 1 — Match sync (17 Jul 2026)** — FIFA calendar post-match sync API in code; fixtures UX / styling still planned. Detail: [phase-10-match-sync](changes/phase-10-match-sync.md) · [phase-10-planned](changes/phase-10-planned.md) · [phase-9-ops-closeout](changes/phase-9-ops-closeout.md) · [phase-8-dashboards](changes/phase-8-dashboards.md) · [phase-7-bugfixes](changes/phase-7-bugfixes.md) · [wc2026-live-data](changes/wc2026-live-data.md).
+Latest: **Phase 10 Task 1 complete (17 Jul 2026)** — FIFA post-match sync reviewed, tested (**268** passed), committed `dcb322b`. Tasks 2–3 still planned. Detail: [phase-10-match-sync](changes/phase-10-match-sync.md) · [phase-10-planned](changes/phase-10-planned.md) · [phase-9-ops-closeout](changes/phase-9-ops-closeout.md) · [phase-8-dashboards](changes/phase-8-dashboards.md) · [phase-7-bugfixes](changes/phase-7-bugfixes.md) · [wc2026-live-data](changes/wc2026-live-data.md).
 
-> **Info:** **Phase 10 in progress.** Task 1 sync API + RabbitMQ decision done; Tasks 2–3 (fixtures UX, WC styling) not started. Checklist: [Phase 10](roadmap.md#phase-10) · detail: [phase-10-match-sync](changes/phase-10-match-sync.md).
+> **Success:** **Phase 10 Task 1 gate closed.** Sync API + RabbitMQ decision done; Bugbot highs fixed; **268** tests green. Checklist: [Phase 10](roadmap.md#phase-10) · detail: [phase-10-match-sync](changes/phase-10-match-sync.md).
 
-> **Info:** **Phase 9 in progress.** Remaining: record Final after 19 Jul FT; commit Phase 7–8 when asked. Checklist: [Phase 9](roadmap.md#phase-9).
+> **Info:** **Phase 9 in progress.** Remaining: record Final after 19 Jul FT. Checklist: [Phase 9](roadmap.md#phase-9).
 
 > **Success:** **Phase 8 implemented (13–16 Jul 2026).** User dashboard, login return URLs, bet resolve hardening (3/0 + bulk), live snapshot API, admin hub / live console, UpdateTeam wiring. Checklist: [Phase 8](roadmap.md#phase-8).
 
-> **Success:** **Phase 7 knockout + live data in same tree.** `MatchStage` / feeders, `KnockoutService`, bracket SPA, H2H standings, offline WC 2026 scripts (groups + finished through both SFs). External football API cancelled for live — Phase 10 adds **post-match** FIFA calendar sync only.
+> **Success:** **Phase 7 knockout + live data.** `MatchStage` / feeders, `KnockoutService`, bracket SPA, H2H standings, offline WC 2026 scripts. External football API cancelled for live — Phase 10 adds **post-match** FIFA calendar sync only.
 
-> **Success:** **Review + test gate passed for Phase 8 / knockout (16 Jul 2026).** Bugbot high (possession race) fixed; medium TBD/stage/auto-resolve fixed. `dotnet test`: **245 passed**. Phase 10 Task 1 review gate is **still open**.
+### Summary stats
 
-### Summary stats (working tree)
-
-- **64 tracked changes** (modified/deleted) + **~50+ untracked** paths (includes Phase 10 MatchSync + ExternalMatchId migration)
-- **Tracked diff:** +3048 / −6233 (large deletion = old HTML docs → Markdown)
-- **Phase 10 Task 1 new surface:** `Core/Services/MatchSync/*`, `MatchResultSyncDTO`, `AddMatchExternalMatchId`, MatchController sync actions, client sync API models
-- **Phase 8 done · Phase 7 done (live API cancelled) · Phase 10 Task 1 API done:** 10 / 10 · 8 / 8 · sync 2 / 4 Phase 10 checklist items
-
-**Git repo (`WorldCup-System/`) — uncommitted on `master` (ahead of remote):**
-
-**Themes:** Phase 7–8 product work + Phase 9 ops + Phase 10 Task 1 post-match sync.
+- **Phase 10 Task 1 committed** (`dcb322b`): MatchSync services, `ExternalMatchId` migration, Admin sync endpoints, client API, tests
+- **Phase 10 checklist:** Task 1 items done (7/9); fixtures UX + styling still open
+- **Tests:** **268** passed (17 Jul 2026)
 
 ### Phase 10 Roadmap Mapping
 
 | Task | Status | Evidence |
 | --- | --- | --- |
-| `p10-match-sync` — Post-match FIFA sync + resolve | Done (API) | `FifaCalendarMatchResultProvider`, `MatchResultSyncService`, `ExternalMatchId`, Admin `SyncResult` / `SyncFinishedResults` / `SetExternalMatchId` |
-| RabbitMQ decision — v1 without broker | Done | Documented; in-process Admin/API only — no RabbitMQ wired |
+| `p10-match-sync` — Post-match FIFA sync + resolve | **Done** | `FifaCalendarMatchResultProvider`, `MatchResultSyncService`, `ExternalMatchId`, Admin sync endpoints, 19 new tests |
+| Explicit MatchStatus + home/away orientation | **Done** | Provider requires status; sync orients/swaps sides |
+| RabbitMQ decision — v1 without broker | **Done** | Documented; in-process Admin/API only |
+| Client sync surface | **Done** | `match-api.service.ts` + sync DTOs |
 | `p10-fixtures-ux` — Bettable matches first | Planned | Not started |
 | `p10-wc-styling` — WC visual polish | Planned | Not started |
 
@@ -66,21 +61,17 @@ Latest: **Phase 10 Task 1 — Match sync (17 Jul 2026)** — FIFA calendar post-
 
 ### Review Gate — Status
 
-> **Success:** **Phase 8 / knockout gate closed.** High/critical review findings fixed; `dotnet test` **245 passed** (16 Jul 2026). Medium debt items below may ship with acceptance notes.
-
-> **Warning:** **Phase 10 Task 1 gate open.** Clear high/critical sync risks before Task 1 test pass / phase advance.
+> **Success:** **Phase 8 / knockout gate closed** (16 Jul 2026). **Phase 10 Task 1 gate closed** (17 Jul 2026) — **268** tests passed.
 
 | Item | Severity | Status | Action |
 | --- | --- | --- | --- |
 | Edited applied migration `IdentityLongKeys` | Critical | Cleared | Not in current diff; knockout schema uses forward `AddMatchStage` |
 | Parallel possession updates race (live console) | High | Fixed | Sequential `updateTeamStats` + possession sum check |
-| `dotnet test` Phase 8 + knockout | High | Passed | 245 passed / 0 failed |
-| Home/Away = TeamOne/TeamTwo orientation (sync) | High | Open | Verify FIFA Home maps to TeamOne before production sync |
-| Re-sync wipes real scorers for placeholders | High | Open | Accept score-only ops model or harden apply path |
-| MatchResultSync unit tests missing | High | Open | Add service/provider tests before closing Task 1 gate |
-| Large uncommitted Phase 7–10 surface | High | Ops | Commit when asked |
+| Sync missing MatchStatus / home-away orientation | High | Fixed | Explicit status + side orientation in MatchSync |
+| MatchResultSync unit tests | High | Fixed | 19 new tests; suite 268 green |
+| Re-sync placeholder scorers | Medium | Accepted | Score-only model; no churn when counts match |
 | Fixtures auto-resolve / TBD update / stage lock | Medium | Fixed | Snapshot on load; nullable UpdateMatch; block stage change after events |
-| `AddMatchStage` + Feeder* + `ExternalMatchId` migrate | Medium | Ops | Migrate on next API start |
+| `AddMatchStage` + Feeder* + `ExternalMatchId` migrate | Medium | Ops | Migrate on API start |
 | Silent swallow of incomplete-stats / advance errors | Medium | Accepted | Optional Serilog / admin surface later |
 
 ### Risk Summary
@@ -88,15 +79,12 @@ Latest: **Phase 10 Task 1 — Match sync (17 Jul 2026)** — FIFA calendar post-
 | Risk | Severity | Details | Action |
 | --- | --- | --- | --- |
 | Migration rewrite (IdentityLongKeys) | Critical | Removed from working tree | Cleared |
-| Sync home/away orientation | High | Assumed TeamOne=Home | Confirm mappings; gate before test close |
-| Sync deletes Admin goals on score change | High | Placeholder “Tournament Scorer” goals | Document / harden |
-| No MatchSync service tests | High | Controller mocks only | Write tests |
-| Uncommitted feature set | High | Dashboards + knockout + sync + WC scripts + MD docs | Commit when asked |
-| Tests executed (P8/knockout) | Done | Phase 8 + knockout suite | 245 passed (16 Jul 2026) |
+| Sync orientation / MatchStatus | High | Fixed in Task 1 | Cleared |
+| Sync deletes Admin goals on score change | Medium | Placeholder scorers when counts differ | Accepted score-only |
+| Uncommitted leftover UI/scripts | Medium | Some Phase 7–8 SPA/scripts may remain | Commit when ready |
+| Tests executed | Done | Full suite | **268** passed (17 Jul 2026) |
 | FIFA calendar ToS / season ids | Medium | Public JSON; config-driven | Monitor; paid provider fallback |
-| GetLiveSnapshot loads broad entity sets | Medium | Players/countries/teams for event enrichment | OK for demo scale |
-| Nullable team FKs + TBD slots | Medium | Goals/cards blocked until both teams set | Guarded in Card/Goal paths |
-| Final not yet finished in DB | Low | Kickoff 19 Jul — schedule via helper script | Ops after FT |
+| Final not yet finished in DB | Low | Kickoff 19 Jul | Ops after FT |
 
 ### Per-File Summary
 

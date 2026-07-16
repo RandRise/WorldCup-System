@@ -9,7 +9,7 @@
 
 Ten phases. Checkboxes below reflect a **code audit as of 17 Jul 2026** — checkboxes use Markdown task lists (`[x]` / `[ ]`).
 
-> **Success:** **Where you are:** Phases 1–8 complete in code (Phase 7–8 still uncommitted). Review + test gate passed (16 Jul 2026) — 245 tests green. **Phase 9** — Final scheduled, Feeder* repair confirmed, knockout re-advance UX done; Final FT + commit still open. **Phase 10 started** — Task 1 post-match sync API + RabbitMQ decision done in code (FIFA calendar, `ExternalMatchId`, Admin sync); fixtures UX and WC styling still open; Task 1 review/test gate not closed yet. Live scores can also use manual offline import + Admin live console. See [Phase 10 sync detail](changes/phase-10-match-sync.md) · [plan](changes/phase-10-planned.md) · [WC 2026 live data](changes/wc2026-live-data.md) · [Changes Review](changes-review.md). Cancelled items (CSV seed UI, stadium CSV, reference admin UI, Phase 7 external live API) count as done for Phases 1–8.
+> **Success:** **Where you are:** Phases 1–8 complete in code. Review + test gate passed (16 Jul 2026). **Phase 9** — Final scheduled; Final FT + remaining tree commit still open. **Phase 10 Task 1 done** — FIFA post-match sync + bet resolve shipped, reviewed, and tested (**268** tests green, 17 Jul 2026); Tasks 2–3 (fixtures UX, WC styling) still open. See [Phase 10 sync detail](changes/phase-10-match-sync.md) · [plan](changes/phase-10-planned.md) · [Changes Review](changes-review.md).
 
 <a id="phase-1"></a>
 
@@ -139,16 +139,26 @@ Ship the Phase 7–8 working tree, keep WC 2026 data current through the Final, 
 - [ ] Record Final result after FT — *Admin live console or extend `import_wc2026_finished_matches.py` (after 19 Jul)*
 - [x] Optional ThirdPlace match — *Skipped for this tournament path*
 - [x] Apply `AddMatchStage` migration + Feeder* repair on API start — *`MigrateAsync` + IF NOT EXISTS in `Program.cs`; Feeder* columns confirmed*
-- [ ] Commit Phase 7–8 working tree — *~64 tracked + 45 untracked paths — commit when you ask*
+- [ ] Commit Phase 7–8 working tree — *knockout/sync core in `dcb322b`; leftover SPA/scripts/services still unstaged*
 - [x] Knockout re-advance UX when destination already has events — *Goal Add/Delete returns Warning; Admin Schedule Advance winner*
 
 <a id="phase-10"></a>
 
 ### Phase 10 — Match Sync, Fixtures UX & Visual Polish **[In progress]**
 
-Post-match result sync + bet resolve, fixtures betting priority UX, and World Cup–fitting visual polish. Task 1 sync API shipped in code; Tasks 2–3 not started. Detail: [phase-10-match-sync](changes/phase-10-match-sync.md) · [phase-10-planned](changes/phase-10-planned.md).
+Post-match result sync + bet resolve, fixtures betting priority UX, and World Cup–fitting visual polish. **Task 1 complete** (API + tests + commit `dcb322b`); Tasks 2–3 not started. Detail: [phase-10-match-sync](changes/phase-10-match-sync.md) · [phase-10-planned](changes/phase-10-planned.md).
 
-- [x] Post-match external result sync API — fetch FT/result feed (FIFA calendar JSON), apply to match, then resolve bets — *Admin `SyncResult` / `SyncFinishedResults` / `SetExternalMatchId`; `ExternalMatchId`; reuse `ResolveBetsForMatch`*
-- [x] Decide messaging: **v1 without RabbitMQ** (in-process Admin/API flow); revisit broker only if durable multi-worker crawl is needed — *Documented + followed; no broker wired*
+**Task 1 — Post-match sync (done)**
+
+- [x] Post-match external result sync API — fetch FT/result feed (FIFA calendar JSON), apply to match, then resolve bets — *Admin `SyncResult` / `SyncFinishedResults`; reuse `ResolveBetsForMatch`*
+- [x] Decide messaging: **v1 without RabbitMQ** (in-process Admin/API flow) — *Documented + followed; no broker wired*
+- [x] `ExternalMatchId` mapping + unique filtered index + Admin `SetExternalMatchId` — *migration `AddMatchExternalMatchId`*
+- [x] FIFA calendar provider — explicit `MatchStatus`, home/away orientation + name aliases — *`FifaCalendarMatchResultProvider`*
+- [x] Idempotent score apply (placeholder scorers only when counts change) + knockout advance — *`MatchResultSyncService`*
+- [x] Client sync models + `match-api` methods — *`api.models.ts`, `match-api.service.ts`*
+- [x] Unit tests + review gate — *19 MatchSync/controller tests; suite **268** passed (17 Jul 2026)*
+
+**Tasks 2–3 — still open**
+
 - [ ] Fixtures page UX — surface open/live bettable matches first (sections or filters); finished history below or filtered — *worldcup-client fixtures*
 - [ ] Professional World Cup styling — black/white/gold atmosphere, stadium-fit backgrounds, stronger typography across SPA — *theme tokens + public pages first*

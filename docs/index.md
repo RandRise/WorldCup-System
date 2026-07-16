@@ -7,15 +7,15 @@
 ---
 ## Project Dashboard
 
-FIFA World Cup management platform — status as of code audit **17 Jul 2026**.
+FIFA World Cup management platform — status as of **17 Jul 2026**.
 
-> **Success:** **Phases 1–8 complete in code.** Phase 7–8 review + test gate passed (16 Jul 2026) — **245 tests** green. **Current work:** [Phase 9](roadmap.md#phase-9) (Final FT + commit still open) and **[Phase 10](roadmap.md#phase-10) Task 1** — post-match FIFA sync API done in code; fixtures UX / styling not started; Task 1 review gate open. See [sync detail](changes/phase-10-match-sync.md) · [plan](changes/phase-10-planned.md) · [WC 2026 data log](changes/wc2026-live-data.md).
+> **Success:** **Phases 1–8 complete in code.** **Phase 10 Task 1 done** — FIFA post-match sync reviewed + tested (**268** tests) and committed (`dcb322b`). **Phase 9** still has Final FT after 19 Jul. Phase 10 Tasks 2–3 (fixtures UX, styling) not started. See [sync detail](changes/phase-10-match-sync.md) · [plan](changes/phase-10-planned.md) · [Changes Review](changes-review.md).
 
 > **Info:** Browse these docs with VitePress (`npm run docs:dev` from the workspace root) or open any `.md` file in Cursor preview. Checklists use `[x]` / `[ ]` task items.
 
-- **Overall Plan Progress:** 8 / 10 phases done — [Phase 9 in progress](roadmap.md#phase-9); [Phase 10 in progress](roadmap.md#phase-10) (Task 1 API)
-- **Backend API Complete:** 100% Phases 1–8 product scope + Phase 10 Task 1 sync endpoints
-- **Frontend SPA:** 100% Phases 1–8 product scope (Task 1 client models/API only; no fixtures UX/styling yet)
+- **Overall Plan Progress:** 8 / 10 phases done — [Phase 9 in progress](roadmap.md#phase-9); [Phase 10 in progress](roadmap.md#phase-10) (Task 1 complete)
+- **Backend API Complete:** 100% Phases 1–8 + Phase 10 Task 1 sync endpoints
+- **Frontend SPA:** 100% Phases 1–8 product scope (Task 1 client API only; fixtures UX/styling open)
 
 ### Component Status
 
@@ -25,22 +25,26 @@ FIFA World Cup management platform — status as of code audit **17 Jul 2026**.
 - Full domain APIs — teams, coaches, players, matches, knockout bracket, goals, cards, stats, standings, bets
 - Angular SPA — fixtures, bracket, standings, bets, leaderboard, user dashboard, admin hub / live console
 - Offline WC 2026 import — groups A–L + finished matches through both semi-finals
-- Tests (245 passed), Docker Compose, health checks, Serilog, GitHub Actions CI
+- Tests (**268** passed), Docker Compose, health checks, Serilog, GitHub Actions CI
 - MCP read-only database server
 - Phase 9 (partial): Final fixture scheduled; Feeder* migration repair confirmed; knockout re-advance UX
-- Phase 10 Task 1 (API): FIFA calendar sync, `ExternalMatchId`, Admin SyncResult / SyncFinishedResults / SetExternalMatchId; no RabbitMQ
+- **Phase 10 Task 1:** FIFA calendar sync, `ExternalMatchId`, Admin SyncResult / SyncFinishedResults / SetExternalMatchId, orientation + tests; no RabbitMQ
 
 ### ⏳ Phase 9 — Remaining
 
 - Record **Final** result after FT (19 Jul) — Admin live console, sync API, or extend import
-- **Commit** Phase 7–8 (+ later) working tree when you ask
+- Finish committing any leftover Phase 7–8 UI/scripts if still unstaged
 
 ### 🔄 Phase 10 — In progress
 
-- **Done:** Post-match external result sync → apply → resolve bets (no RabbitMQ in v1) — [detail](changes/phase-10-match-sync.md)
-- **Open:** Fixtures UX — bettable / live matches first
-- **Open:** World Cup–fitting professional styling & backgrounds  
-  Plan: [phase-10-planned](changes/phase-10-planned.md)
+| # | Item | Status | Doc |
+| --- | --- | --- | --- |
+| 1 | Post-match FIFA sync → apply → resolve bets | **Done** | [phase-10-match-sync](changes/phase-10-match-sync.md) |
+| — | No RabbitMQ in v1 | **Done** | same |
+| 2 | Fixtures UX — bettable / live first | Open | [phase-10-planned](changes/phase-10-planned.md) |
+| 3 | WC professional styling | Open | [phase-10-planned](changes/phase-10-planned.md) |
+
+Full checklist: [Roadmap Phase 10](roadmap.md#phase-10).
 
 ### Phase snapshot
 
@@ -52,10 +56,10 @@ FIFA World Cup management platform — status as of code audit **17 Jul 2026**.
 | 4 | [Betting Module](roadmap.md#phase-4) | Done |
 | 5 | [Frontend SPA](roadmap.md#phase-5) | Done |
 | 6 | [Quality & Ops](roadmap.md#phase-6) | Done |
-| 7 | [Post-Launch / Live](roadmap.md#phase-7) | Done (uncommitted) |
-| 8 | [User & Admin Dashboards](roadmap.md#phase-8) | Done (uncommitted) |
+| 7 | [Post-Launch / Live](roadmap.md#phase-7) | Done |
+| 8 | [User & Admin Dashboards](roadmap.md#phase-8) | Done |
 | 9 | [Ops & Tournament Close-Out](roadmap.md#phase-9) | In progress |
-| 10 | [Match Sync, Fixtures UX & Styling](roadmap.md#phase-10) | In progress (Task 1 API) |
+| 10 | [Match Sync, Fixtures UX & Styling](roadmap.md#phase-10) | In progress (Task 1 done) |
 
 ### Quick Navigation
 
@@ -85,17 +89,13 @@ Phase 10 Task 1 match sync; Phase 9 ops close-out; Phase 8 dashboards; Phase 7 b
 
 ### Recommended next work
 
-#### Close Phase 10 Task 1 gate
+#### Phase 10 Task 2 — Fixtures UX
 
-Fix high sync review risks, add MatchSync tests, run `dotnet test` — see [Review gate](changes/phase-10-match-sync.md#review-gate).
+Surface open/live bettable matches first — see [plan](changes/phase-10-planned.md).
 
-#### Phase 9 — Final FT & commit
+#### Phase 9 — Final FT
 
-After 19 Jul, record the Final score. Commit Phase 7–10 when ready.
-
-#### Phase 10 Tasks 2–3 — After you say go
-
-Fixtures betting priority, WC visual polish — see [plan](changes/phase-10-planned.md).
+After 19 Jul, record the Final score (live console, sync API, or import).
 
 ### Local Dev URLs
 
@@ -106,3 +106,4 @@ Fixtures betting priority, WC visual polish — see [plan](changes/phase-10-plan
 | Health | `http://localhost:5055/health` | Available |
 | PostgreSQL | User Secrets / Docker Compose | Configured |
 | MCP Database Tools | Cursor MCP — `worldcup-database` | Complete |
+| Docs (VitePress) | `npm run docs:dev` from workspace root | Available |

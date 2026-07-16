@@ -9,7 +9,7 @@
 
 ## Phase 10 — Match Sync, Fixtures UX & Visual Polish
 
-**Status: In progress** — Task 1 (post-match sync API) implemented in code; Tasks 2–3 not started. Implementation detail: [phase-10-match-sync](phase-10-match-sync.md).
+**Status: In progress** — Task 1 (post-match sync) **complete** (reviewed, tested, committed); Tasks 2–3 not started. Implementation detail: [phase-10-match-sync](phase-10-match-sync.md).
 
 Opened **17 Jul 2026** after Phase 9 ops close-out planning. Checklist: [Roadmap Phase 10](../roadmap.md#phase-10).
 
@@ -17,7 +17,7 @@ Opened **17 Jul 2026** after Phase 9 ops close-out planning. Checklist: [Roadmap
 
 | # | Theme | Outcome | Status |
 | --- | --- | --- | --- |
-| 1 | Post-match external sync + bet resolve | After FT, pull official/result feed updates into our match model, then resolve open bets | **Done (API)** — review/test gate open |
+| 1 | Post-match external sync + bet resolve | After FT, pull official/result feed updates into our match model, then resolve open bets | **Done** — gate closed; [detail](phase-10-match-sync.md) |
 | 2 | Fixtures betting UX | Users reach bettable matches without scrolling past long finished-history lists | Planned |
 | 3 | Professional World Cup styling | Stronger brand atmosphere (palette, typography, backgrounds) across the SPA | Planned |
 
@@ -137,8 +137,8 @@ Prefer licensed or original photography / abstract pitch textures; avoid scrapin
 
 | Task id | Status | Notes |
 | --- | --- | --- |
-| `p10-match-sync` | Done (API) | FIFA calendar + ExternalMatchId + Admin sync; no RabbitMQ; [detail](phase-10-match-sync.md) |
-| RabbitMQ decision | Done | v1 without broker — documented and followed |
+| `p10-match-sync` | **Done** | FIFA calendar + ExternalMatchId + Admin sync + tests; [detail](phase-10-match-sync.md) |
+| RabbitMQ decision | **Done** | v1 without broker — documented and followed |
 | `p10-fixtures-ux` | Planned | Prioritize open/live over finished on fixtures |
 | `p10-wc-styling` | Planned | WC-inspired palette, atmosphere, typography |
 
