@@ -34,7 +34,10 @@
 }
 
 .stat-value {
-  font-size: 1.5rem;
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  letter-spacing: 0.03em;
+  color: var(--primary-bright);
 }
 
 .section-title {

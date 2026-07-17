@@ -7,7 +7,11 @@
 ---
 ## Changes Review
 
-Latest: **Phase 10 Task 2 complete (17 Jul 2026)** — fixtures Action default, chips, Open/Live/Finished sections, jump-to-bet; Bugbot cleared; Jasmine **12** + API **268** green. Task 1 remains closed (`dcb322b`). Detail: [phase-10-fixtures-ux](changes/phase-10-fixtures-ux.md) · [phase-10-match-sync](changes/phase-10-match-sync.md) · [phase-10-planned](changes/phase-10-planned.md) · [phase-9-ops-closeout](changes/phase-9-ops-closeout.md) · [phase-8-dashboards](changes/phase-8-dashboards.md) · [phase-7-bugfixes](changes/phase-7-bugfixes.md) · [wc2026-live-data](changes/wc2026-live-data.md).
+Latest: **Phase 10 Task 4 planned (17 Jul 2026)** — project cleanup scan (duplicates / unused). Tasks 1–3 remain gated. Detail: [phase-10-planned](changes/phase-10-planned.md) · [phase-10-styling](changes/phase-10-styling.md) · [phase-10-fixtures-ux](changes/phase-10-fixtures-ux.md) · [phase-10-match-sync](changes/phase-10-match-sync.md) · [phase-9-ops-closeout](changes/phase-9-ops-closeout.md) · [phase-8-dashboards](changes/phase-8-dashboards.md) · [phase-7-bugfixes](changes/phase-7-bugfixes.md) · [wc2026-live-data](changes/wc2026-live-data.md).
+
+> **Info:** **Phase 10 Task 4 planned.** Workspace cleanup — remove duplicates and unused assets (e.g. stale root `worldcup-client`). Not started. Checklist: [Phase 10](roadmap.md#phase-10) · plan: [phase-10-planned](changes/phase-10-planned.md).
+
+> **Success:** **Phase 10 Task 3 gate closed.** WC styling shipped; no high/critical Bugbot findings; medium fixes applied; Jasmine **25** + `dotnet test` **268** passed. Checklist: [Phase 10](roadmap.md#phase-10) · detail: [phase-10-styling](changes/phase-10-styling.md).
 
 > **Success:** **Phase 10 Task 2 gate closed.** Fixtures UX shipped; no high/critical Bugbot findings; Jasmine **12** + `dotnet test` **268** passed. Checklist: [Phase 10](roadmap.md#phase-10) · detail: [phase-10-fixtures-ux](changes/phase-10-fixtures-ux.md).
 
@@ -21,10 +25,12 @@ Latest: **Phase 10 Task 2 complete (17 Jul 2026)** — fixtures Action default, 
 
 ### Summary stats
 
-- **Phase 10 Task 2 (gate closed):** `fixture-sections.ts` + 12 Jasmine specs, fixtures component — Action default, chips, sections, jump CTA (Live/Finished → Action), live `canBet` clear
+- **Phase 10 Task 3 (gate closed):** black/gold theme, night-pitch atmosphere, Bebas Neue + Manrope, brand-first home; medium Bugbot fixes (pending pill, amber warnings, reduced-motion, admin finished)
+- **Phase 10 Task 2 (gate closed):** `fixture-sections.ts` + 12 Jasmine specs, fixtures component — Action default, chips, sections, jump CTA
 - **Phase 10 Task 1 committed** (`dcb322b`): MatchSync services, `ExternalMatchId` migration, Admin sync endpoints, client API, tests
-- **Phase 10 checklist:** Tasks 1–2 done (8/9 items); Task 3 styling still open
-- **Tests:** Jasmine **12** / 12; API `dotnet test` **268** / 268 (17 Jul 2026)
+- **Phase 10 Task 4 (planned):** project cleanup — duplicates / unused (stale root `worldcup-client`, dual docs, etc.)
+- **Phase 10 checklist:** Tasks 1–3 complete; Task 4 open
+- **Tests:** Jasmine **25** / 25; API `dotnet test` **268** / 268 (17 Jul 2026)
 
 ### Phase 10 Roadmap Mapping
 
@@ -35,7 +41,8 @@ Latest: **Phase 10 Task 2 complete (17 Jul 2026)** — fixtures Action default, 
 | RabbitMQ decision — v1 without broker | **Done** | Documented; in-process Admin/API only |
 | Client sync surface | **Done** | `match-api.service.ts` + sync DTOs |
 | `p10-fixtures-ux` — Bettable matches first | **Done** | Action default; chips; Open/Live/Finished; jump fixed; Jasmine **12**; [detail](changes/phase-10-fixtures-ux.md) |
-| `p10-wc-styling` — WC visual polish | Planned | Not started |
+| `p10-wc-styling` — WC visual polish | **Done** | Theme tokens, atmosphere, typography; Jasmine **25** + API **268**; [detail](changes/phase-10-styling.md) |
+| `p10-cleanup` — Duplicates & unused | Planned | Not started; [plan](changes/phase-10-planned.md#4--project-cleanup-duplicates--unused) |
 
 ### Phase 8 Roadmap Mapping
 
@@ -64,10 +71,15 @@ Latest: **Phase 10 Task 2 complete (17 Jul 2026)** — fixtures Action default, 
 
 ### Review Gate — Status
 
-> **Success:** **Phase 10 Task 2 gate closed** (17 Jul 2026). Jasmine **12** + API **268** passed. **Phase 10 Task 1 gate closed**. **Phase 8 / knockout gate closed** (16 Jul 2026).
+> **Info:** **Phase 10 Task 3 gate open** (17 Jul 2026). CSS/HTML-only; clear Bugbot highs before regression tests. **Task 2 gate closed** — Jasmine **12** + API **268**. **Task 1 gate closed**. **Phase 8 / knockout gate closed** (16 Jul 2026).
 
 | Item | Severity | Status | Action |
 | --- | --- | --- | --- |
+| Task 3 Bugbot review | High (gate) | **Pending** | Must clear before Task 3 testing |
+| Google Fonts CDN / CSP / offline | Medium | Open | Fallbacks in `--font-*`; self-host later if needed |
+| `color-mix` / `backdrop-filter` | Medium | Accepted v1 | Readable without blur on older engines |
+| Gold-on-dark contrast | Medium | Mitigated | Dark text on gold CTAs; bright gold accents |
+| Task 3 Jasmine / API regression | — | **Pending** | No new logic; run existing suites after Bugbot |
 | Task 2 Bugbot review | High (gate) | **Cleared** | No high/critical findings |
 | Live snapshot stale `canBet` | High | **Fixed** | `canBet` forced false when live status ≠ `Scheduled` |
 | Jump scroll after filter change | Medium | **Fixed** | Live/Finished → Action; `setTimeout` before `#fixture-{id}` scroll |
@@ -85,15 +97,24 @@ Latest: **Phase 10 Task 2 complete (17 Jul 2026)** — fixtures Action default, 
 
 | Risk | Severity | Details | Action |
 | --- | --- | --- | --- |
+| Task 3 review/test gate | High | Open | Bugbot → fix highs → regression |
 | Task 2 review/test gate | High | Closed | Jasmine **12** + API **268** |
 | Migration rewrite (IdentityLongKeys) | Critical | Removed from working tree | Cleared |
 | Sync orientation / MatchStatus | High | Fixed in Task 1 | Cleared |
 | Sync deletes Admin goals on score change | Medium | Placeholder scorers when counts differ | Accepted score-only |
-| Tests executed | Done | Jasmine fixtures + API suite | **12** + **268** passed (17 Jul 2026) |
+| External Google Fonts | Medium | CDN in `index.html` | Fallbacks; monitor CSP |
+| Tests executed | Partial | Task 1–2 green; Task 3 pending | **12** + **268** baseline (17 Jul 2026) |
 | FIFA calendar ToS / season ids | Medium | Public JSON; config-driven | Monitor; paid provider fallback |
 | Final not yet finished in DB | Low | Kickoff 19 Jul | Ops after FT |
 
 ### Per-File Summary
+
+#### WC styling (theme + shell + home + accents) — Task 3
+
+
+**[p10-wc-styling]**
+
+Uncommitted client-only diff (**13 files**, **384+/125−**): `styles.scss` black/gold tokens + night-pitch atmosphere + motions; `index.html` Bebas Neue / Manrope; shell glass topbar + shimmer brand; home brand-first hero (no cards); fixtures/leaderboard/auth/dashboard/bracket/bets gold + display typography. Detail: [phase-10-styling](changes/phase-10-styling.md).
 
 #### Fixtures UX (NEW helpers + component) — Action / chips / sections
 
@@ -185,13 +206,13 @@ WC 2026 group/results import scripts; unit tests for resolve, snapshot, knockout
 | Phase 7 — Bugfixes & Live Data | Done · uncommitted knockout/data | [Phase 7 detail](changes/phase-7-bugfixes.md) |
 | Phase 8 — User & Admin Dashboards | Implemented · uncommitted | [Phase 8 detail](changes/phase-8-dashboards.md) |
 | Phase 9 — Ops & Tournament Close-Out | In progress | [Phase 9 detail](changes/phase-9-ops-closeout.md) |
-| Phase 10 — Match Sync, Fixtures UX & Styling | In progress (Tasks 1–2 done; Task 3 open) | [sync](changes/phase-10-match-sync.md) · [fixtures UX](changes/phase-10-fixtures-ux.md) · [plan](changes/phase-10-planned.md) |
+| Phase 10 — Match Sync, Fixtures UX & Styling | In progress (Tasks 1–3 in code; Task 3 gate open) | [sync](changes/phase-10-match-sync.md) · [fixtures UX](changes/phase-10-fixtures-ux.md) · [styling](changes/phase-10-styling.md) · [plan](changes/phase-10-planned.md) |
 
 ### Suggested Next Steps
 
-#### Phase 10 Task 3 (when asked)
+#### Close Phase 10 Task 3 gate
 
-WC visual styling — black/white/gold atmosphere across SPA.
+Bugbot → fix highs → Jasmine + `dotnet test` regression — see [phase-10-styling](changes/phase-10-styling.md).
 
 #### Record Final after FT (19 Jul)
 

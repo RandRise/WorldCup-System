@@ -106,7 +106,7 @@ Prevents bet buttons lingering after a match goes Live/Finished via the 30s poll
 ### Explicit non-goals
 
 - Server-side fixture filtering (`?status=open`)
-- Phase 10 Task 3 visual branding (palette / atmosphere)
+- Phase 10 Task 3 visual branding — **done in code** (gate pending); see [phase-10-styling](phase-10-styling.md)
 - Changing list API payloads or pagination
 
 ### Diff highlights
@@ -145,7 +145,7 @@ Covers: status bucketing, Open→Live→Finished grouping/order, bettable-before
 | `p10-match-sync` | **Done** | Gate closed; [phase-10-match-sync](phase-10-match-sync.md) |
 | RabbitMQ decision | **Done** | No broker in v1 |
 | `p10-fixtures-ux` | **Done in code** | Gate **pending**; this page |
-| `p10-wc-styling` | Planned | Not started |
+| `p10-wc-styling` | **Done in code** (gate pending) | [phase-10-styling](phase-10-styling.md) |
 
 ### Related
 

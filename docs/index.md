@@ -9,13 +9,13 @@
 
 FIFA World Cup management platform — status as of **17 Jul 2026**.
 
-> **Success:** **Phases 1–8 complete in code.** **Phase 10 Tasks 1–2 done** — FIFA sync (`dcb322b`) + fixtures UX (Action/chips/sections; Jasmine **12**, API **268**). **Phase 9** still has Final FT after 19 Jul. Task 3 styling not started. See [fixtures UX](changes/phase-10-fixtures-ux.md) · [sync](changes/phase-10-match-sync.md) · [plan](changes/phase-10-planned.md) · [Changes Review](changes-review.md).
+> **Success:** **Phases 1–8 complete in code.** **Phase 10 Tasks 1–3 done**; Task 4 cleanup **planned**. **Phase 9** still has Final FT after 19 Jul. See [plan](changes/phase-10-planned.md) · [styling](changes/phase-10-styling.md) · [fixtures UX](changes/phase-10-fixtures-ux.md) · [sync](changes/phase-10-match-sync.md) · [Changes Review](changes-review.md).
 
 > **Info:** Browse these docs with VitePress (`npm run docs:dev` from the workspace root) or open any `.md` file in Cursor preview. Checklists use `[x]` / `[ ]` task items.
 
-- **Overall Plan Progress:** 8 / 10 phases done — [Phase 9 in progress](roadmap.md#phase-9); [Phase 10 in progress](roadmap.md#phase-10) (Tasks 1–2 done; Task 3 open)
+- **Overall Plan Progress:** 8 / 10 phases done — [Phase 9 in progress](roadmap.md#phase-9); [Phase 10 in progress](roadmap.md#phase-10) (Tasks 1–3 done; Task 4 open)
 - **Backend API Complete:** 100% Phases 1–8 + Phase 10 Task 1 sync endpoints
-- **Frontend SPA:** 100% Phases 1–8 + Phase 10 Task 2 fixtures UX (styling still open)
+- **Frontend SPA:** 100% Phases 1–8 + Phase 10 Tasks 2–3 (fixtures UX + WC styling)
 
 ### Component Status
 
@@ -30,6 +30,7 @@ FIFA World Cup management platform — status as of **17 Jul 2026**.
 - Phase 9 (partial): Final fixture scheduled; Feeder* migration repair confirmed; knockout re-advance UX
 - **Phase 10 Task 1:** FIFA calendar sync, `ExternalMatchId`, Admin SyncResult / SyncFinishedResults / SetExternalMatchId, orientation + tests; no RabbitMQ
 - **Phase 10 Task 2:** Fixtures Action default, filter chips, Open/Live/Finished sections, jump-to-bet, `fixture-sections` + Jasmine **12** — gate closed
+- **Phase 10 Task 3:** Black/gold theme, night-pitch atmosphere, Bebas Neue + Manrope, brand-first home — gate closed; [detail](changes/phase-10-styling.md)
 
 ### ⏳ Phase 9 — Remaining
 
@@ -41,7 +42,8 @@ FIFA World Cup management platform — status as of **17 Jul 2026**.
 | 1 | Post-match FIFA sync → apply → resolve bets | **Done** | [phase-10-match-sync](changes/phase-10-match-sync.md) |
 | — | No RabbitMQ in v1 | **Done** | same |
 | 2 | Fixtures UX — bettable / live first | **Done** | [phase-10-fixtures-ux](changes/phase-10-fixtures-ux.md) |
-| 3 | WC professional styling | Open | [phase-10-planned](changes/phase-10-planned.md) |
+| 3 | WC professional styling | **Done** | [phase-10-styling](changes/phase-10-styling.md) |
+| 4 | Project cleanup — duplicates / unused | Planned | [phase-10-planned](changes/phase-10-planned.md#4--project-cleanup-duplicates--unused) |
 
 Full checklist: [Roadmap Phase 10](roadmap.md#phase-10).
 
@@ -58,7 +60,7 @@ Full checklist: [Roadmap Phase 10](roadmap.md#phase-10).
 | 7 | [Post-Launch / Live](roadmap.md#phase-7) | Done |
 | 8 | [User & Admin Dashboards](roadmap.md#phase-8) | Done |
 | 9 | [Ops & Tournament Close-Out](roadmap.md#phase-9) | In progress |
-| 10 | [Match Sync, Fixtures UX & Styling](roadmap.md#phase-10) | In progress (Tasks 1–2 in code; Task 2 gate open) |
+| 10 | [Match Sync, Fixtures UX, Styling & Cleanup](roadmap.md#phase-10) | In progress (Tasks 1–3 done; Task 4 open) |
 
 ### Quick Navigation
 
@@ -84,17 +86,13 @@ Tech stack, folder structure, and architecture.
 
 #### 🔍 Changes Review
 
-Phase 10 Task 2 fixtures UX (gate open); Task 1 match sync; Phase 9 ops close-out; Phase 8 dashboards; Phase 7 bugfixes; prior phases.
+Phase 10 complete (sync, fixtures UX, WC styling); Phase 9 ops close-out; Phase 8 dashboards; Phase 7 bugfixes; prior phases.
 
 ### Recommended next work
 
-#### Close Phase 10 Task 2 gate
+#### Phase 10 Task 4 — Project cleanup
 
-Bugbot → fix highs → run tests — see [fixtures UX](changes/phase-10-fixtures-ux.md) · [Changes Review](changes-review.md).
-
-#### Phase 10 Task 3 — WC styling
-
-Black/white/gold atmosphere across SPA — see [plan](changes/phase-10-planned.md).
+Scan and remove duplicates / unused (stale root `worldcup-client`, dual docs, etc.) — see [plan](changes/phase-10-planned.md#4--project-cleanup-duplicates--unused).
 
 #### Phase 9 — Final FT
 

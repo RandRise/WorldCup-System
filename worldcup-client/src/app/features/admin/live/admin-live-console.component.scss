@@ -164,8 +164,8 @@
   }
 
   &.finished {
-    background: var(--primary-soft);
-    color: var(--primary);
+    background: var(--success-soft);
+    color: #6dcea0;
   }
 
   &.scheduled {

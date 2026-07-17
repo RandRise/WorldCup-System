@@ -128,8 +128,8 @@ Admin SyncResult / SyncFinishedResults
 | --- | --- | --- |
 | `p10-match-sync` | **Done** | Sync + mapping + FIFA provider + tests; gate closed |
 | RabbitMQ decision | **Done** | No broker in v1 |
-| `p10-fixtures-ux` | **Done in code** (gate pending) | [phase-10-fixtures-ux](phase-10-fixtures-ux.md) |
-| `p10-wc-styling` | Planned | Not started |
+| `p10-fixtures-ux` | **Done** | [phase-10-fixtures-ux](phase-10-fixtures-ux.md) |
+| `p10-wc-styling` | **Done in code** (gate pending) | [phase-10-styling](phase-10-styling.md) |
 
 ### Related
 

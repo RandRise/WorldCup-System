@@ -29,7 +29,8 @@
 
   @if (isLoading()) {
     <p class="muted">Loading…</p>
-  } @else if (match(); as m) {
+  } @else {
+    @if (match(); as m) {
     <div class="console-grid">
       <section class="panel">
         <h2>Record goal</h2>
@@ -159,6 +160,7 @@
           }
         </div>
       }
+    }
     }
   }
 </section>

@@ -214,24 +214,31 @@ export class AdminLiveConsoleComponent implements OnInit {
     }
 
     this.clearMessages();
+    if (match.teamOneId == null || match.teamTwoId == null) {
+      this.errorMessage.set('Both teams must be assigned before updating stats.');
+      return;
+    }
     if (this.statsForm.teamOnePossession + this.statsForm.teamTwoPossession !== 100) {
       this.errorMessage.set('Possession must sum to 100%.');
       return;
     }
+
+    const teamOneId: number = match.teamOneId;
+    const teamTwoId: number = match.teamTwoId;
 
     try {
       // Sequential writes: TeamStatsService auto-balances the opposing possession row.
       // Parallel updates race and can persist splits that do not match the form.
       await this.statsApi.updateTeamStats({
         matchId: match.id,
-        teamId: match.teamOneId,
+        teamId: teamOneId,
         possession: this.statsForm.teamOnePossession,
         shots: this.statsForm.teamOneShots,
         shotsOnTarget: this.statsForm.teamOneShotsOnTarget,
       });
       await this.statsApi.updateTeamStats({
         matchId: match.id,
-        teamId: match.teamTwoId,
+        teamId: teamTwoId,
         possession: this.statsForm.teamTwoPossession,
         shots: this.statsForm.teamTwoShots,
         shotsOnTarget: this.statsForm.teamTwoShotsOnTarget,
