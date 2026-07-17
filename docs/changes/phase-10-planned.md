@@ -9,7 +9,7 @@
 
 ## Phase 10 — Match Sync, Fixtures UX & Visual Polish
 
-**Status: In progress** — Task 1 (post-match sync) **complete** (reviewed, tested, committed); Tasks 2–3 not started. Implementation detail: [phase-10-match-sync](phase-10-match-sync.md).
+**Status: In progress** — Tasks 1–2 **complete** (reviewed, tested); Task 3 not started. Detail: [phase-10-match-sync](phase-10-match-sync.md) · [phase-10-fixtures-ux](phase-10-fixtures-ux.md).
 
 Opened **17 Jul 2026** after Phase 9 ops close-out planning. Checklist: [Roadmap Phase 10](../roadmap.md#phase-10).
 
@@ -18,7 +18,7 @@ Opened **17 Jul 2026** after Phase 9 ops close-out planning. Checklist: [Roadmap
 | # | Theme | Outcome | Status |
 | --- | --- | --- | --- |
 | 1 | Post-match external sync + bet resolve | After FT, pull official/result feed updates into our match model, then resolve open bets | **Done** — gate closed; [detail](phase-10-match-sync.md) |
-| 2 | Fixtures betting UX | Users reach bettable matches without scrolling past long finished-history lists | Planned |
+| 2 | Fixtures betting UX | Users reach bettable matches without scrolling past long finished-history lists | **Done** — gate closed; [detail](phase-10-fixtures-ux.md) |
 | 3 | Professional World Cup styling | Stronger brand atmosphere (palette, typography, backgrounds) across the SPA | Planned |
 
 ---
@@ -78,27 +78,27 @@ Phase 7 item `p7-external-api` was **cancelled** for live in-match feeds. Phase 
 
 ---
 
-### 2 — Fixtures page: bettable matches first
+### 2 — Fixtures page: bettable matches first — **Done in code** (gate pending)
 
 #### Problem
 
-Fixtures currently sort by date ascending (`fixtures.component.ts`). With many **finished** matches first, the matches the user still needs to bet on sit at the bottom — heavy scroll on mobile and desktop.
+Fixtures previously sorted by date ascending. With many **finished** matches first, bettable matches sat at the bottom — heavy scroll on mobile and desktop.
 
-#### Recommended UX (pick one primary + optional filters)
+#### Implemented UX
 
-1. **Default sort / sections (preferred):**
-   - **Open for betting** (scheduled, kickoff in future, no FT) — top
-   - **Live** — next
-   - **Finished** — collapsed or below, or behind a filter
-2. **Filter chips:** `All` · `Open bets` · `Live` · `Finished` (default = `Open bets` or a combined “Action” view)
-3. **Deep link / scroll:** optional “Jump to next match to bet” when some open fixtures remain
+1. **Default = Action** — open (scheduled) + live; finished hidden from first scroll
+2. **Filter chips:** Action · Open bets · Live · Finished · All
+3. **Sections:** Open for betting → Live → Finished (collapsible; expanded on Finished/All)
+4. **Jump to next bet** — scrolls to earliest `canBet` match
+5. **Live poll** — clears `canBet` when status leaves `Scheduled`
 
-Keep finished results available for history; do not delete them — just de-prioritize them in the default view.
+Helpers + Jasmine: `fixture-sections.ts` / `.spec.ts`. Full detail: [phase-10-fixtures-ux](phase-10-fixtures-ux.md).
 
-#### Touch points (when implementing)
+#### Touch points (implemented)
 
-- `worldcup-client/.../fixtures/fixtures.component.ts` (+ template/styles)
-- Possibly API query params later (`?status=open`) if payloads get large; client-side split is enough at current scale
+- `worldcup-client/.../fixtures/fixture-sections.ts` (+ spec)
+- `worldcup-client/.../fixtures/fixtures.component.ts` / `.html` / `.scss`
+- API `?status=` **not** added — client-side split is enough at current scale
 
 ---
 
@@ -139,7 +139,7 @@ Prefer licensed or original photography / abstract pitch textures; avoid scrapin
 | --- | --- | --- |
 | `p10-match-sync` | **Done** | FIFA calendar + ExternalMatchId + Admin sync + tests; [detail](phase-10-match-sync.md) |
 | RabbitMQ decision | **Done** | v1 without broker — documented and followed |
-| `p10-fixtures-ux` | Planned | Prioritize open/live over finished on fixtures |
+| `p10-fixtures-ux` | **Done** | Action default + chips + sections; Jasmine 12; [detail](phase-10-fixtures-ux.md) |
 | `p10-wc-styling` | Planned | WC-inspired palette, atmosphere, typography |
 
 ### Explicit non-goals (until revisited)

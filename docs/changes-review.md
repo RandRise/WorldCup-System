@@ -7,9 +7,11 @@
 ---
 ## Changes Review
 
-Latest: **Phase 10 Task 1 complete (17 Jul 2026)** — FIFA post-match sync reviewed, tested (**268** passed), committed `dcb322b`. Tasks 2–3 still planned. Detail: [phase-10-match-sync](changes/phase-10-match-sync.md) · [phase-10-planned](changes/phase-10-planned.md) · [phase-9-ops-closeout](changes/phase-9-ops-closeout.md) · [phase-8-dashboards](changes/phase-8-dashboards.md) · [phase-7-bugfixes](changes/phase-7-bugfixes.md) · [wc2026-live-data](changes/wc2026-live-data.md).
+Latest: **Phase 10 Task 2 complete (17 Jul 2026)** — fixtures Action default, chips, Open/Live/Finished sections, jump-to-bet; Bugbot cleared; Jasmine **12** + API **268** green. Task 1 remains closed (`dcb322b`). Detail: [phase-10-fixtures-ux](changes/phase-10-fixtures-ux.md) · [phase-10-match-sync](changes/phase-10-match-sync.md) · [phase-10-planned](changes/phase-10-planned.md) · [phase-9-ops-closeout](changes/phase-9-ops-closeout.md) · [phase-8-dashboards](changes/phase-8-dashboards.md) · [phase-7-bugfixes](changes/phase-7-bugfixes.md) · [wc2026-live-data](changes/wc2026-live-data.md).
 
-> **Success:** **Phase 10 Task 1 gate closed.** Sync API + RabbitMQ decision done; Bugbot highs fixed; **268** tests green. Checklist: [Phase 10](roadmap.md#phase-10) · detail: [phase-10-match-sync](changes/phase-10-match-sync.md).
+> **Success:** **Phase 10 Task 2 gate closed.** Fixtures UX shipped; no high/critical Bugbot findings; Jasmine **12** + `dotnet test` **268** passed. Checklist: [Phase 10](roadmap.md#phase-10) · detail: [phase-10-fixtures-ux](changes/phase-10-fixtures-ux.md).
+
+> **Success:** **Phase 10 Task 1 gate closed.** Sync API + RabbitMQ decision done; Bugbot highs fixed; **268** tests green. Detail: [phase-10-match-sync](changes/phase-10-match-sync.md).
 
 > **Info:** **Phase 9 in progress.** Remaining: record Final after 19 Jul FT. Checklist: [Phase 9](roadmap.md#phase-9).
 
@@ -19,9 +21,10 @@ Latest: **Phase 10 Task 1 complete (17 Jul 2026)** — FIFA post-match sync revi
 
 ### Summary stats
 
+- **Phase 10 Task 2 (gate closed):** `fixture-sections.ts` + 12 Jasmine specs, fixtures component — Action default, chips, sections, jump CTA (Live/Finished → Action), live `canBet` clear
 - **Phase 10 Task 1 committed** (`dcb322b`): MatchSync services, `ExternalMatchId` migration, Admin sync endpoints, client API, tests
-- **Phase 10 checklist:** Task 1 items done (7/9); fixtures UX + styling still open
-- **Tests:** **268** passed (17 Jul 2026)
+- **Phase 10 checklist:** Tasks 1–2 done (8/9 items); Task 3 styling still open
+- **Tests:** Jasmine **12** / 12; API `dotnet test` **268** / 268 (17 Jul 2026)
 
 ### Phase 10 Roadmap Mapping
 
@@ -31,7 +34,7 @@ Latest: **Phase 10 Task 1 complete (17 Jul 2026)** — FIFA post-match sync revi
 | Explicit MatchStatus + home/away orientation | **Done** | Provider requires status; sync orients/swaps sides |
 | RabbitMQ decision — v1 without broker | **Done** | Documented; in-process Admin/API only |
 | Client sync surface | **Done** | `match-api.service.ts` + sync DTOs |
-| `p10-fixtures-ux` — Bettable matches first | Planned | Not started |
+| `p10-fixtures-ux` — Bettable matches first | **Done** | Action default; chips; Open/Live/Finished; jump fixed; Jasmine **12**; [detail](changes/phase-10-fixtures-ux.md) |
 | `p10-wc-styling` — WC visual polish | Planned | Not started |
 
 ### Phase 8 Roadmap Mapping
@@ -61,10 +64,14 @@ Latest: **Phase 10 Task 1 complete (17 Jul 2026)** — FIFA post-match sync revi
 
 ### Review Gate — Status
 
-> **Success:** **Phase 8 / knockout gate closed** (16 Jul 2026). **Phase 10 Task 1 gate closed** (17 Jul 2026) — **268** tests passed.
+> **Success:** **Phase 10 Task 2 gate closed** (17 Jul 2026). Jasmine **12** + API **268** passed. **Phase 10 Task 1 gate closed**. **Phase 8 / knockout gate closed** (16 Jul 2026).
 
 | Item | Severity | Status | Action |
 | --- | --- | --- | --- |
+| Task 2 Bugbot review | High (gate) | **Cleared** | No high/critical findings |
+| Live snapshot stale `canBet` | High | **Fixed** | `canBet` forced false when live status ≠ `Scheduled` |
+| Jump scroll after filter change | Medium | **Fixed** | Live/Finished → Action; `setTimeout` before `#fixture-{id}` scroll |
+| Unknown status → Open bucket | Medium | Accepted v1 | Documented in [phase-10-fixtures-ux](changes/phase-10-fixtures-ux.md) |
 | Edited applied migration `IdentityLongKeys` | Critical | Cleared | Not in current diff; knockout schema uses forward `AddMatchStage` |
 | Parallel possession updates race (live console) | High | Fixed | Sequential `updateTeamStats` + possession sum check |
 | Sync missing MatchStatus / home-away orientation | High | Fixed | Explicit status + side orientation in MatchSync |
@@ -78,15 +85,22 @@ Latest: **Phase 10 Task 1 complete (17 Jul 2026)** — FIFA post-match sync revi
 
 | Risk | Severity | Details | Action |
 | --- | --- | --- | --- |
+| Task 2 review/test gate | High | Closed | Jasmine **12** + API **268** |
 | Migration rewrite (IdentityLongKeys) | Critical | Removed from working tree | Cleared |
 | Sync orientation / MatchStatus | High | Fixed in Task 1 | Cleared |
 | Sync deletes Admin goals on score change | Medium | Placeholder scorers when counts differ | Accepted score-only |
-| Uncommitted leftover UI/scripts | Medium | Some Phase 7–8 SPA/scripts may remain | Commit when ready |
-| Tests executed | Done | Full suite | **268** passed (17 Jul 2026) |
+| Tests executed | Done | Jasmine fixtures + API suite | **12** + **268** passed (17 Jul 2026) |
 | FIFA calendar ToS / season ids | Medium | Public JSON; config-driven | Monitor; paid provider fallback |
 | Final not yet finished in DB | Low | Kickoff 19 Jul | Ops after FT |
 
 ### Per-File Summary
+
+#### Fixtures UX (NEW helpers + component) — Action / chips / sections
+
+
+**[p10-fixtures-ux]**
+
+`fixture-sections.ts` (+ Jasmine spec): group, filter, next bettable. Fixtures component: default Action, toolbar chips, Open → Live → Finished, collapsible finished, jump CTA, live poll clears `canBet`. Detail: [phase-10-fixtures-ux](changes/phase-10-fixtures-ux.md).
 
 #### MatchSync (NEW) — FIFA provider + apply + resolve
 
@@ -147,16 +161,16 @@ Untracked feature folders + write/knockout API services; routes in `app.routes.t
 #### Fixtures + admin schedule · Program.cs
 
 
-**[p8-live-snapshot · p8-admin-leaderboard · p7-knockout · p10-match-sync]**
+**[p8-live-snapshot · p8-admin-leaderboard · p7-knockout · p10-match-sync · p10-fixtures-ux]**
 
-30s snapshot poll; resolve breakdown; live console links; Knockout DI + Feeder* startup repair SQL; MatchResultSync HttpClient registration.
+30s snapshot poll (+ Task 2 `canBet` clear); resolve breakdown; live console links; Knockout DI + Feeder* startup repair SQL; MatchResultSync HttpClient registration; Task 2 sectioned fixtures UI.
 
 #### Scripts + tests + docs
 
 
 **[coverage · ops]**
 
-WC 2026 group/results import scripts; unit tests for resolve, snapshot, knockout, H2H standings (245 passed pre–Task 1 sync tests). Planning docs migrated HTML → Markdown (VitePress).
+WC 2026 group/results import scripts; unit tests for resolve, snapshot, knockout, H2H standings (245 passed pre–Task 1 sync tests). Planning docs migrated HTML → Markdown (VitePress). Task 2 Jasmine `fixture-sections.spec.ts`.
 
 ### Prior Phases — Committed
 
@@ -171,21 +185,13 @@ WC 2026 group/results import scripts; unit tests for resolve, snapshot, knockout
 | Phase 7 — Bugfixes & Live Data | Done · uncommitted knockout/data | [Phase 7 detail](changes/phase-7-bugfixes.md) |
 | Phase 8 — User & Admin Dashboards | Implemented · uncommitted | [Phase 8 detail](changes/phase-8-dashboards.md) |
 | Phase 9 — Ops & Tournament Close-Out | In progress | [Phase 9 detail](changes/phase-9-ops-closeout.md) |
-| Phase 10 — Match Sync, Fixtures UX & Styling | In progress (Task 1 API) | [Phase 10 sync](changes/phase-10-match-sync.md) · [plan](changes/phase-10-planned.md) |
+| Phase 10 — Match Sync, Fixtures UX & Styling | In progress (Tasks 1–2 done; Task 3 open) | [sync](changes/phase-10-match-sync.md) · [fixtures UX](changes/phase-10-fixtures-ux.md) · [plan](changes/phase-10-planned.md) |
 
 ### Suggested Next Steps
 
-#### Close Phase 10 Task 1 review/test gate
+#### Phase 10 Task 3 (when asked)
 
-Address high sync risks (orientation, placeholder goals, unit tests), then run `dotnet test`.
-
-#### Phase 10 Tasks 2–3 (when asked)
-
-Fixtures betting priority UX; WC visual styling.
-
-#### Commit when ready
-
-Stage Phase 7–10 paths when you ask for a commit.
+WC visual styling — black/white/gold atmosphere across SPA.
 
 #### Record Final after FT (19 Jul)
 

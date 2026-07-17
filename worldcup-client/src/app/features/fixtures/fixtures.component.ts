@@ -1,5 +1,5 @@
-import { DatePipe } from '@angular/common';
-import { Component, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
+import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatchApiService } from '../../core/api/match-api.service';
 import { BetApiService } from '../../core/api/bet-api.service';
@@ -7,10 +7,17 @@ import { AuthService } from '../../core/auth/auth.service';
 import { Bet, Match } from '../../core/models/api.models';
 import { WorldCupContextService } from '../../core/services/worldcup-context.service';
 import { WorldCupSelectorComponent } from '../shared/world-cup-selector/world-cup-selector.component';
+import {
+  FIXTURE_FILTER_OPTIONS,
+  FixtureFilter,
+  filterFixtureSections,
+  groupFixtures,
+  nextBettableMatch,
+} from './fixture-sections';
 
 @Component({
   selector: 'app-fixtures',
-  imports: [DatePipe, RouterLink, WorldCupSelectorComponent],
+  imports: [DatePipe, NgTemplateOutlet, RouterLink, WorldCupSelectorComponent],
   templateUrl: './fixtures.component.html',
   styleUrl: './fixtures.component.scss',
 })
@@ -28,6 +35,21 @@ export class FixturesComponent implements OnInit, OnDestroy {
   protected readonly recentEvents = signal<{ matchId: number; eventType: string; minute: number; playerName?: string | null; teamName?: string | null }[]>([]);
   protected readonly userBets = signal<Map<number, Bet>>(new Map());
   protected readonly placingMatchId = signal<number | null>(null);
+  protected readonly activeFilter = signal<FixtureFilter>('action');
+  protected readonly finishedExpanded = signal(false);
+
+  protected readonly filterOptions = FIXTURE_FILTER_OPTIONS;
+
+  protected readonly sections = computed(() =>
+    filterFixtureSections(groupFixtures(this.matches()), this.activeFilter()),
+  );
+
+  protected readonly nextBet = computed(() => nextBettableMatch(this.matches()));
+
+  protected readonly hasVisibleFixtures = computed(() => {
+    const sections = this.sections();
+    return sections.open.length + sections.live.length + sections.finished.length > 0;
+  });
 
   constructor() {
     effect(() => {
@@ -50,6 +72,37 @@ export class FixturesComponent implements OnInit, OnDestroy {
       clearInterval(this.refreshTimer);
     }
   }
+
+  setFilter(filter: FixtureFilter): void {
+    this.activeFilter.set(filter);
+    if (filter === 'finished' || filter === 'all') {
+      this.finishedExpanded.set(true);
+    } else if (filter === 'action' || filter === 'open' || filter === 'live') {
+      this.finishedExpanded.set(false);
+    }
+  }
+
+  toggleFinished(): void {
+    this.finishedExpanded.update((open) => !open);
+  }
+
+  scrollToNextBet(): void {
+    const match = this.nextBet();
+    if (match == null) {
+      return;
+    }
+    // Open/bettable rows only exist under Action, Open, or All — leave Live/Finished first.
+    const filter = this.activeFilter();
+    if (filter === 'finished' || filter === 'live') {
+      this.setFilter('action');
+    }
+    // Wait for Angular to render the Open section before scrolling.
+    setTimeout(() => {
+      const element = document.getElementById(`fixture-${match.id}`);
+      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+
   async loadFixtures(): Promise<void> {
     const worldCupId = this.context.selectedWorldCupId();
     if (worldCupId == null) {
@@ -109,6 +162,7 @@ export class FixturesComponent implements OnInit, OnDestroy {
           teamOneScore: live.teamOneScore,
           teamTwoScore: live.teamTwoScore,
           status: live.status,
+          canBet: live.status === 'Scheduled' ? match.canBet : false,
         };
       }),
     );

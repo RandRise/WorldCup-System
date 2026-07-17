@@ -9,7 +9,7 @@
 
 Ten phases. Checkboxes below reflect a **code audit as of 17 Jul 2026** — checkboxes use Markdown task lists (`[x]` / `[ ]`).
 
-> **Success:** **Where you are:** Phases 1–8 complete in code. **Phase 9** — Final scheduled; Final FT after 19 Jul still open (working tree commit done). **Phase 10 Task 1 done** — FIFA post-match sync + bet resolve shipped, reviewed, and tested (**268** tests green, 17 Jul 2026); Tasks 2–3 (fixtures UX, WC styling) still open. See [Phase 10 sync detail](changes/phase-10-match-sync.md) · [plan](changes/phase-10-planned.md) · [Changes Review](changes-review.md).
+> **Success:** **Where you are:** Phases 1–8 complete in code. **Phase 9** — Final scheduled; Final FT after 19 Jul still open. **Phase 10 Tasks 1–2 done** — Task 1 sync (`dcb322b`, **268** tests); Task 2 fixtures UX (Jasmine **12**, API **268**); Task 3 styling not started. See [fixtures UX](changes/phase-10-fixtures-ux.md) · [sync](changes/phase-10-match-sync.md) · [plan](changes/phase-10-planned.md) · [Changes Review](changes-review.md).
 
 <a id="phase-1"></a>
 
@@ -146,7 +146,7 @@ Ship the Phase 7–8 working tree, keep WC 2026 data current through the Final, 
 
 ### Phase 10 — Match Sync, Fixtures UX & Visual Polish **[In progress]**
 
-Post-match result sync + bet resolve, fixtures betting priority UX, and World Cup–fitting visual polish. **Task 1 complete** (API + tests + commit `dcb322b`); Tasks 2–3 not started. Detail: [phase-10-match-sync](changes/phase-10-match-sync.md) · [phase-10-planned](changes/phase-10-planned.md).
+Post-match result sync + bet resolve, fixtures betting priority UX, and World Cup–fitting visual polish. **Tasks 1–2 complete** (reviewed + tested); Task 3 not started. Detail: [phase-10-match-sync](changes/phase-10-match-sync.md) · [phase-10-fixtures-ux](changes/phase-10-fixtures-ux.md) · [phase-10-planned](changes/phase-10-planned.md).
 
 **Task 1 — Post-match sync (done)**
 
@@ -158,7 +158,10 @@ Post-match result sync + bet resolve, fixtures betting priority UX, and World Cu
 - [x] Client sync models + `match-api` methods — *`api.models.ts`, `match-api.service.ts`*
 - [x] Unit tests + review gate — *19 MatchSync/controller tests; suite **268** passed (17 Jul 2026)*
 
-**Tasks 2–3 — still open**
+**Task 2 — Fixtures UX (done)**
 
-- [ ] Fixtures page UX — surface open/live bettable matches first (sections or filters); finished history below or filtered — *worldcup-client fixtures*
+- [x] Fixtures page UX — surface open/live bettable matches first (sections + filter chips); finished history below or filtered — *Action default; Jasmine **12**; [detail](changes/phase-10-fixtures-ux.md)*
+
+**Task 3 — still open**
+
 - [ ] Professional World Cup styling — black/white/gold atmosphere, stadium-fit backgrounds, stronger typography across SPA — *theme tokens + public pages first*

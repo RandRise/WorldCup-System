@@ -3,6 +3,66 @@
   color: var(--text-muted);
 }
 
+.fixtures-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+
+  .tabs {
+    margin-bottom: 0;
+  }
+}
+
+.jump-bet {
+  flex-shrink: 0;
+}
+
+.fixture-section {
+  margin-bottom: 1.25rem;
+
+  > h2 {
+    margin: 0 0 0.65rem;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+}
+
+.section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin: 0 0 0.65rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+
+  &:hover {
+    color: var(--primary);
+  }
+}
+
+.section-count {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.section-chevron {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
 .fixture-list {
   display: flex;
   flex-direction: column;
@@ -41,6 +101,7 @@
 
 .fixture {
   padding: 1rem;
+  scroll-margin-top: 1rem;
 }
 
 .fixture-meta {

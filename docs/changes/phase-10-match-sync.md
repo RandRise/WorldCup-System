@@ -106,7 +106,7 @@ Admin SyncResult / SyncFinishedResults
 - Live in-match feed replacing Admin live console
 - HTML website scraping as primary source
 - Sync of cards / detailed stats / real scorers
-- Fixtures betting UX (`p10-fixtures-ux`)
+- Fixtures betting UX (`p10-fixtures-ux`) — tracked separately; see [phase-10-fixtures-ux](phase-10-fixtures-ux.md)
 - WC visual styling (`p10-wc-styling`)
 - Message broker
 
@@ -128,7 +128,7 @@ Admin SyncResult / SyncFinishedResults
 | --- | --- | --- |
 | `p10-match-sync` | **Done** | Sync + mapping + FIFA provider + tests; gate closed |
 | RabbitMQ decision | **Done** | No broker in v1 |
-| `p10-fixtures-ux` | Planned | Not started |
+| `p10-fixtures-ux` | **Done in code** (gate pending) | [phase-10-fixtures-ux](phase-10-fixtures-ux.md) |
 | `p10-wc-styling` | Planned | Not started |
 
 ### Related
