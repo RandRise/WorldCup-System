@@ -28,9 +28,11 @@ Scripts define:
 - **16** Round of 32 · **8** Round of 16 · **4** quarter-finals · **2** semi-finals
   - SF1: France 0–2 Spain (Dallas, 14 Jul)
   - SF2: England 1–2 Argentina (Atlanta, 15 Jul) — now in `import_wc2026_finished_matches.py`
-- **Not finished in import:** Final Argentina vs Spain (19 Jul, MetLife) — **scheduled** via `add_sf2_and_final.py` (MatchId 116, no score until FT)
+- **Finished Final:** Argentina **0–1** Spain a.e.t. (Ferran Torres 106', MetLife) — via `add_sf2_and_final.py` `apply_final_ft` (MatchId **116**); also in wipe importer `MATCHES`
 - **Not used:** Third-place playoff (`MatchStage.ThirdPlace` exists but skipped for this path)
-- Scores materialised as `Goal` rows on placeholder `Tournament Scorer` players so standings/fixtures show FT results
+- Scores materialised as `Goal` rows on seeded squad forwards when available (round-robin); `Tournament Scorer` only as fallback for empty squads
+- **Squad names** — key players per team via `scripts/seed_wc2026_players.py` + `scripts/data/wc2026_players.csv` (idempotent)
+- **Reassign existing placeholders** — `scripts/reassign_placeholder_goals.py` updates Goal.PlayerId off Tournament Scorer onto squad forwards
 
 Re-run the import (or Admin live console) on your local DB if the DB was last loaded before SF2 was added to the script.
 
@@ -46,13 +48,23 @@ Re-run the import (or Admin live console) on your local DB if the DB was last lo
 # Groups + teams (idempotent SQL)
 psql -h localhost -U postgres -d TestDatabase -f WorldCup-System/scripts/seed-wc2026-groups.sql
 
+# Squad / key players (idempotent upsert by team + jersey; does not touch Tournament Scorer #99)
+python WorldCup-System/scripts/seed_wc2026_players.py
+# Optional: --dry-run | --csv path\to\players.csv
+# Optional: set WC_DB="host=... dbname=... user=... password=..."
+
+# Re-point existing placeholder goals onto squad forwards (no score change)
+python WorldCup-System/scripts/reassign_placeholder_goals.py
+
 # Finished matches (clears Match/TeamStats/Goal/Bet rows, then reloads through both SFs)
 python WorldCup-System/scripts/import_wc2026_finished_matches.py
 # Optional: set WC_DB="host=... dbname=... user=... password=..."
 
-# Idempotent: ensure SF2 + Final fixture (Final without score, for betting)
+# Idempotent: ensure SF2 + Final FT (Argentina 0-1 Spain, Torres 106')
 python WorldCup-System/scripts/add_sf2_and_final.py
 ```
+
+Edit `scripts/data/wc2026_players.csv` (`country,number,name,position`) to add or correct names, then re-run the player seed. Country aliases match the match-import script (e.g. `USA` → United States). Positions: `GK` / `DEF` / `MID` / `FWD` (or full names).
 
 Sources for results: FIFA schedule/results pages and published knockout scores (Yahoo Sports). Group standings were verified against published tables after import. Further results: extend the import script or use the Admin live console (Phase 8).
 
@@ -63,5 +75,5 @@ Scripts and `RoundOf32` / Feeder schema remain in the shared Phase 7+8 working t
 ### Out of scope
 
 - Live external football API poller — **cancelled** (manual import / Admin live console)
-- Player-accurate goalscorers / cards (placeholder scorers only)
+- Auto-linking finished-match goals to historically accurate scorers — **moved to [Phase 11](phase-11-planned.md)** (FIFA timeline); until then goals are attributed to seeded squad forwards in round-robin order; correct via Admin live console
 - Penalty shoot-out winners beyond FT/ET scoreline

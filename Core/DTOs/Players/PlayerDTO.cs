@@ -10,6 +10,7 @@ namespace Core.DTOs.Players
         public int TeamId { get; set; }
         public int PositionId { get; set; }
         public string? PositionName { get; set; }
+        public string? ExternalPlayerId { get; set; }
     }
 
     public class AddPlayerDTO

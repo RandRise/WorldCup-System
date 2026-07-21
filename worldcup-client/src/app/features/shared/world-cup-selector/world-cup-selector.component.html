@@ -1,9 +1,13 @@
 @if (context.worldCups().length > 0) {
   <label class="wc-select">
     <span>Tournament</span>
-    <select [value]="selectedId() ?? ''" (change)="onSelect($event)">
+    <select
+      [ngModel]="selectedId()"
+      (ngModelChange)="onSelect($event)"
+      [attr.aria-label]="'Selected tournament: ' + context.selectedWorldCupLabel()"
+    >
       @for (worldCup of context.worldCups(); track worldCup.id) {
-        <option [value]="worldCup.id">{{ context.worldCupLabel(worldCup) }}</option>
+        <option [ngValue]="worldCup.id">{{ context.worldCupLabel(worldCup) }}</option>
       }
     </select>
   </label>

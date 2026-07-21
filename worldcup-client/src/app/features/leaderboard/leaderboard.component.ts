@@ -1,4 +1,4 @@
-import { Component, effect, inject, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { BetApiService } from '../../core/api/bet-api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { LeaderboardEntry, LeaderboardSummary } from '../../core/models/api.models';
@@ -11,10 +11,12 @@ import { WorldCupSelectorComponent } from '../shared/world-cup-selector/world-cu
   templateUrl: './leaderboard.component.html',
   styleUrl: './leaderboard.component.scss',
 })
-export class LeaderboardComponent implements OnInit {
+export class LeaderboardComponent {
   private readonly betApi = inject(BetApiService);
   protected readonly auth = inject(AuthService);
   protected readonly context = inject(WorldCupContextService);
+
+  private loadToken = 0;
 
   protected readonly entries = signal<LeaderboardEntry[]>([]);
   protected readonly summary = signal<LeaderboardSummary | null>(null);
@@ -23,35 +25,48 @@ export class LeaderboardComponent implements OnInit {
 
   constructor() {
     effect(() => {
-      this.context.selectedWorldCupId();
-      void this.load();
+      const worldCupId = this.context.selectedWorldCupId();
+      void this.load(worldCupId);
     });
   }
 
-  async ngOnInit(): Promise<void> {
-    await this.load();
-  }
+  private async load(worldCupId: number | null = this.context.selectedWorldCupId()): Promise<void> {
+    const token = ++this.loadToken;
+    const scopedId = worldCupId ?? undefined;
 
-  private async load(): Promise<void> {
-    const worldCupId = this.context.selectedWorldCupId() ?? undefined;
     this.isLoading.set(true);
     this.errorMessage.set(null);
     try {
       const requests: Promise<void>[] = [
-        this.betApi.getLeaderboard(worldCupId).then((rows) => this.entries.set(rows)),
+        this.betApi.getLeaderboard(scopedId).then((rows) => {
+          if (token !== this.loadToken || this.context.selectedWorldCupId() !== worldCupId) {
+            return;
+          }
+          this.entries.set(rows);
+        }),
       ];
       if (this.auth.isAuthenticated()) {
         requests.push(
-          this.betApi.getMySummary(worldCupId).then((row) => this.summary.set(row)),
+          this.betApi.getMySummary(scopedId).then((row) => {
+            if (token !== this.loadToken || this.context.selectedWorldCupId() !== worldCupId) {
+              return;
+            }
+            this.summary.set(row);
+          }),
         );
       } else {
         this.summary.set(null);
       }
       await Promise.all(requests);
     } catch {
+      if (token !== this.loadToken || this.context.selectedWorldCupId() !== worldCupId) {
+        return;
+      }
       this.errorMessage.set('Failed to load leaderboard.');
     } finally {
-      this.isLoading.set(false);
+      if (token === this.loadToken) {
+        this.isLoading.set(false);
+      }
     }
   }
 

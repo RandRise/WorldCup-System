@@ -22,6 +22,7 @@ namespace Core.DTOs.Matches
         public string Status { get; set; } = "Scheduled";
         public bool CanBet { get; set; }
         public string? ExternalMatchId { get; set; }
+        public string? ExternalStageId { get; set; }
     }
 
     public class MatchDetailDTO : MatchDTO

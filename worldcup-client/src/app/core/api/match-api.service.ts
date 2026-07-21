@@ -70,4 +70,19 @@ export class MatchApiService {
       this.http.post<SyncFinishedResults>(`${this.baseUrl}/Match/SyncFinishedResults`, {}, { params }),
     );
   }
+
+  /** Scorers-only backfill — FT score and bets unchanged. */
+  syncScorers(matchId: number): Promise<SyncMatchResult> {
+    return firstValueFrom(
+      this.http.post<SyncMatchResult>(`${this.baseUrl}/Match/SyncScorers/${matchId}`, {}),
+    );
+  }
+
+  /** Batch scorers-only backfill for mapped fixtures in a World Cup. */
+  syncScorersForWorldCup(worldCupId: number): Promise<SyncFinishedResults> {
+    const params = new HttpParams().set('worldCupId', String(worldCupId));
+    return firstValueFrom(
+      this.http.post<SyncFinishedResults>(`${this.baseUrl}/Match/SyncScorersForWorldCup`, {}, { params }),
+    );
+  }
 }

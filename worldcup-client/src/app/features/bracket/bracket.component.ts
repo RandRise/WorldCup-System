@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, effect, inject, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { KnockoutApiService } from '../../core/api/knockout-api.service';
 import { Bracket, BracketRound, Match } from '../../core/models/api.models';
@@ -12,9 +12,11 @@ import { WorldCupSelectorComponent } from '../shared/world-cup-selector/world-cu
   templateUrl: './bracket.component.html',
   styleUrl: './bracket.component.scss',
 })
-export class BracketComponent implements OnInit {
+export class BracketComponent {
   private readonly knockoutApi = inject(KnockoutApiService);
   protected readonly context = inject(WorldCupContextService);
+
+  private loadToken = 0;
 
   protected readonly isLoading = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
@@ -22,19 +24,17 @@ export class BracketComponent implements OnInit {
 
   constructor() {
     effect(() => {
-      this.context.selectedWorldCupId();
-      void this.loadBracket();
+      const worldCupId = this.context.selectedWorldCupId();
+      void this.loadBracket(worldCupId);
     });
   }
 
-  async ngOnInit(): Promise<void> {
-    await this.loadBracket();
-  }
+  async loadBracket(worldCupId: number | null = this.context.selectedWorldCupId()): Promise<void> {
+    const token = ++this.loadToken;
 
-  async loadBracket(): Promise<void> {
-    const worldCupId = this.context.selectedWorldCupId();
     if (worldCupId == null) {
       this.rounds.set([]);
+      this.isLoading.set(false);
       return;
     }
 
@@ -42,12 +42,20 @@ export class BracketComponent implements OnInit {
     this.errorMessage.set(null);
     try {
       const bracket: Bracket = await this.knockoutApi.getBracket(worldCupId);
+      if (token !== this.loadToken || this.context.selectedWorldCupId() !== worldCupId) {
+        return;
+      }
       this.rounds.set(bracket.rounds ?? []);
     } catch {
+      if (token !== this.loadToken || this.context.selectedWorldCupId() !== worldCupId) {
+        return;
+      }
       this.errorMessage.set('Failed to load knockout bracket.');
       this.rounds.set([]);
     } finally {
-      this.isLoading.set(false);
+      if (token === this.loadToken) {
+        this.isLoading.set(false);
+      }
     }
   }
 

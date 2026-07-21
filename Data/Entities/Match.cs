@@ -21,6 +21,8 @@
         public bool FeederTwoTakesLoser { get; set; }
         /// <summary>External provider match id (e.g. FIFA IdMatch) for post-match result sync.</summary>
         public string? ExternalMatchId { get; set; }
+        /// <summary>External provider stage id (e.g. FIFA IdStage) for timeline URLs.</summary>
+        public string? ExternalStageId { get; set; }
         public ICollection<TeamStats> TeamStats { get; set; }
         public ICollection<Bet> Bets { get; set; }
     }

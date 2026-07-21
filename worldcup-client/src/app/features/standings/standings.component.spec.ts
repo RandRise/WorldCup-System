@@ -50,7 +50,11 @@ describe('StandingsComponent', () => {
           useValue: {
             groupsForSelectedWorldCup: () => groupsForSelectedWorldCup,
             selectedWorldCupId: () => 1,
+            selectedWorldCup: () => null,
+            selectedWorldCupLabel: () => 'FIFA World Cup 2026',
             worldCups: () => [],
+            worldCupLabel: (worldCup: { year: string }) =>
+              `FIFA World Cup ${new Date(worldCup.year).getUTCFullYear()}`,
             selectWorldCup: jasmine.createSpy('selectWorldCup'),
           },
         },

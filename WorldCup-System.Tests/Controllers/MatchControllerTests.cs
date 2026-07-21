@@ -297,7 +297,8 @@ namespace WorldCup_System.Tests.Controllers
             SetExternalMatchIdDTO request = new SetExternalMatchIdDTO
             {
                 MatchId = 1,
-                ExternalMatchId = "FIFA-100"
+                ExternalMatchId = "FIFA-100",
+                ExternalStageId = "STAGE-100"
             };
             _matchResultSyncServiceMock
                 .Setup(syncService => syncService.SetExternalMatchId(request))
@@ -414,6 +415,121 @@ namespace WorldCup_System.Tests.Controllers
 
             IActionResult actionResult =
                 await _matchController.SyncFinishedResults(999, CancellationToken.None);
+
+            BadRequestObjectResult badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult);
+            Assert.Contains("World Cup not found", badRequestResult.Value?.ToString());
+        }
+
+        [Fact]
+        public async Task SyncScorers_WhenServiceSucceeds_ReturnsOkWithResult()
+        {
+            SyncMatchResultDTO syncResult = new SyncMatchResultDTO
+            {
+                MatchId = 1,
+                ExternalMatchId = "FIFA-100",
+                ExternalStageId = "STAGE-100",
+                Applied = true,
+                ScoreChanged = false,
+                TeamOneScore = 2,
+                TeamTwoScore = 1,
+                BetsResolved = 0,
+                ScorerStatus = SyncScorerStatuses.Applied,
+                ScorerGoalsUpdated = 3,
+                Message = "Scorers-only sync (FT unchanged 2-1). Scorers: Updated 3 goal scorer(s)."
+            };
+            _matchResultSyncServiceMock
+                .Setup(syncService => syncService.SyncScorers(1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(syncResult);
+
+            IActionResult actionResult = await _matchController.SyncScorers(1, CancellationToken.None);
+
+            OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
+            SyncMatchResultDTO result = Assert.IsType<SyncMatchResultDTO>(okResult.Value);
+            Assert.True(result.Applied);
+            Assert.False(result.ScoreChanged);
+            Assert.Equal(0, result.BetsResolved);
+            Assert.Equal(SyncScorerStatuses.Applied, result.ScorerStatus);
+            Assert.Equal(3, result.ScorerGoalsUpdated);
+            _matchResultSyncServiceMock.Verify(
+                syncService => syncService.SyncScorers(1, It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task SyncScorers_WhenServiceThrows_ReturnsBadRequest()
+        {
+            _matchResultSyncServiceMock
+                .Setup(syncService => syncService.SyncScorers(1, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("Match 1 has no ExternalMatchId."));
+
+            IActionResult actionResult = await _matchController.SyncScorers(1, CancellationToken.None);
+
+            BadRequestObjectResult badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult);
+            Assert.Contains("ExternalMatchId", badRequestResult.Value?.ToString());
+        }
+
+        [Fact]
+        public async Task SyncScorersForWorldCup_WhenServiceSucceeds_ReturnsOkWithBatchResult()
+        {
+            SyncFinishedResultsDTO batchResult = new SyncFinishedResultsDTO
+            {
+                WorldCupId = 2026,
+                MatchesAttempted = 2,
+                MatchesApplied = 1,
+                TotalBetsResolved = 0,
+                ScorersApplied = 1,
+                ScorerWarnings = 1,
+                Message =
+                    "Scorers-only: attempted 2 mapped match(es); applied/matched 1 " +
+                    "(scorers updated 1, already matched 0); skipped 0; scorer warnings 1.",
+                Results = new List<SyncMatchResultDTO>
+                {
+                    new SyncMatchResultDTO
+                    {
+                        MatchId = 1,
+                        Applied = true,
+                        ScoreChanged = false,
+                        BetsResolved = 0,
+                        ScorerStatus = SyncScorerStatuses.Applied
+                    },
+                    new SyncMatchResultDTO
+                    {
+                        MatchId = 2,
+                        Applied = false,
+                        ScoreChanged = false,
+                        BetsResolved = 0,
+                        ScorerStatus = SyncScorerStatuses.Warning
+                    }
+                }
+            };
+            _matchResultSyncServiceMock
+                .Setup(syncService => syncService.SyncScorersForWorldCup(2026, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(batchResult);
+
+            IActionResult actionResult =
+                await _matchController.SyncScorersForWorldCup(2026, CancellationToken.None);
+
+            OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
+            SyncFinishedResultsDTO result = Assert.IsType<SyncFinishedResultsDTO>(okResult.Value);
+            Assert.Equal(2, result.MatchesAttempted);
+            Assert.Equal(1, result.MatchesApplied);
+            Assert.Equal(0, result.TotalBetsResolved);
+            Assert.Equal(1, result.ScorersApplied);
+            Assert.Equal(1, result.ScorerWarnings);
+            _matchResultSyncServiceMock.Verify(
+                syncService => syncService.SyncScorersForWorldCup(2026, It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task SyncScorersForWorldCup_WhenServiceThrows_ReturnsBadRequest()
+        {
+            _matchResultSyncServiceMock
+                .Setup(syncService => syncService.SyncScorersForWorldCup(999, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("World Cup not found."));
+
+            IActionResult actionResult =
+                await _matchController.SyncScorersForWorldCup(999, CancellationToken.None);
 
             BadRequestObjectResult badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult);
             Assert.Contains("World Cup not found", badRequestResult.Value?.ToString());

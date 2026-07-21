@@ -3,6 +3,8 @@ namespace Core.Services.MatchSync
     public class ExternalMatchResult
     {
         public required string ExternalMatchId { get; init; }
+        /// <summary>FIFA IdStage when present on the calendar payload (needed for timeline URLs).</summary>
+        public string? ExternalStageId { get; init; }
         public int HomeScore { get; init; }
         public int AwayScore { get; init; }
         public bool IsFinished { get; init; }

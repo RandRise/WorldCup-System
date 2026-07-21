@@ -6,6 +6,7 @@ import { BetApiService } from '../../core/api/bet-api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { Bet, Match } from '../../core/models/api.models';
 import { WorldCupContextService } from '../../core/services/worldcup-context.service';
+import { toHonestPlayerName } from '../../core/utils/placeholder-scorer';
 import { WorldCupSelectorComponent } from '../shared/world-cup-selector/world-cup-selector.component';
 import {
   FIXTURE_FILTER_OPTIONS,
@@ -28,6 +29,9 @@ export class FixturesComponent implements OnInit, OnDestroy {
   protected readonly context = inject(WorldCupContextService);
 
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
+  private loadToken = 0;
+  private snapshotToken = 0;
+
   protected readonly isLoading = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly message = signal<string | null>(null);
@@ -53,13 +57,12 @@ export class FixturesComponent implements OnInit, OnDestroy {
 
   constructor() {
     effect(() => {
-      this.context.selectedWorldCupId();
-      void this.loadFixtures();
+      const worldCupId = this.context.selectedWorldCupId();
+      void this.loadFixtures(worldCupId);
     });
   }
 
   async ngOnInit(): Promise<void> {
-    await this.loadFixtures();
     this.refreshTimer = setInterval(() => {
       if (this.shouldAutoRefresh()) {
         void this.refreshLiveData();
@@ -103,33 +106,54 @@ export class FixturesComponent implements OnInit, OnDestroy {
     });
   }
 
-  async loadFixtures(): Promise<void> {
-    const worldCupId = this.context.selectedWorldCupId();
+  async loadFixtures(
+    worldCupId: number | null = this.context.selectedWorldCupId(),
+  ): Promise<void> {
+    const token = ++this.loadToken;
+
     if (worldCupId == null) {
+      this.matches.set([]);
+      this.userBets.set(new Map());
+      this.recentEvents.set([]);
+      this.isLoading.set(false);
       return;
     }
+
     this.isLoading.set(true);
     this.errorMessage.set(null);
     try {
       const fixtures = await this.matchApi.getFixturesByWorldCup(worldCupId);
+      if (token !== this.loadToken || this.context.selectedWorldCupId() !== worldCupId) {
+        return;
+      }
       this.matches.set(fixtures.sort((a, b) => a.date.localeCompare(b.date)));
 
       if (this.auth.isAuthenticated()) {
         const bets = await this.betApi.getMyBetsForWorldCup(worldCupId);
+        if (token !== this.loadToken || this.context.selectedWorldCupId() !== worldCupId) {
+          return;
+        }
         const betMap = new Map<number, Bet>();
         for (const bet of bets) {
           betMap.set(bet.matchId, bet);
         }
         this.userBets.set(betMap);
+      } else {
+        this.userBets.set(new Map());
       }
 
       // Always pull snapshot on load so finished matches can auto-resolve bets
       // even when nothing is live (polling alone would never start).
       await this.applyLiveSnapshot(worldCupId);
     } catch {
+      if (token !== this.loadToken || this.context.selectedWorldCupId() !== worldCupId) {
+        return;
+      }
       this.errorMessage.set('Failed to load fixtures.');
     } finally {
-      this.isLoading.set(false);
+      if (token === this.loadToken) {
+        this.isLoading.set(false);
+      }
     }
   }
 
@@ -147,8 +171,18 @@ export class FixturesComponent implements OnInit, OnDestroy {
   }
 
   private async applyLiveSnapshot(worldCupId: number): Promise<void> {
+    const token = ++this.snapshotToken;
     const snapshot = await this.matchApi.getLiveSnapshot(worldCupId);
-    this.recentEvents.set(snapshot.recentEvents);
+    if (token !== this.snapshotToken || this.context.selectedWorldCupId() !== worldCupId) {
+      return;
+    }
+
+    this.recentEvents.set(
+      snapshot.recentEvents.map((event) => ({
+        ...event,
+        playerName: toHonestPlayerName(event.playerName),
+      })),
+    );
 
     const snapshotByMatch = new Map(snapshot.matches.map((item) => [item.matchId, item]));
     this.matches.update((current) =>

@@ -1,5 +1,6 @@
 using Core.DTOs.Matches;
 using Core.Services.Bets;
+using Core.Services.MatchSync;
 using Data.Entities;
 using Data.Repos;
 
@@ -71,6 +72,7 @@ namespace Core.Services.Matches
                 Status = status,
                 CanBet = canBet,
                 ExternalMatchId = match.ExternalMatchId,
+                ExternalStageId = match.ExternalStageId,
                 TeamOneStats = BuildTeamStatsDto(teamOneStats, match, teams, countries, players, goals, cards),
                 TeamTwoStats = BuildTeamStatsDto(teamTwoStats, match, teams, countries, players, goals, cards)
             };
@@ -95,7 +97,7 @@ namespace Core.Services.Matches
 
             Match match = new Match
             {
-                Date = matchDto.Date,
+                Date = ToUtc(matchDto.Date),
                 Stage = matchDto.Stage,
                 StadiumId = matchDto.StadiumId,
                 TeamOneId = matchDto.TeamOneId,
@@ -179,7 +181,8 @@ namespace Core.Services.Matches
                 match.TeamTwoId = matchDto.TeamTwoId;
             }
 
-            bool dateChanged = match.Date != matchDto.Date;
+            DateTime kickoffUtc = ToUtc(matchDto.Date);
+            bool dateChanged = match.Date != kickoffUtc;
             if (dateChanged && hasRecordedEvents)
             {
                 throw new InvalidOperationException(
@@ -193,7 +196,7 @@ namespace Core.Services.Matches
                 await EnsureTeamsEligibleForStage(teamOne, teamTwo, matchDto.Stage);
             }
 
-            match.Date = matchDto.Date;
+            match.Date = kickoffUtc;
             match.Stage = matchDto.Stage;
             match.StadiumId = matchDto.StadiumId;
 
@@ -406,7 +409,8 @@ namespace Core.Services.Matches
                     MatchId = match.Id,
                     EventType = goal.IsOwnGoal != 0 ? "OwnGoal" : "Goal",
                     Minute = ToMinute(goal.TimeScored, match.Date),
-                    PlayerName = players.FirstOrDefault(player => player.Id == goal.PlayerId)?.Name,
+                    PlayerName = ToHonestPlayerName(
+                        players.FirstOrDefault(player => player.Id == goal.PlayerId)?.Name),
                     TeamName = ResolveTeamName(owningStats.TeamId, teams, countries)
                 });
             }
@@ -425,7 +429,8 @@ namespace Core.Services.Matches
                     MatchId = match.Id,
                     EventType = CardTypeName(card.Type),
                     Minute = ToMinute(card.TimeIssued, match.Date),
-                    PlayerName = players.FirstOrDefault(player => player.Id == card.PlayerId)?.Name,
+                    PlayerName = ToHonestPlayerName(
+                        players.FirstOrDefault(player => player.Id == card.PlayerId)?.Name),
                     TeamName = ResolveTeamName(owningStats.TeamId, teams, countries)
                 });
             }
@@ -494,7 +499,8 @@ namespace Core.Services.Matches
                     TeamTwoScore = teamTwoStats == null ? 0 : goals.Count(goal => goal.TeamStatsId == teamTwoStats.Id),
                     Status = status,
                     CanBet = canBet,
-                    ExternalMatchId = match.ExternalMatchId
+                    ExternalMatchId = match.ExternalMatchId,
+                    ExternalStageId = match.ExternalStageId
                 };
             }).ToList();
         }
@@ -556,7 +562,8 @@ namespace Core.Services.Matches
                 {
                     Id = goal.Id,
                     PlayerId = goal.PlayerId,
-                    PlayerName = players.FirstOrDefault(player => player.Id == goal.PlayerId)?.Name,
+                    PlayerName = ToHonestPlayerName(
+                        players.FirstOrDefault(player => player.Id == goal.PlayerId)?.Name),
                     Minute = ToMinute(goal.TimeScored, match.Date),
                     IsOwnGoal = goal.IsOwnGoal != 0
                 })
@@ -569,7 +576,8 @@ namespace Core.Services.Matches
                 {
                     Id = card.Id,
                     PlayerId = card.PlayerId,
-                    PlayerName = players.FirstOrDefault(player => player.Id == card.PlayerId)?.Name,
+                    PlayerName = ToHonestPlayerName(
+                        players.FirstOrDefault(player => player.Id == card.PlayerId)?.Name),
                     Minute = ToMinute(card.TimeIssued, match.Date),
                     Type = CardTypeName(card.Type)
                 })
@@ -588,6 +596,28 @@ namespace Core.Services.Matches
                 Goals = goalDtos,
                 Cards = cardDtos
             };
+        }
+
+        /// <summary>
+        /// Omits import/sync placeholder names so Recent events and match timelines
+        /// never present "Tournament Scorer" as a real player (Phase 11 Task 7).
+        /// </summary>
+        private static string? ToHonestPlayerName(string? playerName)
+        {
+            if (string.IsNullOrWhiteSpace(playerName))
+            {
+                return null;
+            }
+
+            if (string.Equals(
+                    playerName.Trim(),
+                    MatchResultSyncService.PlaceholderScorerName,
+                    StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            return playerName;
         }
 
         private static string? ResolveTeamName(int teamId, List<Team> teams, List<Country> countries)
@@ -660,6 +690,13 @@ namespace Core.Services.Matches
                 TeamOneId = 1,
                 TeamTwoId = 2
             });
+        }
+
+        private static DateTime ToUtc(DateTime value)
+        {
+            return value.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(value, DateTimeKind.Utc)
+                : value.ToUniversalTime();
         }
     }
 }

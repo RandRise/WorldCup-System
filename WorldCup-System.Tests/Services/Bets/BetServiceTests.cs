@@ -125,6 +125,60 @@ namespace WorldCup_System.Tests.Services.Bets
         }
 
         [Fact]
+        public async Task PlaceBet_WhenUnspecifiedKickoffInFuture_CreatesBet()
+        {
+            DateTime futureKickoffUnspecified = DateTime.SpecifyKind(
+                DateTime.UtcNow.AddHours(2),
+                DateTimeKind.Unspecified);
+            MatchEntity match = new MatchEntity
+            {
+                Id = 1,
+                Date = futureKickoffUnspecified,
+                StadiumId = 1,
+                TeamOneId = 10,
+                TeamTwoId = 20
+            };
+
+            _matchRepositoryMock.Setup(matchRepository => matchRepository.GetByIdAsync(1)).ReturnsAsync(match);
+            _betRepositoryMock.Setup(betRepository => betRepository.Find(It.IsAny<Expression<Func<Bet, bool>>>()))
+                .Returns(new List<Bet>().AsQueryable());
+
+            PlaceBetDTO placeBetDto = new PlaceBetDTO { MatchId = 1, IsDraw = false, TeamId = 10 };
+
+            await _betService.PlaceBet(5, placeBetDto);
+
+            _betRepositoryMock.Verify(betRepository => betRepository.Create(It.Is<Bet>(bet =>
+                bet.UserId == 5 && bet.MatchId == 1 && bet.TeamId == 10 && !bet.IsDraw)), Times.Once);
+            _repositoryManagerMock.Verify(repositoryManager => repositoryManager.SaveAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task PlaceBet_WhenUnspecifiedKickoffInPast_ThrowsInvalidOperationException()
+        {
+            DateTime pastKickoffUnspecified = DateTime.SpecifyKind(
+                DateTime.UtcNow.AddHours(-1),
+                DateTimeKind.Unspecified);
+            MatchEntity match = new MatchEntity
+            {
+                Id = 1,
+                Date = pastKickoffUnspecified,
+                StadiumId = 1,
+                TeamOneId = 10,
+                TeamTwoId = 20
+            };
+
+            _matchRepositoryMock.Setup(matchRepository => matchRepository.GetByIdAsync(1)).ReturnsAsync(match);
+
+            PlaceBetDTO placeBetDto = new PlaceBetDTO { MatchId = 1, IsDraw = false, TeamId = 10 };
+
+            InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _betService.PlaceBet(5, placeBetDto));
+
+            Assert.Contains("after the match has started", exception.Message);
+            _betRepositoryMock.Verify(betRepository => betRepository.Create(It.IsAny<Bet>()), Times.Never);
+        }
+
+        [Fact]
         public async Task PlaceBet_WhenTeamNotInMatch_ThrowsInvalidOperationException()
         {
             MatchEntity match = new MatchEntity
@@ -369,6 +423,60 @@ namespace WorldCup_System.Tests.Services.Bets
             {
                 new Goal { Id = 1, TeamStatsId = 100, PlayerId = 1, TimeScored = pastKickoff.AddMinutes(30), IsOwnGoal = 0 },
                 new Goal { Id = 2, TeamStatsId = 101, PlayerId = 2, TimeScored = pastKickoff.AddMinutes(60), IsOwnGoal = 0 }
+            };
+
+            _matchRepositoryMock.Setup(matchRepository => matchRepository.GetByIdAsync(1)).ReturnsAsync(match);
+            _betRepositoryMock.Setup(betRepository => betRepository.Find(It.IsAny<Expression<Func<Bet, bool>>>()))
+                .Returns((Expression<Func<Bet, bool>> predicate) => bets.AsQueryable().Where(predicate));
+            _betResultRepositoryMock.Setup(betResultRepository => betResultRepository.Find(It.IsAny<Expression<Func<BetResult, bool>>>()))
+                .Returns(new List<BetResult>().AsQueryable());
+            _teamStatsRepositoryMock.Setup(teamStatsRepository => teamStatsRepository.Find(It.IsAny<Expression<Func<TeamStats, bool>>>()))
+                .Returns((Expression<Func<TeamStats, bool>> predicate) => stats.AsQueryable().Where(predicate));
+            _goalRepositoryMock.Setup(goalRepository => goalRepository.Find(It.IsAny<Expression<Func<Goal, bool>>>()))
+                .Returns((Expression<Func<Goal, bool>> predicate) => goals.AsQueryable().Where(predicate));
+
+            int resolvedCount = (await _betService.ResolveBetsForMatch(1)).ResolvedCount;
+
+            Assert.Equal(2, resolvedCount);
+            _betResultRepositoryMock.Verify(betResultRepository => betResultRepository.Create(It.Is<BetResult>(result =>
+                result.BetId == 1 && result.Point == BetScoringRules.CorrectOutcomePoints)), Times.Once);
+            _betResultRepositoryMock.Verify(betResultRepository => betResultRepository.Create(It.Is<BetResult>(result =>
+                result.BetId == 2 && result.Point == BetScoringRules.IncorrectPredictionPoints)), Times.Once);
+        }
+
+        [Fact]
+        public async Task ResolveBetsForMatch_WhenOnlyExtraTimeGoal_ResolvesAsDraw()
+        {
+            // 0-0 after regulation; ET winner goal at minute 106 must not decide the bet outcome.
+            DateTime pastKickoff = DateTime.UtcNow.AddMinutes(-(BetScoringRules.MatchDurationMinutes + 30));
+            MatchEntity match = new MatchEntity
+            {
+                Id = 1,
+                Date = pastKickoff,
+                StadiumId = 1,
+                TeamOneId = 10,
+                TeamTwoId = 20
+            };
+            List<Bet> bets = new List<Bet>
+            {
+                new Bet { Id = 1, UserId = 1, MatchId = 1, IsDraw = true, TeamId = null },
+                new Bet { Id = 2, UserId = 2, MatchId = 1, IsDraw = false, TeamId = 10 }
+            };
+            List<TeamStats> stats = new List<TeamStats>
+            {
+                new TeamStats { Id = 100, MatchId = 1, TeamId = 10 },
+                new TeamStats { Id = 101, MatchId = 1, TeamId = 20 }
+            };
+            List<Goal> goals = new List<Goal>
+            {
+                new Goal
+                {
+                    Id = 1,
+                    TeamStatsId = 100,
+                    PlayerId = 1,
+                    TimeScored = pastKickoff.AddMinutes(106),
+                    IsOwnGoal = 0
+                }
             };
 
             _matchRepositoryMock.Setup(matchRepository => matchRepository.GetByIdAsync(1)).ReturnsAsync(match);

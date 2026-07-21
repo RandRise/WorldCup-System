@@ -17,7 +17,7 @@ namespace Core.Services.Bets
         {
             Match match = await _repository.Match.GetByIdAsync(betDto.MatchId);
 
-            if (match.Date <= DateTime.UtcNow)
+            if (ToUtc(match.Date) <= DateTime.UtcNow)
             {
                 throw new InvalidOperationException("Cannot place a bet after the match has started.");
             }
@@ -110,7 +110,7 @@ namespace Core.Services.Bets
         public async Task<ResolveBetsResultDTO> ResolveBetsForMatch(int matchId)
         {
             Match match = await _repository.Match.GetByIdAsync(matchId);
-            DateTime fullTime = match.Date.AddMinutes(BetScoringRules.MatchDurationMinutes);
+            DateTime fullTime = ToUtc(match.Date).AddMinutes(BetScoringRules.MatchDurationMinutes);
 
             if (fullTime > DateTime.UtcNow)
             {
@@ -124,7 +124,7 @@ namespace Core.Services.Bets
         public async Task TryAutoResolveFinishedMatch(int matchId)
         {
             Match match = await _repository.Match.GetByIdAsync(matchId);
-            DateTime fullTime = match.Date.AddMinutes(BetScoringRules.MatchDurationMinutes);
+            DateTime fullTime = ToUtc(match.Date).AddMinutes(BetScoringRules.MatchDurationMinutes);
             if (fullTime > DateTime.UtcNow)
             {
                 return;
@@ -150,7 +150,7 @@ namespace Core.Services.Bets
             foreach (int matchId in matchIds)
             {
                 Match match = await _repository.Match.GetByIdAsync(matchId);
-                DateTime fullTime = match.Date.AddMinutes(BetScoringRules.MatchDurationMinutes);
+                DateTime fullTime = ToUtc(match.Date).AddMinutes(BetScoringRules.MatchDurationMinutes);
                 if (fullTime > DateTime.UtcNow)
                 {
                     continue;
@@ -401,8 +401,12 @@ namespace Core.Services.Bets
                 .Find(teamStats => teamStats.MatchId == match.Id)
                 .ToList();
             List<int> statIds = stats.Select(teamStats => teamStats.Id).ToList();
+            DateTime regulationEnd = ToUtc(match.Date).AddMinutes(BetScoringRules.MatchDurationMinutes);
             List<Goal> goals = statIds.Count > 0
-                ? _repository.Goal.Find(goal => statIds.Contains(goal.TeamStatsId)).ToList()
+                ? _repository.Goal
+                    .Find(goal => statIds.Contains(goal.TeamStatsId))
+                    .Where(goal => ToUtc(goal.TimeScored) <= regulationEnd)
+                    .ToList()
                 : new List<Goal>();
 
             TeamStats? teamOneStats = stats.FirstOrDefault(teamStats => teamStats.TeamId == match.TeamOneId);
@@ -443,6 +447,13 @@ namespace Core.Services.Bets
             }
 
             return countries.FirstOrDefault(country => country.Id == team.CountryId)?.Name;
+        }
+
+        private static DateTime ToUtc(DateTime value)
+        {
+            return value.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(value, DateTimeKind.Utc)
+                : value.ToUniversalTime();
         }
     }
 }

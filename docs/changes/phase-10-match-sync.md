@@ -56,7 +56,7 @@ Opened **17 Jul 2026** as implementation of [phase-10-planned](phase-10-planned.
 
 Request shape: `?idCompetition=&idSeason=&idMatch=&language=&count=1`. Finished only when FIFA `MatchStatus` is present and equals `0` (Played). Scores from `HomeTeamScore` / `AwayTeamScore` (fallback `Home.Score` / `Away.Score`).
 
-**Score-only:** no cards, detailed team stats, or real scorer identities from FIFA.
+**Score-only (Phase 10):** no cards, detailed team stats, or real scorer identities from FIFA calendar. **Real scorers:** planned in [Phase 11](phase-11-planned.md) via timeline API.
 
 ### ExternalMatchId mapping
 
@@ -105,7 +105,7 @@ Admin SyncResult / SyncFinishedResults
 
 - Live in-match feed replacing Admin live console
 - HTML website scraping as primary source
-- Sync of cards / detailed stats / real scorers
+- Sync of cards / detailed stats / real scorers — **real scorers moved to [Phase 11](phase-11-planned.md)**
 - Fixtures betting UX (`p10-fixtures-ux`) — tracked separately; see [phase-10-fixtures-ux](phase-10-fixtures-ux.md)
 - WC visual styling (`p10-wc-styling`)
 - Message broker

@@ -27,7 +27,7 @@ All domain controllers implemented (audit 17 Jul 2026). Base URL: `http://localh
 | `CoachController` | CRUD, get by team | Admin on mutating | Done |
 | `PlayerController` | CRUD, squad list by team | Admin on mutating | Done |
 | `PlayerPositionController` | List lookup values | None | Done |
-| `MatchController` | `GetMatches`, `GetMatchById`, `GetFixturesByWorldCup`, `GetFixturesByGroup`, `GetFixturesByDate`, `GetLiveSnapshot`; Admin `AddMatch`, `UpdateMatch`, `DeleteMatch`; Admin sync `SetExternalMatchId`, `SyncResult/{matchId}`, `SyncFinishedResults?worldCupId=` (stages include `RoundOf32`; `ExternalMatchId` on DTOs) | Admin on mutating / sync | Done |
+| `MatchController` | `GetMatches`, `GetMatchById`, `GetFixturesByWorldCup`, `GetFixturesByGroup`, `GetFixturesByDate`, `GetLiveSnapshot`; Admin `AddMatch`, `UpdateMatch`, `DeleteMatch`; Admin sync `SetExternalMatchId` (optional `ExternalStageId`), `SyncResult/{matchId}`, `SyncFinishedResults?worldCupId=`, `SyncScorers/{matchId}`, `SyncScorersForWorldCup?worldCupId=` (stages include `RoundOf32`; `ExternalMatchId` / `ExternalStageId` on DTOs) | Admin on mutating / sync | Done |
 | `KnockoutController` | `GetBracket`; Admin `GenerateBracket` (feeder auto-advance) | Admin on generate | Done |
 | `GoalController` | `GetGoalsByMatch`; Admin `AddGoal`, `DeleteGoal` | Admin on mutating | Done |
 | `CardController` | `GetCardsByMatch`; Admin `AddCard`, `DeleteCard` | Admin on mutating | Done |
@@ -57,9 +57,66 @@ Post-match FIFA calendar sync — not a live in-match feed. Detail: [phase-10-ma
 | Capability | Status | Surface | Task |
 | --- | --- | --- | --- |
 | External match mapping | Done | `Match.ExternalMatchId`; Admin `POST Match/SetExternalMatchId` | `p10-match-sync` |
-| Sync one match | Done | Admin `POST Match/SyncResult/{matchId}` → FIFA FT → idempotent goals → resolve + advance | `p10-match-sync` |
-| Sync batch | Done | Admin `POST Match/SyncFinishedResults?worldCupId=` | `p10-match-sync` |
+| Sync one match | Done | Admin `POST Match/SyncResult/{matchId}` → FIFA FT → idempotent goals → resolve + advance → (Phase 11) fail-soft timeline scorers | `p10-match-sync` / `p11-sync-wire` |
+| Sync batch | Done | Admin `POST Match/SyncFinishedResults?worldCupId=` (+ scorer counts / batch delay) | `p10-match-sync` / `p11-sync-wire` |
 | Provider | Done | `FifaCalendarMatchResultProvider` via `MatchResultSync` config (no RabbitMQ) | `p10-match-sync` |
+
+### Phase 11 — Real scorers (Done)
+
+FIFA timeline Goal! import so Recent events show true scorers. **Tasks 1–8 done** (gate closed; Bugbot highs fixed; suite **382**). Detail: [phase-11-tests-gate](changes/phase-11-tests-gate.md) · [phase-11-planned](changes/phase-11-planned.md) · [Task 1](changes/phase-11-external-stage.md) · [Task 2](changes/phase-11-timeline-provider.md) · [Task 3](changes/phase-11-player-resolve.md) · [Task 4](changes/phase-11-scorer-apply.md) · [Task 5](changes/phase-11-sync-wire.md) · [Task 6](changes/phase-11-backfill.md) · [Task 7](changes/phase-11-recent-events-honesty.md) · [Phase 11 checklist](roadmap.md#phase-11).
+
+| Capability | Status | Surface | Task |
+| --- | --- | --- | --- |
+| External stage id | Done | `Match.ExternalStageId`; optional on `SetExternalMatchId`; calendar `IdStage` auto-fill on sync | `p11-external-stage` |
+| Timeline provider | Done | `FifaTimelineEventsProvider` via `MatchResultSync:TimelineBaseUrl`; Goal! / Own Goal / Penalty Goal parse | `p11-timeline-provider` |
+| Player resolve | Done | `ITimelinePlayerResolver` / `TimelinePlayerResolver`; `Player.ExternalPlayerId` | `p11-player-resolve` |
+| Scorer apply | Done | `ITimelineScorerApplyService` / `TimelineScorerApplyService` — in-place Goal rewrite when counts align | `p11-scorer-apply` |
+| Sync wire | Done | `SyncResult` / `SyncFinishedResults` call timeline + apply (fail-soft); `ScorerStatus` on DTO; `BatchDelayMilliseconds` | `p11-sync-wire` |
+| Scorers backfill | Done | Admin `POST Match/SyncScorers/{matchId}`, `POST Match/SyncScorersForWorldCup?worldCupId=`; client `syncScorers` / `syncScorersForWorldCup`; optional `scripts/sync_scorers_backfill.ps1` (FT/bets unchanged; empty timeline → `Skipped`; batch hard fail → `Warning`) | `p11-backfill` |
+| Recent events honesty | Done | `GetLiveSnapshot` / match-detail omit `"Tournament Scorer"` via `ToHonestPlayerName`; fixtures + admin live sanitize (name-only) | `p11-recent-events-honesty` |
+| Tests + review gate | Done | Bugbot highs fixed; suite **382** | `p11-tests-gate` |
+
+<a id="recent-events-honesty-phase-11-task-7"></a>
+
+### Recent events honesty (Phase 11 Task 7)
+
+| Surface | Behavior |
+| --- | --- |
+| `GET Match/GetLiveSnapshot` | Goal/Card `PlayerName` null when blank or `"Tournament Scorer"` |
+| `GetMatchById` / team stats DTOs | Same via `BuildTeamStatsDto` |
+| Fixtures Recent events | Client remaps `playerName` through `toHonestPlayerName` |
+| Admin live Event timeline | Labels omit placeholder; picker excludes placeholder (+ jersey 99 for picker only) |
+
+Does not rewrite Goal rows — display safety net until/after Tasks 4–6 backfill. Detail: [phase-11-recent-events-honesty](changes/phase-11-recent-events-honesty.md).
+
+<a id="sync-scorers-phase-11-task-6"></a>
+
+### Scorers-only backfill endpoints (Phase 11 Task 6)
+
+| Endpoint | Auth | Behavior |
+| --- | --- | --- |
+| `POST Match/SyncScorers/{matchId}` | Admin | Calendar finished + orient + timeline apply only; no Goal-count rewrite, bets, or knockout |
+| `POST Match/SyncScorersForWorldCup?worldCupId=` | Admin | Batch mapped fixtures; `BatchDelayMilliseconds`; hard failures → per-match `ScorerStatus=Warning` |
+
+Response uses the same `SyncMatchResultDTO` / `SyncFinishedResultsDTO` scorer fields as Task 5. Ops: map External ids → backfill → verify `GetLiveSnapshot` Recent events. Detail: [phase-11-backfill](changes/phase-11-backfill.md).
+
+<a id="sync-result-dto-fields-phase-11-task-5"></a>
+
+### Sync result DTO fields (Phase 11 Task 5)
+
+Admin sync responses (`SyncMatchResultDTO` / `SyncFinishedResultsDTO`; client `SyncMatchResult` / `SyncFinishedResults`).
+
+| Field | On | Type | Meaning |
+| --- | --- | --- | --- |
+| `ExternalStageId` | per-match | `string?` | FIFA IdStage on the match after sync / SetExternal |
+| `ScorerStatus` | per-match | `string?` | `Applied` \| `AlreadyMatched` \| `Skipped` \| `Warning`, or `null` if scorers not attempted (e.g. not finished) |
+| `ScorerGoalsUpdated` | per-match | `int` | Goal rows rewritten on this attempt |
+| `ScorerMessage` | per-match | `string?` | Human-readable scorer step note (also appended to `Message` as `Scorers: …`) |
+| `Warning` | per-match | `string?` | May include merged bet/advance warning + `Scorer sync warning: …` |
+| `ScorersApplied` | batch | `int` | Matches with `ScorerStatus == Applied` |
+| `ScorerWarnings` | batch | `int` | Matches with `ScorerStatus == Warning` |
+
+Config: `MatchResultSync:BatchDelayMilliseconds` (default **250**; `0` disables). Detail: [phase-11-sync-wire](changes/phase-11-sync-wire.md).
 
 ### Repository Manager Coverage
 

@@ -34,7 +34,7 @@ A FIFA World Cup management platform covering the full tournament lifecycle:
 
 ### Frontend & Ops
 
-| Frontend | Angular SPA (`worldcup-client`, port 4200) |
+| Frontend | Angular SPA (`WorldCup-System/worldcup-client`, port 4200) |
 | --- | --- |
 | MCP Server | Node.js + TypeScript + pg |
 | Tests | xUnit — services, controllers, WebApplicationFactory |
@@ -65,5 +65,6 @@ EF Core `ApplicationDbContext`, entities, generic repository, `RepositoryManager
 
 | Issue | Location | Impact |
 | --- | --- | --- |
-| External live scores API | — | Cancelled — manual import |
-| Duplicate `worldcup-client` tree at workspace root vs solution folder | workspace / solution | Cleanup |
+| External live scores API | — | Cancelled for live — Phase 10 post-match FIFA calendar sync available; Phase 11 timeline scorers **Done** |
+| Recent events wrong scorers | Goals / sync | Phase 11 honesty + real scorers **Done** |
+| Global (cross-company) leaderboard | Betting / leaderboard | Workplace isolation planned in [Phase 13](roadmap.md#phase-13) |

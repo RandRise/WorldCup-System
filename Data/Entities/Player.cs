@@ -15,6 +15,10 @@ namespace Data.Entities
         public Team Team { get; set; }
         public PlayerPosition PlayerPosition { get; set; }
         public int PositionId { get; set; }
+
+        /// <summary>FIFA IdPlayer when known (timeline sync). Unique when set.</summary>
+        public string? ExternalPlayerId { get; set; }
+
         public ICollection<Card> Cards { get; set; }
         public ICollection<Goal> Goals { get; set; }
     }

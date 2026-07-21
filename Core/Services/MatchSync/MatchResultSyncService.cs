@@ -1,16 +1,20 @@
 using Core.DTOs.Bets;
 using Core.DTOs.Matches;
+using Core.Options;
 using Core.Services.Bets;
 using Core.Services.Knockout;
 using Core.Services.Matches;
 using Data.Entities;
 using Data.Repos;
+using Microsoft.Extensions.Options;
 
 namespace Core.Services.MatchSync
 {
     /// <summary>
-    /// Post-match FT sync: fetch external score → idempotently apply Goal rows → resolve bets.
-    /// Score-only for 1X2 betting; does not sync cards or team stats beyond ensuring TeamStats exist.
+    /// Post-match FT sync: fetch external score → idempotently apply Goal rows → resolve bets →
+    /// then (fail-soft) fetch FIFA timeline Goal! events and rewrite scorers when counts align.
+    /// Also exposes scorers-only backfill (<see cref="SyncScorers"/>) that never changes FT or bets.
+    /// Does not sync cards or team stats beyond ensuring TeamStats exist.
     /// </summary>
     public class MatchResultSyncService : IMatchResultSyncService
     {
@@ -20,22 +24,31 @@ namespace Core.Services.MatchSync
 
         private readonly IRepositoryManager _repository;
         private readonly IExternalMatchResultProvider _resultProvider;
+        private readonly IExternalMatchEventsProvider _eventsProvider;
+        private readonly ITimelineScorerApplyService _scorerApplyService;
         private readonly IBetService _betService;
         private readonly IKnockoutService _knockoutService;
         private readonly IMatchService _matchService;
+        private readonly MatchResultSyncOptions _options;
 
         public MatchResultSyncService(
             IRepositoryManager repository,
             IExternalMatchResultProvider resultProvider,
+            IExternalMatchEventsProvider eventsProvider,
+            ITimelineScorerApplyService scorerApplyService,
             IBetService betService,
             IKnockoutService knockoutService,
-            IMatchService matchService)
+            IMatchService matchService,
+            IOptions<MatchResultSyncOptions> options)
         {
             _repository = repository;
             _resultProvider = resultProvider;
+            _eventsProvider = eventsProvider;
+            _scorerApplyService = scorerApplyService;
             _betService = betService;
             _knockoutService = knockoutService;
             _matchService = matchService;
+            _options = options.Value;
         }
 
         public async Task SetExternalMatchId(SetExternalMatchIdDTO request)
@@ -60,6 +73,12 @@ namespace Core.Services.MatchSync
             }
 
             match.ExternalMatchId = externalMatchId;
+            if (request.ExternalStageId != null)
+            {
+                string trimmedStageId = request.ExternalStageId.Trim();
+                match.ExternalStageId = string.IsNullOrWhiteSpace(trimmedStageId) ? null : trimmedStageId;
+            }
+
             _repository.Match.Update(match);
             await _repository.SaveAsync();
         }
@@ -83,19 +102,23 @@ namespace Core.Services.MatchSync
                 match.ExternalMatchId,
                 cancellationToken);
 
+            await PersistExternalStageIdIfNeededAsync(match, external.ExternalStageId);
+
             if (!external.IsFinished)
             {
                 return new SyncMatchResultDTO
                 {
                     MatchId = matchId,
                     ExternalMatchId = match.ExternalMatchId,
+                    ExternalStageId = match.ExternalStageId,
                     Applied = false,
                     ScoreChanged = false,
                     Message = $"External match is not finished yet ({external.StatusLabel ?? "unknown status"})."
                 };
             }
 
-            (int teamOneScore, int teamTwoScore) = OrientScoresToLocalSides(match, external);
+            (int teamOneScore, int teamTwoScore, bool homeMapsToTeamOne) =
+                OrientScoresToLocalSides(match, external);
 
             (bool scoreChanged, int appliedTeamOneScore, int appliedTeamTwoScore) = await ApplyScoreIdempotentAsync(
                 match,
@@ -105,6 +128,9 @@ namespace Core.Services.MatchSync
             (int betsResolved, ResolveBetsResultDTO? resolveResult, string? warning) =
                 await TryResolveAndAdvance(matchId, match);
 
+            (string scorerStatus, int scorerGoalsUpdated, string scorerMessage, string? scorerWarning) =
+                await TryApplyTimelineScorersAsync(match, homeMapsToTeamOne, cancellationToken);
+
             string resolveNote = resolveResult != null
                 ? $" Bet resolve: {betsResolved} update(s)."
                 : " Bet resolve skipped (match not past full-time clock or stats incomplete).";
@@ -112,19 +138,24 @@ namespace Core.Services.MatchSync
             string message = scoreChanged
                 ? $"Applied FT score {appliedTeamOneScore}-{appliedTeamTwoScore} from external feed.{resolveNote}"
                 : $"Score already matched FT {appliedTeamOneScore}-{appliedTeamTwoScore}.{resolveNote}";
+            message += $" Scorers: {scorerMessage}";
 
             return new SyncMatchResultDTO
             {
                 MatchId = matchId,
                 ExternalMatchId = match.ExternalMatchId,
+                ExternalStageId = match.ExternalStageId,
                 Applied = true,
                 ScoreChanged = scoreChanged,
                 TeamOneScore = appliedTeamOneScore,
                 TeamTwoScore = appliedTeamTwoScore,
                 BetsResolved = betsResolved,
                 Message = message,
-                Warning = warning,
-                ResolveResult = resolveResult
+                Warning = MergeWarnings(warning, scorerWarning),
+                ResolveResult = resolveResult,
+                ScorerStatus = scorerStatus,
+                ScorerGoalsUpdated = scorerGoalsUpdated,
+                ScorerMessage = scorerMessage
             };
         }
 
@@ -140,14 +171,19 @@ namespace Core.Services.MatchSync
                     match.ExternalMatchId != null
                     && match.ExternalMatchId != string.Empty
                     && fixtureIds.Contains(match.Id))
+                .OrderBy(match => match.Date)
+                .ThenBy(match => match.Id)
                 .ToList();
 
             List<SyncMatchResultDTO> results = new List<SyncMatchResultDTO>();
             int appliedCount = 0;
             int totalBetsResolved = 0;
+            int scorersApplied = 0;
+            int scorerWarnings = 0;
 
-            foreach (Match match in mappedMatches.OrderBy(match => match.Date).ThenBy(match => match.Id))
+            for (int index = 0; index < mappedMatches.Count; index++)
             {
+                Match match = mappedMatches[index];
                 try
                 {
                     SyncMatchResultDTO result = await SyncResult(match.Id, cancellationToken);
@@ -157,16 +193,48 @@ namespace Core.Services.MatchSync
                         appliedCount++;
                         totalBetsResolved += result.BetsResolved;
                     }
+
+                    if (result.ScorerStatus == SyncScorerStatuses.Applied)
+                    {
+                        scorersApplied++;
+                    }
+                    else if (result.ScorerStatus == SyncScorerStatuses.Warning)
+                    {
+                        scorerWarnings++;
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
                 }
                 catch (Exception ex)
                 {
+                    string? externalMatchId = match.ExternalMatchId;
+                    string? externalStageId = match.ExternalStageId;
+                    try
+                    {
+                        Match refreshed = await _repository.Match.GetByIdAsync(match.Id);
+                        externalMatchId = refreshed.ExternalMatchId;
+                        externalStageId = refreshed.ExternalStageId;
+                    }
+                    catch
+                    {
+                        // Fall back to the in-memory mapping if refresh fails.
+                    }
+
                     results.Add(new SyncMatchResultDTO
                     {
                         MatchId = match.Id,
-                        ExternalMatchId = match.ExternalMatchId,
+                        ExternalMatchId = externalMatchId,
+                        ExternalStageId = externalStageId,
                         Applied = false,
                         Message = ex.Message
                     });
+                }
+
+                if (_options.BatchDelayMilliseconds > 0 && index < mappedMatches.Count - 1)
+                {
+                    await Task.Delay(_options.BatchDelayMilliseconds, cancellationToken);
                 }
             }
 
@@ -176,11 +244,243 @@ namespace Core.Services.MatchSync
                 MatchesAttempted = mappedMatches.Count,
                 MatchesApplied = appliedCount,
                 TotalBetsResolved = totalBetsResolved,
+                ScorersApplied = scorersApplied,
+                ScorerWarnings = scorerWarnings,
                 Message =
                     $"Attempted {mappedMatches.Count} mapped match(es); applied {appliedCount}; " +
-                    $"resolved {totalBetsResolved} bet update(s).",
+                    $"resolved {totalBetsResolved} bet update(s); " +
+                    $"scorers applied {scorersApplied}; scorer warnings {scorerWarnings}.",
                 Results = results
             };
+        }
+
+        /// <summary>
+        /// Scorers-only: uses calendar for finished + home/away orientation (and stage persist), then timeline apply.
+        /// Does not rewrite Goal counts, resolve bets, or advance knockout.
+        /// </summary>
+        public async Task<SyncMatchResultDTO> SyncScorers(int matchId, CancellationToken cancellationToken = default)
+        {
+            Match match = await _repository.Match.GetByIdAsync(matchId);
+            if (string.IsNullOrWhiteSpace(match.ExternalMatchId))
+            {
+                throw new InvalidOperationException(
+                    $"Match {matchId} has no ExternalMatchId. Map a FIFA IdMatch before syncing scorers.");
+            }
+
+            if (!match.TeamOneId.HasValue || !match.TeamTwoId.HasValue)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot sync scorers for match {matchId} until both teams are set.");
+            }
+
+            ExternalMatchResult external = await _resultProvider.FetchResultAsync(
+                match.ExternalMatchId,
+                cancellationToken);
+
+            await PersistExternalStageIdIfNeededAsync(match, external.ExternalStageId);
+
+            if (!external.IsFinished)
+            {
+                return new SyncMatchResultDTO
+                {
+                    MatchId = matchId,
+                    ExternalMatchId = match.ExternalMatchId,
+                    ExternalStageId = match.ExternalStageId,
+                    Applied = false,
+                    ScoreChanged = false,
+                    Message =
+                        $"External match is not finished yet ({external.StatusLabel ?? "unknown status"}). " +
+                        "Scorers not attempted."
+                };
+            }
+
+            (_, _, bool homeMapsToTeamOne) = OrientScoresToLocalSides(match, external);
+            (int teamOneScore, int teamTwoScore) = GetLocalGoalCounts(match);
+
+            (string scorerStatus, int scorerGoalsUpdated, string scorerMessage, string? scorerWarning) =
+                await TryApplyTimelineScorersForBackfillAsync(match, homeMapsToTeamOne, cancellationToken);
+
+            bool applied =
+                scorerStatus == SyncScorerStatuses.Applied
+                || scorerStatus == SyncScorerStatuses.AlreadyMatched;
+
+            return new SyncMatchResultDTO
+            {
+                MatchId = matchId,
+                ExternalMatchId = match.ExternalMatchId,
+                ExternalStageId = match.ExternalStageId,
+                Applied = applied,
+                ScoreChanged = false,
+                TeamOneScore = teamOneScore,
+                TeamTwoScore = teamTwoScore,
+                BetsResolved = 0,
+                Message =
+                    $"Scorers-only sync (FT unchanged {teamOneScore}-{teamTwoScore}). Scorers: {scorerMessage}",
+                Warning = scorerWarning,
+                ScorerStatus = scorerStatus,
+                ScorerGoalsUpdated = scorerGoalsUpdated,
+                ScorerMessage = scorerMessage
+            };
+        }
+
+        public async Task<SyncFinishedResultsDTO> SyncScorersForWorldCup(
+            int worldCupId,
+            CancellationToken cancellationToken = default)
+        {
+            List<MatchDTO> fixtures = _matchService.GetFixturesByWorldCup(worldCupId);
+            HashSet<int> fixtureIds = fixtures.Select(fixture => fixture.Id).ToHashSet();
+
+            List<Match> mappedMatches = _repository.Match
+                .Find(match =>
+                    match.ExternalMatchId != null
+                    && match.ExternalMatchId != string.Empty
+                    && fixtureIds.Contains(match.Id))
+                .OrderBy(match => match.Date)
+                .ThenBy(match => match.Id)
+                .ToList();
+
+            List<SyncMatchResultDTO> results = new List<SyncMatchResultDTO>();
+            int appliedCount = 0;
+            int scorersApplied = 0;
+            int scorerWarnings = 0;
+            int alreadyMatched = 0;
+            int skipped = 0;
+
+            for (int index = 0; index < mappedMatches.Count; index++)
+            {
+                Match match = mappedMatches[index];
+                try
+                {
+                    SyncMatchResultDTO result = await SyncScorers(match.Id, cancellationToken);
+                    results.Add(result);
+                    if (result.Applied)
+                    {
+                        appliedCount++;
+                    }
+
+                    if (result.ScorerStatus == SyncScorerStatuses.Applied)
+                    {
+                        scorersApplied++;
+                    }
+                    else if (result.ScorerStatus == SyncScorerStatuses.AlreadyMatched)
+                    {
+                        alreadyMatched++;
+                    }
+                    else if (result.ScorerStatus == SyncScorerStatuses.Warning)
+                    {
+                        scorerWarnings++;
+                    }
+                    else if (result.ScorerStatus == SyncScorerStatuses.Skipped
+                        || result.ScorerStatus == null)
+                    {
+                        skipped++;
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    string? externalMatchId = match.ExternalMatchId;
+                    string? externalStageId = match.ExternalStageId;
+                    try
+                    {
+                        Match refreshed = await _repository.Match.GetByIdAsync(match.Id);
+                        externalMatchId = refreshed.ExternalMatchId;
+                        externalStageId = refreshed.ExternalStageId;
+                    }
+                    catch
+                    {
+                        // Fall back to the in-memory mapping if refresh fails.
+                    }
+
+                    results.Add(new SyncMatchResultDTO
+                    {
+                        MatchId = match.Id,
+                        ExternalMatchId = externalMatchId,
+                        ExternalStageId = externalStageId,
+                        Applied = false,
+                        ScoreChanged = false,
+                        Message = ex.Message,
+                        ScorerStatus = SyncScorerStatuses.Warning,
+                        ScorerMessage = "not applied (see message)."
+                    });
+                    scorerWarnings++;
+                }
+
+                if (_options.BatchDelayMilliseconds > 0 && index < mappedMatches.Count - 1)
+                {
+                    await Task.Delay(_options.BatchDelayMilliseconds, cancellationToken);
+                }
+            }
+
+            return new SyncFinishedResultsDTO
+            {
+                WorldCupId = worldCupId,
+                MatchesAttempted = mappedMatches.Count,
+                MatchesApplied = appliedCount,
+                TotalBetsResolved = 0,
+                ScorersApplied = scorersApplied,
+                ScorerWarnings = scorerWarnings,
+                Message =
+                    $"Scorers-only: attempted {mappedMatches.Count} mapped match(es); " +
+                    $"applied/matched {appliedCount} (scorers updated {scorersApplied}, already matched {alreadyMatched}); " +
+                    $"skipped {skipped}; scorer warnings {scorerWarnings}.",
+                Results = results
+            };
+        }
+
+        /// <summary>
+        /// Local FT Goal counts for TeamOne/TeamTwo (not calendar scores). Used by scorers-only backfill reporting.
+        /// </summary>
+        private (int TeamOneScore, int TeamTwoScore) GetLocalGoalCounts(Match match)
+        {
+            int teamOneId = match.TeamOneId!.Value;
+            int teamTwoId = match.TeamTwoId!.Value;
+
+            TeamStats? teamOneStats = _repository.TeamStats
+                .Find(teamStats => teamStats.MatchId == match.Id && teamStats.TeamId == teamOneId)
+                .FirstOrDefault();
+            TeamStats? teamTwoStats = _repository.TeamStats
+                .Find(teamStats => teamStats.MatchId == match.Id && teamStats.TeamId == teamTwoId)
+                .FirstOrDefault();
+
+            if (teamOneStats == null || teamTwoStats == null)
+            {
+                return (0, 0);
+            }
+
+            List<int> statIds = new List<int> { teamOneStats.Id, teamTwoStats.Id };
+            List<Goal> existingGoals = _repository.Goal
+                .Find(goal => statIds.Contains(goal.TeamStatsId))
+                .ToList();
+
+            int teamOneScore = existingGoals.Count(goal => goal.TeamStatsId == teamOneStats.Id);
+            int teamTwoScore = existingGoals.Count(goal => goal.TeamStatsId == teamTwoStats.Id);
+            return (teamOneScore, teamTwoScore);
+        }
+
+        /// <summary>
+        /// Stores FIFA IdStage when calendar returns one and the match is missing it or has a different value.
+        /// Timeline URLs need IdStage alongside IdMatch; competition/season stay in MatchResultSync config.
+        /// </summary>
+        private async Task PersistExternalStageIdIfNeededAsync(Match match, string? externalStageId)
+        {
+            if (string.IsNullOrWhiteSpace(externalStageId))
+            {
+                return;
+            }
+
+            string trimmedStageId = externalStageId.Trim();
+            if (string.Equals(match.ExternalStageId, trimmedStageId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            match.ExternalStageId = trimmedStageId;
+            _repository.Match.Update(match);
+            await _repository.SaveAsync();
         }
 
         private static readonly Dictionary<string, string> ExternalTeamNameAliases =
@@ -194,7 +494,138 @@ namespace Core.Services.MatchSync
                 ["Turkiye"] = "Turkey"
             };
 
-        private (int TeamOneScore, int TeamTwoScore) OrientScoresToLocalSides(
+        /// <summary>
+        /// Fail-soft timeline scorer step. Calendar FT / bets already succeeded; never throw from here.
+        /// </summary>
+        private async Task<(string Status, int GoalsUpdated, string Message, string? Warning)> TryApplyTimelineScorersAsync(
+            Match match,
+            bool homeMapsToTeamOne,
+            CancellationToken cancellationToken)
+        {
+            return await TryApplyTimelineScorersCoreAsync(
+                match,
+                homeMapsToTeamOne,
+                skipWhenNoTimelineGoals: false,
+                cancellationToken);
+        }
+
+        /// <summary>
+        /// Backfill scorer step: same fail-soft rules, but skips when timeline has no Goal! events
+        /// (does not treat empty timeline vs existing Goal rows as a count-mismatch warning).
+        /// </summary>
+        private async Task<(string Status, int GoalsUpdated, string Message, string? Warning)> TryApplyTimelineScorersForBackfillAsync(
+            Match match,
+            bool homeMapsToTeamOne,
+            CancellationToken cancellationToken)
+        {
+            return await TryApplyTimelineScorersCoreAsync(
+                match,
+                homeMapsToTeamOne,
+                skipWhenNoTimelineGoals: true,
+                cancellationToken);
+        }
+
+        private async Task<(string Status, int GoalsUpdated, string Message, string? Warning)> TryApplyTimelineScorersCoreAsync(
+            Match match,
+            bool homeMapsToTeamOne,
+            bool skipWhenNoTimelineGoals,
+            CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(match.ExternalMatchId))
+            {
+                return (
+                    SyncScorerStatuses.Skipped,
+                    0,
+                    "skipped (no ExternalMatchId).",
+                    null);
+            }
+
+            if (string.IsNullOrWhiteSpace(match.ExternalStageId))
+            {
+                return (
+                    SyncScorerStatuses.Skipped,
+                    0,
+                    "skipped (no ExternalStageId; map stage or re-sync calendar to persist IdStage).",
+                    null);
+            }
+
+            try
+            {
+                ExternalMatchEvents events = await _eventsProvider.FetchGoalEventsAsync(
+                    match.ExternalMatchId,
+                    match.ExternalStageId,
+                    cancellationToken);
+
+                if (skipWhenNoTimelineGoals
+                    && (events.Goals == null || events.Goals.Count == 0))
+                {
+                    return (
+                        SyncScorerStatuses.Skipped,
+                        0,
+                        "skipped (no timeline Goal! events).",
+                        null);
+                }
+
+                TimelineScorerApplyResult applyResult = await _scorerApplyService.ApplyAsync(
+                    match.Id,
+                    events,
+                    homeMapsToTeamOne,
+                    cancellationToken);
+
+                if (applyResult.Applied)
+                {
+                    return (
+                        SyncScorerStatuses.Applied,
+                        applyResult.GoalsUpdated,
+                        applyResult.Message,
+                        applyResult.Warning);
+                }
+
+                if (applyResult.AlreadyMatched)
+                {
+                    return (
+                        SyncScorerStatuses.AlreadyMatched,
+                        applyResult.GoalsUpdated,
+                        applyResult.Message,
+                        applyResult.Warning);
+                }
+
+                return (
+                    SyncScorerStatuses.Skipped,
+                    applyResult.GoalsUpdated,
+                    applyResult.Message,
+                    applyResult.Warning);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                return (
+                    SyncScorerStatuses.Warning,
+                    0,
+                    "not applied (see warning).",
+                    $"Scorer sync warning: {ex.Message}");
+            }
+        }
+
+        private static string? MergeWarnings(string? existing, string? next)
+        {
+            if (string.IsNullOrWhiteSpace(next))
+            {
+                return existing;
+            }
+
+            if (string.IsNullOrWhiteSpace(existing))
+            {
+                return next;
+            }
+
+            return $"{existing} {next}";
+        }
+
+        private (int TeamOneScore, int TeamTwoScore, bool HomeMapsToTeamOne) OrientScoresToLocalSides(
             Match match,
             ExternalMatchResult external)
         {
@@ -208,12 +639,12 @@ namespace Core.Services.MatchSync
 
             if (homeIsTeamOne && awayIsTeamTwo)
             {
-                return (external.HomeScore, external.AwayScore);
+                return (external.HomeScore, external.AwayScore, true);
             }
 
             if (homeIsTeamTwo && awayIsTeamOne)
             {
-                return (external.AwayScore, external.HomeScore);
+                return (external.AwayScore, external.HomeScore, false);
             }
 
             throw new InvalidOperationException(
@@ -246,10 +677,8 @@ namespace Core.Services.MatchSync
             string normalizedLocal = NormalizeName(localName);
             foreach (string candidate in ExpandExternalNames(externalName, externalCountryCode))
             {
-                string normalizedCandidate = NormalizeName(candidate);
-                if (normalizedCandidate == normalizedLocal
-                    || normalizedCandidate.Contains(normalizedLocal)
-                    || normalizedLocal.Contains(normalizedCandidate))
+                // Equality only — substring contains ("Iran"/"Ukraine", "Niger"/"Nigeria") mis-maps sides.
+                if (NormalizeName(candidate) == normalizedLocal)
                 {
                     return true;
                 }
@@ -318,11 +747,12 @@ namespace Core.Services.MatchSync
                 _repository.Goal.Delete(goal);
             }
 
-            Player teamOneScorer = await EnsurePlaceholderScorerAsync(teamOneId);
-            Player teamTwoScorer = await EnsurePlaceholderScorerAsync(teamTwoId);
+            List<Player> teamOneScorers = GetSquadScorers(teamOneId);
+            List<Player> teamTwoScorers = GetSquadScorers(teamTwoId);
 
             for (int index = 0; index < homeScore; index++)
             {
+                Player teamOneScorer = await ResolveScorerAsync(teamOneId, teamOneScorers, index);
                 _repository.Goal.Create(new Goal
                 {
                     PlayerId = teamOneScorer.Id,
@@ -334,6 +764,7 @@ namespace Core.Services.MatchSync
 
             for (int index = 0; index < awayScore; index++)
             {
+                Player teamTwoScorer = await ResolveScorerAsync(teamTwoId, teamTwoScorers, index);
                 _repository.Goal.Create(new Goal
                 {
                     PlayerId = teamTwoScorer.Id,
@@ -403,6 +834,51 @@ namespace Core.Services.MatchSync
             _repository.TeamStats.Create(created);
             await _repository.SaveAsync();
             return created;
+        }
+
+        /// <summary>
+        /// Prefers seeded squad forwards, then any non-placeholder player.
+        /// Empty when the team only has (or lacks) Tournament Scorer placeholders.
+        /// Excludes placeholder by name only — jersey 99 may be a real squad player.
+        /// </summary>
+        private List<Player> GetSquadScorers(int teamId)
+        {
+            int? forwardPositionId = _repository.PlayerPosition
+                .Find(position => position.Name == ForwardPositionName)
+                .Select(position => (int?)position.Id)
+                .FirstOrDefault();
+
+            List<Player> squad = _repository.Player
+                .Find(player =>
+                    player.TeamId == teamId
+                    && player.Name != PlaceholderScorerName)
+                .OrderBy(player => player.Number)
+                .ToList();
+
+            if (squad.Count == 0)
+            {
+                return squad;
+            }
+
+            if (!forwardPositionId.HasValue)
+            {
+                return squad;
+            }
+
+            List<Player> forwards = squad
+                .Where(player => player.PositionId == forwardPositionId.Value)
+                .ToList();
+            return forwards.Count > 0 ? forwards : squad;
+        }
+
+        private async Task<Player> ResolveScorerAsync(int teamId, List<Player> squadScorers, int goalIndex)
+        {
+            if (squadScorers.Count > 0)
+            {
+                return squadScorers[goalIndex % squadScorers.Count];
+            }
+
+            return await EnsurePlaceholderScorerAsync(teamId);
         }
 
         private async Task<Player> EnsurePlaceholderScorerAsync(int teamId)

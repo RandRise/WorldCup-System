@@ -115,7 +115,7 @@
               {{ playerForm.id > 0 ? 'Update player' : 'Add player' }}
             </button>
             @if (playerForm.id > 0) {
-              <button type="button" class="btn btn-secondary" (click)="playerForm = { id: 0, name: '', number: 1, teamId, positionId: positions()[0]?.id ?? 0 }">Cancel</button>
+              <button type="button" class="btn btn-secondary" (click)="playerForm = { id: 0, name: '', number: 1, teamId, positionId: positions().at(0)?.id ?? 0 }">Cancel</button>
             }
           </div>
           <table class="data-table">

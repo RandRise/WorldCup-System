@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using Core.DTOs.Matches;
 using Core.Services.Bets;
 using Core.Services.Matches;
+using Core.Services.MatchSync;
 using Data.Entities;
 using Data.Repos;
 using Moq;
@@ -915,6 +916,249 @@ namespace WorldCup_System.Tests.Services.Matches
             _betServiceMock.Verify(betService => betService.TryAutoResolveFinishedMatch(1), Times.Once);
             _betServiceMock.Verify(betService => betService.TryAutoResolveFinishedMatch(2), Times.Never);
             _betServiceMock.Verify(betService => betService.TryAutoResolveFinishedMatch(3), Times.Never);
+        }
+
+        [Fact]
+        public async Task GetLiveSnapshot_WhenGoalCreditedToTournamentScorer_OmitsPlayerNameFromRecentEvent()
+        {
+            DateTime liveKickoff = DateTime.UtcNow.AddMinutes(-30);
+            List<Group> groups = new List<Group> { new Group { Id = 1, WorldCupId = 2026, Name = "A" } };
+            List<Team> teams = new List<Team>
+            {
+                CreateTeam(10, "Brazil", 1),
+                CreateTeam(20, "France", 1)
+            };
+            List<MatchEntity> matches = new List<MatchEntity>
+            {
+                new MatchEntity { Id = 1, Date = liveKickoff, StadiumId = 5, TeamOneId = 10, TeamTwoId = 20 }
+            };
+            List<Country> countries = new List<Country>
+            {
+                new Country { Id = 1, Name = "Brazil" },
+                new Country { Id = 2, Name = "France" }
+            };
+            List<Stadium> stadiums = new List<Stadium> { new Stadium { Id = 5, Name = "Arena", CityId = 1 } };
+            List<TeamStats> stats = new List<TeamStats>
+            {
+                new TeamStats { Id = 100, MatchId = 1, TeamId = 10 },
+                new TeamStats { Id = 101, MatchId = 1, TeamId = 20 }
+            };
+            List<Goal> goals = new List<Goal>
+            {
+                new Goal
+                {
+                    Id = 1,
+                    TeamStatsId = 100,
+                    PlayerId = 99,
+                    TimeScored = liveKickoff.AddMinutes(12),
+                    IsOwnGoal = 0
+                }
+            };
+            List<Player> players = new List<Player>
+            {
+                new Player
+                {
+                    Id = 99,
+                    Name = MatchResultSyncService.PlaceholderScorerName,
+                    Number = 0,
+                    TeamId = 10,
+                    PositionId = 1
+                }
+            };
+
+            SetupFind(_groupRepositoryMock, groups);
+            SetupFind(_teamRepositoryMock, teams);
+            SetupFind(_matchRepositoryMock, matches);
+            _matchRepositoryMock.Setup(matchRepository => matchRepository.GetAllAsync()).Returns(matches.AsQueryable());
+            _teamRepositoryMock.Setup(teamRepository => teamRepository.GetAllAsync()).Returns(teams.AsQueryable());
+            _countryRepositoryMock.Setup(countryRepository => countryRepository.GetAllAsync()).Returns(countries.AsQueryable());
+            _stadiumRepositoryMock.Setup(stadiumRepository => stadiumRepository.GetAllAsync()).Returns(stadiums.AsQueryable());
+            SetupFind(_teamStatsRepositoryMock, stats);
+            SetupFind(_goalRepositoryMock, goals);
+            SetupFind(_cardRepositoryMock, new List<Card>());
+            SetupPlayerRepository(players);
+
+            LiveSnapshotDTO snapshot = await _matchService.GetLiveSnapshot(2026);
+
+            Assert.Single(snapshot.RecentEvents);
+            LiveEventSnapshotDTO recentEvent = snapshot.RecentEvents[0];
+            Assert.Equal("Goal", recentEvent.EventType);
+            Assert.Equal("Brazil", recentEvent.TeamName);
+            Assert.Equal(1, recentEvent.MatchId);
+            Assert.Null(recentEvent.PlayerName);
+            Assert.DoesNotContain(
+                MatchResultSyncService.PlaceholderScorerName,
+                snapshot.RecentEvents.Select(evt => evt.PlayerName));
+        }
+
+        [Fact]
+        public async Task GetLiveSnapshot_WhenCardCreditedToTournamentScorer_OmitsPlayerNameFromRecentEvent()
+        {
+            DateTime liveKickoff = DateTime.UtcNow.AddMinutes(-30);
+            List<Group> groups = new List<Group> { new Group { Id = 1, WorldCupId = 2026, Name = "A" } };
+            List<Team> teams = new List<Team>
+            {
+                CreateTeam(10, "Brazil", 1),
+                CreateTeam(20, "France", 1)
+            };
+            List<MatchEntity> matches = new List<MatchEntity>
+            {
+                new MatchEntity { Id = 1, Date = liveKickoff, StadiumId = 5, TeamOneId = 10, TeamTwoId = 20 }
+            };
+            List<Country> countries = new List<Country>
+            {
+                new Country { Id = 1, Name = "Brazil" },
+                new Country { Id = 2, Name = "France" }
+            };
+            List<Stadium> stadiums = new List<Stadium> { new Stadium { Id = 5, Name = "Arena", CityId = 1 } };
+            List<TeamStats> stats = new List<TeamStats>
+            {
+                new TeamStats { Id = 100, MatchId = 1, TeamId = 10 },
+                new TeamStats { Id = 101, MatchId = 1, TeamId = 20 }
+            };
+            List<Card> cards = new List<Card>
+            {
+                new Card
+                {
+                    Id = 1,
+                    TeamStatsId = 101,
+                    PlayerId = 99,
+                    Type = 1,
+                    TimeIssued = liveKickoff.AddMinutes(40)
+                }
+            };
+            List<Player> players = new List<Player>
+            {
+                new Player
+                {
+                    Id = 99,
+                    Name = MatchResultSyncService.PlaceholderScorerName,
+                    Number = 0,
+                    TeamId = 20,
+                    PositionId = 1
+                }
+            };
+
+            SetupFind(_groupRepositoryMock, groups);
+            SetupFind(_teamRepositoryMock, teams);
+            SetupFind(_matchRepositoryMock, matches);
+            _matchRepositoryMock.Setup(matchRepository => matchRepository.GetAllAsync()).Returns(matches.AsQueryable());
+            _teamRepositoryMock.Setup(teamRepository => teamRepository.GetAllAsync()).Returns(teams.AsQueryable());
+            _countryRepositoryMock.Setup(countryRepository => countryRepository.GetAllAsync()).Returns(countries.AsQueryable());
+            _stadiumRepositoryMock.Setup(stadiumRepository => stadiumRepository.GetAllAsync()).Returns(stadiums.AsQueryable());
+            SetupFind(_teamStatsRepositoryMock, stats);
+            SetupFind(_goalRepositoryMock, new List<Goal>());
+            SetupFind(_cardRepositoryMock, cards);
+            SetupPlayerRepository(players);
+
+            LiveSnapshotDTO snapshot = await _matchService.GetLiveSnapshot(2026);
+
+            Assert.Single(snapshot.RecentEvents);
+            LiveEventSnapshotDTO recentEvent = snapshot.RecentEvents[0];
+            Assert.Equal("Yellow", recentEvent.EventType);
+            Assert.Equal("France", recentEvent.TeamName);
+            Assert.Null(recentEvent.PlayerName);
+        }
+
+        [Fact]
+        public async Task GetMatchById_WhenGoalCreditedToTournamentScorer_OmitsPlayerNameButPreservesRealNames()
+        {
+            DateTime kickoff = new DateTime(2026, 6, 15, 18, 0, 0);
+            MatchEntity match = new MatchEntity { Id = 1, Date = kickoff, StadiumId = 5, TeamOneId = 10, TeamTwoId = 20 };
+            List<Team> teams = new List<Team>
+            {
+                CreateTeam(10, "Brazil", 1),
+                CreateTeam(20, "France", 2)
+            };
+            List<Country> countries = new List<Country>
+            {
+                new Country { Id = 1, Name = "Brazil" },
+                new Country { Id = 2, Name = "France" }
+            };
+            List<Player> players = new List<Player>
+            {
+                new Player
+                {
+                    Id = 99,
+                    Name = MatchResultSyncService.PlaceholderScorerName,
+                    Number = 0,
+                    TeamId = 10,
+                    PositionId = 1
+                },
+                new Player { Id = 1, Name = "Neymar", Number = 10, TeamId = 10, PositionId = 1 },
+                new Player { Id = 2, Name = "Mbappe", Number = 7, TeamId = 20, PositionId = 1 }
+            };
+            List<TeamStats> stats = new List<TeamStats>
+            {
+                new TeamStats { Id = 100, MatchId = 1, TeamId = 10, Possession = 55, Shots = 12, ShotsOnTarget = 5 },
+                new TeamStats { Id = 101, MatchId = 1, TeamId = 20, Possession = 45, Shots = 8, ShotsOnTarget = 3 }
+            };
+            List<Goal> goals = new List<Goal>
+            {
+                new Goal
+                {
+                    Id = 1,
+                    TeamStatsId = 100,
+                    PlayerId = 99,
+                    TimeScored = kickoff.AddMinutes(10),
+                    IsOwnGoal = 0
+                },
+                new Goal
+                {
+                    Id = 2,
+                    TeamStatsId = 100,
+                    PlayerId = 1,
+                    TimeScored = kickoff.AddMinutes(25),
+                    IsOwnGoal = 0
+                }
+            };
+            List<Card> cards = new List<Card>
+            {
+                new Card
+                {
+                    Id = 1,
+                    TeamStatsId = 101,
+                    PlayerId = 99,
+                    Type = 2,
+                    TimeIssued = kickoff.AddMinutes(50)
+                },
+                new Card
+                {
+                    Id = 2,
+                    TeamStatsId = 101,
+                    PlayerId = 2,
+                    Type = 1,
+                    TimeIssued = kickoff.AddMinutes(60)
+                }
+            };
+
+            _matchRepositoryMock.Setup(matchRepository => matchRepository.GetByIdAsync(1)).ReturnsAsync(match);
+            _teamRepositoryMock.Setup(teamRepository => teamRepository.GetAllAsync()).Returns(teams.AsQueryable());
+            _countryRepositoryMock.Setup(countryRepository => countryRepository.GetAllAsync()).Returns(countries.AsQueryable());
+            SetupPlayerRepository(players);
+            _stadiumRepositoryMock.Setup(stadiumRepository => stadiumRepository.GetByIdAsync(5))
+                .ReturnsAsync(new Stadium { Id = 5, Name = "Arena", CityId = 1 });
+            SetupFind(_teamStatsRepositoryMock, stats);
+            SetupFind(_goalRepositoryMock, goals);
+            SetupFind(_cardRepositoryMock, cards);
+
+            MatchDetailDTO result = await _matchService.GetMatchById(1);
+
+            Assert.NotNull(result.TeamOneStats);
+            Assert.Equal(2, result.TeamOneStats!.Goals.Count);
+            MatchGoalDTO placeholderGoal = result.TeamOneStats.Goals.Single(goal => goal.PlayerId == 99);
+            MatchGoalDTO realGoal = result.TeamOneStats.Goals.Single(goal => goal.PlayerId == 1);
+            Assert.Null(placeholderGoal.PlayerName);
+            Assert.Equal("Neymar", realGoal.PlayerName);
+
+            Assert.NotNull(result.TeamTwoStats);
+            Assert.Equal(2, result.TeamTwoStats!.Cards.Count);
+            MatchCardDTO placeholderCard = result.TeamTwoStats.Cards.Single(card => card.PlayerId == 99);
+            MatchCardDTO realCard = result.TeamTwoStats.Cards.Single(card => card.PlayerId == 2);
+            Assert.Null(placeholderCard.PlayerName);
+            Assert.Equal("Red", placeholderCard.Type);
+            Assert.Equal("Mbappe", realCard.PlayerName);
+            Assert.Equal("Yellow", realCard.Type);
         }
 
         [Fact]

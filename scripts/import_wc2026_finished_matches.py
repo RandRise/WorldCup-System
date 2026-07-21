@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """
-Import finished FIFA World Cup 2026 matches (group stage + knockouts through 15 Jul 2026).
+Import finished FIFA World Cup 2026 matches (group stage + knockouts through Final).
 
-Sources: FIFA match centre / schedule page + Yahoo Sports results
-(through Argentina 2-1 England SF). Final (Argentina vs Spain) is scheduled
-separately for betting — not wiped/reloaded here as a finished result.
+Sources: FIFA match centre / schedule page + Yahoo Sports / ESPN results
+(through Spain 1-0 Argentina Final a.e.t., Ferran Torres 106').
+
+WARNING: This script wipes Match/TeamStats/Goal/Bet rows for WC 2026 then reloads.
+For Final-only upsert without wipe, use add_sf2_and_final.py instead.
 
 Usage:
   python import_wc2026_finished_matches.py
@@ -27,6 +29,7 @@ GROUP = 0
 R16 = 1
 QF = 2
 SF = 3
+FINAL = 5
 R32 = 6
 
 # Stadium name aliases -> DB "Stadium"."Name"
@@ -72,7 +75,7 @@ def utc(iso: str) -> datetime:
 
 # Each row: (kickoff_utc, stage, venue_alias, home, away, home_goals, away_goals)
 # Group-stage home/away & venues: FIFA schedule. Scores: FIFA where listed, else Yahoo.
-# Knockouts: Yahoo + FIFA venues; both SFs finished (Spain–France, England–Argentina).
+# Knockouts: Yahoo + FIFA venues; SFs + Final finished (Spain champions).
 MATCHES: list[tuple[datetime, int, str, str, str, int, int]] = [
     # ---- Group stage MD1 ----
     (utc("2026-06-11T19:00:00Z"), GROUP, "Mexico City", "Mexico", "South Africa", 2, 0),
@@ -184,6 +187,9 @@ MATCHES: list[tuple[datetime, int, str, str, str, int, int]] = [
     (utc("2026-07-14T19:00:00Z"), SF, "Dallas", "France", "Spain", 0, 2),
     # England 1-2 Argentina (Atlanta): Gordon 55'; Fernandez 85'; Lautaro 90+2
     (utc("2026-07-15T19:00:00Z"), SF, "Atlanta", "England", "Argentina", 1, 2),
+    # ---- Final (finished a.e.t.) ----
+    # Argentina 0-1 Spain (MetLife): Ferran Torres 106' (special-cased in insert loop).
+    (utc("2026-07-19T19:00:00Z"), FINAL, "New York New Jersey", "Argentina", "Spain", 0, 1),
 ]
 
 
@@ -191,10 +197,193 @@ def resolve_country(name: str) -> str:
     return COUNTRY_ALIASES.get(name, name)
 
 
+PLACEHOLDER_NAME = "Tournament Scorer"
+
+
+def resolve_world_cup_id(cur, year: int = 2026) -> int:
+    cur.execute(
+        """
+        SELECT "Id" FROM "WorldCups"
+        WHERE EXTRACT(YEAR FROM "Year" AT TIME ZONE 'UTC') = %s
+        ORDER BY "Id"
+        LIMIT 1
+        """,
+        (year,),
+    )
+    row = cur.fetchone()
+    if not row:
+        raise SystemExit(f"No WorldCups row for year {year}")
+    return int(row[0])
+
+
+def resolve_forward_position_id(cur) -> int:
+    cur.execute(
+        """
+        SELECT "Id" FROM "PlayerPositions"
+        WHERE "Name" = 'Forward'
+        ORDER BY "Id"
+        LIMIT 1
+        """
+    )
+    row = cur.fetchone()
+    if not row:
+        raise SystemExit(
+            "Missing PlayerPositions row 'Forward'. Start the API once to seed positions."
+        )
+    return int(row[0])
+
+
+def world_cup_team_ids_sql() -> str:
+    return """
+        SELECT t."Id"
+        FROM "Team" t
+        JOIN "Group" g ON g."Id" = t."GroupId"
+        WHERE g."WorldCupId" = %s
+    """
+
+
+def wipe_world_cup_matches(cur, world_cup_id: int) -> int:
+    """Delete matches/goals/stats/bets for this World Cup only (multi-cup safe)."""
+    cur.execute(
+        f"""
+        SELECT DISTINCT m."Id" FROM "Match" m
+        WHERE m."TeamOneId" IN ({world_cup_team_ids_sql()})
+           OR m."TeamTwoId" IN ({world_cup_team_ids_sql()})
+        """,
+        (world_cup_id, world_cup_id),
+    )
+    match_ids = [int(row[0]) for row in cur.fetchall()]
+    if not match_ids:
+        return 0
+
+    cur.execute(
+        'UPDATE "Match" SET "FeederMatchOneId" = NULL WHERE "FeederMatchOneId" = ANY(%s)',
+        (match_ids,),
+    )
+    cur.execute(
+        'UPDATE "Match" SET "FeederMatchTwoId" = NULL WHERE "FeederMatchTwoId" = ANY(%s)',
+        (match_ids,),
+    )
+    cur.execute(
+        """
+        DELETE FROM "BetResult"
+        WHERE "BetId" IN (SELECT "Id" FROM "Bet" WHERE "MatchId" = ANY(%s))
+        """,
+        (match_ids,),
+    )
+    cur.execute('DELETE FROM "Bet" WHERE "MatchId" = ANY(%s)', (match_ids,))
+    cur.execute(
+        """
+        DELETE FROM "Goal"
+        WHERE "TeamStatsId" IN (SELECT "Id" FROM "TeamStats" WHERE "MatchId" = ANY(%s))
+        """,
+        (match_ids,),
+    )
+    cur.execute(
+        """
+        DELETE FROM "Card"
+        WHERE "TeamStatsId" IN (SELECT "Id" FROM "TeamStats" WHERE "MatchId" = ANY(%s))
+        """,
+        (match_ids,),
+    )
+    cur.execute('DELETE FROM "TeamStats" WHERE "MatchId" = ANY(%s)', (match_ids,))
+    cur.execute('DELETE FROM "Match" WHERE "Id" = ANY(%s)', (match_ids,))
+    return len(match_ids)
+
+
+def load_scorers_by_team(cur, world_cup_id: int) -> dict[int, list[int]]:
+    """Prefer seeded Forwards; else any non-placeholder player; else Tournament Scorer."""
+    cur.execute(
+        """
+        SELECT p."TeamId", p."Id"
+        FROM "Player" p
+        JOIN "Team" t ON t."Id" = p."TeamId"
+        JOIN "Group" g ON g."Id" = t."GroupId"
+        JOIN "PlayerPositions" pp ON pp."Id" = p."PositionId"
+        WHERE g."WorldCupId" = %s
+          AND p."Name" <> %s
+          AND p."Number" <> 99
+          AND pp."Name" = 'Forward'
+        ORDER BY p."TeamId", p."Number"
+        """,
+        (world_cup_id, PLACEHOLDER_NAME),
+    )
+    forwards_by_team: dict[int, list[int]] = {}
+    for team_id, player_id in cur.fetchall():
+        forwards_by_team.setdefault(team_id, []).append(player_id)
+
+    cur.execute(
+        """
+        SELECT p."TeamId", p."Id"
+        FROM "Player" p
+        JOIN "Team" t ON t."Id" = p."TeamId"
+        JOIN "Group" g ON g."Id" = t."GroupId"
+        WHERE g."WorldCupId" = %s
+          AND p."Name" <> %s AND p."Number" <> 99
+        ORDER BY p."TeamId", p."Number"
+        """,
+        (world_cup_id, PLACEHOLDER_NAME),
+    )
+    any_by_team: dict[int, list[int]] = {}
+    for team_id, player_id in cur.fetchall():
+        any_by_team.setdefault(team_id, []).append(player_id)
+
+    cur.execute(
+        """
+        SELECT p."TeamId", p."Id"
+        FROM "Player" p
+        JOIN "Team" t ON t."Id" = p."TeamId"
+        JOIN "Group" g ON g."Id" = t."GroupId"
+        WHERE g."WorldCupId" = %s AND p."Name" = %s
+        """,
+        (world_cup_id, PLACEHOLDER_NAME),
+    )
+    placeholder_by_team = {team_id: player_id for team_id, player_id in cur.fetchall()}
+
+    team_ids = set(forwards_by_team) | set(any_by_team) | set(placeholder_by_team)
+    scorers: dict[int, list[int]] = {}
+    for team_id in team_ids:
+        if team_id in forwards_by_team:
+            scorers[team_id] = forwards_by_team[team_id]
+        elif team_id in any_by_team:
+            scorers[team_id] = any_by_team[team_id]
+        else:
+            scorers[team_id] = [placeholder_by_team[team_id]]
+    return scorers
+
+
+def pick_scorer(scorers_by_team: dict[int, list[int]], team_id: int, goal_index: int) -> int:
+    scorers = scorers_by_team.get(team_id) or []
+    if not scorers:
+        raise SystemExit(
+            f"No scorers for team {team_id}. Run seed_wc2026_players.py "
+            f"or ensure placeholder '{PLACEHOLDER_NAME}' exists."
+        )
+    return scorers[goal_index % len(scorers)]
+
+
+def find_player_id(cur, team_id: int, name: str) -> int | None:
+    cur.execute(
+        """
+        SELECT p."Id"
+        FROM "Player" p
+        WHERE p."TeamId" = %s AND p."Name" = %s
+        ORDER BY p."Id"
+        LIMIT 1
+        """,
+        (team_id, name),
+    )
+    row = cur.fetchone()
+    return int(row[0]) if row else None
+
+
 def main() -> None:
     conn = psycopg2.connect(CONN)
     conn.autocommit = False
     cur = conn.cursor()
+
+    world_cup_id = resolve_world_cup_id(cur, 2026)
+    forward_position_id = resolve_forward_position_id(cur)
 
     cur.execute('SELECT "Id", "Name" FROM "Stadium"')
     stadium_by_name = {name: sid for sid, name in cur.fetchall()}
@@ -204,7 +393,10 @@ def main() -> None:
         SELECT t."Id", c."Name"
         FROM "Team" t
         JOIN "Countries" c ON c."Id" = t."CountryId"
-        """
+        JOIN "Group" g ON g."Id" = t."GroupId"
+        WHERE g."WorldCupId" = %s
+        """,
+        (world_cup_id,),
     )
     team_by_country = {name: tid for tid, name in cur.fetchall()}
 
@@ -218,37 +410,32 @@ def main() -> None:
     }
     missing_teams = sorted(needed_teams - set(team_by_country))
     if missing_teams:
-        raise SystemExit(f"Missing teams in DB: {missing_teams}")
+        raise SystemExit(f"Missing teams in DB (WorldCup {world_cup_id}): {missing_teams}")
 
-    # Placeholder scorers (Forward = 4)
+    # Prefer real squad forwards; keep Tournament Scorer only as fallback for empty squads.
     cur.execute(
         """
         INSERT INTO "Player" ("Name", "Number", "TeamId", "PositionId")
-        SELECT 'Tournament Scorer', 99, t."Id", 4
+        SELECT %s, 99, t."Id", %s
         FROM "Team" t
-        WHERE NOT EXISTS (
+        JOIN "Group" g ON g."Id" = t."GroupId"
+        WHERE g."WorldCupId" = %s
+          AND NOT EXISTS (
             SELECT 1 FROM "Player" p
-            WHERE p."TeamId" = t."Id" AND p."Name" = 'Tournament Scorer'
-        )
-        """
+            WHERE p."TeamId" = t."Id" AND p."Name" = %s
+          )
+          AND NOT EXISTS (
+            SELECT 1 FROM "Player" p
+            WHERE p."TeamId" = t."Id" AND p."Name" <> %s AND p."Number" <> 99
+          )
+        """,
+        (PLACEHOLDER_NAME, forward_position_id, world_cup_id, PLACEHOLDER_NAME, PLACEHOLDER_NAME),
     )
 
-    cur.execute(
-        """
-        SELECT p."TeamId", p."Id"
-        FROM "Player" p
-        WHERE p."Name" = 'Tournament Scorer'
-        """
-    )
-    scorer_by_team = {tid: pid for tid, pid in cur.fetchall()}
+    scorers_by_team = load_scorers_by_team(cur, world_cup_id)
 
-    # Clear previous schedule data so re-runs are idempotent.
-    cur.execute('DELETE FROM "Goal"')
-    cur.execute('DELETE FROM "Card"')
-    cur.execute('DELETE FROM "BetResult"')
-    cur.execute('DELETE FROM "Bet"')
-    cur.execute('DELETE FROM "TeamStats"')
-    cur.execute('DELETE FROM "Match"')
+    wiped = wipe_world_cup_matches(cur, world_cup_id)
+    print(f"Wiped {wiped} prior match(es) for WorldCupId={world_cup_id} (2026 only).")
 
     inserted = 0
     goals_inserted = 0
@@ -299,27 +486,48 @@ def main() -> None:
                 INSERT INTO "Goal" ("PlayerId", "TeamStatsId", "TimeScored", "IsOwnGoal")
                 VALUES (%s, %s, %s, 0)
                 """,
-                (scorer_by_team[team_one_id], stats_one, scored_at),
+                (pick_scorer(scorers_by_team, team_one_id, minute_offset), stats_one, scored_at),
             )
             goals_inserted += 1
 
-        for minute_offset in range(away_goals):
-            scored_at = kickoff + timedelta(minutes=15 + minute_offset * 12)
+        # Final a.e.t.: Ferran Torres 106' (not the generic away minute loop).
+        if (
+            stage == FINAL
+            and home_goals == 0
+            and away_goals == 1
+            and resolve_country(home) == "Argentina"
+            and resolve_country(away) == "Spain"
+        ):
+            torres_id = find_player_id(cur, team_two_id, "Ferran Torres")
+            if torres_id is None:
+                torres_id = pick_scorer(scorers_by_team, team_two_id, 0)
+            scored_at = kickoff + timedelta(minutes=106)
             cur.execute(
                 """
                 INSERT INTO "Goal" ("PlayerId", "TeamStatsId", "TimeScored", "IsOwnGoal")
                 VALUES (%s, %s, %s, 0)
                 """,
-                (scorer_by_team[team_two_id], stats_two, scored_at),
+                (torres_id, stats_two, scored_at),
             )
             goals_inserted += 1
+        else:
+            for minute_offset in range(away_goals):
+                scored_at = kickoff + timedelta(minutes=15 + minute_offset * 12)
+                cur.execute(
+                    """
+                    INSERT INTO "Goal" ("PlayerId", "TeamStatsId", "TimeScored", "IsOwnGoal")
+                    VALUES (%s, %s, %s, 0)
+                    """,
+                    (pick_scorer(scorers_by_team, team_two_id, minute_offset), stats_two, scored_at),
+                )
+                goals_inserted += 1
 
         inserted += 1
 
     conn.commit()
     cur.close()
     conn.close()
-    print(f"Imported {inserted} matches with {goals_inserted} goals.")
+    print(f"Imported {inserted} matches with {goals_inserted} goals (WorldCupId={world_cup_id}).")
 
 
 if __name__ == "__main__":

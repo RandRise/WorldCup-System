@@ -71,6 +71,7 @@ namespace Core.Services.MatchSync
             return new ExternalMatchResult
             {
                 ExternalMatchId = match.IdMatch ?? externalMatchId.Trim(),
+                ExternalStageId = string.IsNullOrWhiteSpace(match.IdStage) ? null : match.IdStage.Trim(),
                 HomeScore = homeScore,
                 AwayScore = awayScore,
                 IsFinished = isFinished,
@@ -97,6 +98,9 @@ namespace Core.Services.MatchSync
         {
             [JsonPropertyName("IdMatch")]
             public string? IdMatch { get; set; }
+
+            [JsonPropertyName("IdStage")]
+            public string? IdStage { get; set; }
 
             [JsonPropertyName("MatchStatus")]
             public int? MatchStatus { get; set; }

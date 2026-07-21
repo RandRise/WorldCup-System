@@ -16,6 +16,7 @@ namespace WorldCup_System.Tests.Services.MatchSync
                   "Results": [
                     {
                       "IdMatch": "400234567",
+                      "IdStage": "  12345678  ",
                       "MatchStatus": 0,
                       "HomeTeamScore": 2,
                       "AwayTeamScore": 1,
@@ -46,6 +47,7 @@ namespace WorldCup_System.Tests.Services.MatchSync
             ExternalMatchResult result = await provider.FetchResultAsync("400234567");
 
             Assert.Equal("400234567", result.ExternalMatchId);
+            Assert.Equal("12345678", result.ExternalStageId);
             Assert.True(result.IsFinished);
             Assert.Equal(2, result.HomeScore);
             Assert.Equal(1, result.AwayScore);
@@ -54,6 +56,38 @@ namespace WorldCup_System.Tests.Services.MatchSync
             Assert.Equal("BRA", result.HomeTeamCountryCode);
             Assert.Equal("FRA", result.AwayTeamCountryCode);
             Assert.Contains("idMatch=400234567", handler.LastRequestUri);
+        }
+
+        [Fact]
+        public async Task FetchResultAsync_WhenIdStageMissing_ReturnsNullExternalStageId()
+        {
+            string json = """
+                {
+                  "Results": [
+                    {
+                      "IdMatch": "400234567",
+                      "MatchStatus": 0,
+                      "HomeTeamScore": 1,
+                      "AwayTeamScore": 0,
+                      "Home": { "TeamName": [{ "Description": "Brazil" }] },
+                      "Away": { "TeamName": [{ "Description": "France" }] }
+                    }
+                  ]
+                }
+                """;
+
+            using StubHttpMessageHandler handler = new StubHttpMessageHandler(HttpStatusCode.OK, json);
+            using HttpClient httpClient = new HttpClient(handler)
+            {
+                BaseAddress = new Uri("https://api.fifa.com/api/v3/calendar/matches")
+            };
+            FifaCalendarMatchResultProvider provider = new FifaCalendarMatchResultProvider(
+                httpClient,
+                Options.Create(new MatchResultSyncOptions()));
+
+            ExternalMatchResult result = await provider.FetchResultAsync("400234567");
+
+            Assert.Null(result.ExternalStageId);
         }
 
         [Fact]

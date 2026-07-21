@@ -20,9 +20,9 @@ Entity relationships and table inventory. All entities live in `WorldCup-System/
 | `Countries` | Country.cs | Has Cities; Team links to Country | Done |
 | `City` | City.cs | Belongs to Country; has Stadiums | Done |
 | `Stadium` | Stadium.cs | Belongs to City; hosts Matches | Done |
-| `Team` | Team.cs | One per Country; assigned to Group; has Coach, Players | Done |
+| `Team` | Team.cs | One per Country **per World Cup** (via Group); has Coach, Players | Done |
 | `Coach` | Coach.cs | One per Team | Done |
-| `Player` | Player.cs | Belongs to Team; has PlayerPosition | Done |
+| `Player` | Player.cs | Belongs to Team; has PlayerPosition; optional `ExternalPlayerId` (FIFA IdPlayer) | Done |
 | `PlayerPositions` | PlayerPosition.cs | Lookup table for player roles | Done |
 | `Match` | Match.cs | Two Teams (nullable for TBD knockout), Stadium, date/time, `MatchStage` (Group → RoundOf32 → … → Final), optional feeder match IDs | Done |
 | `TeamStats` | TeamStats.cs | Per-match stats (possession, shots, points) | Done |
@@ -31,7 +31,8 @@ Entity relationships and table inventory. All entities live in `WorldCup-System/
 | `Standings` | — (computed) | Group table from match results; no DB table | Done |
 | `Bet` | Bet.cs | User prediction on Match outcome | Done |
 | `BetResult` | BetResult.cs | Points earned from a Bet (via `BetController`) | Done |
-| `Users` | User.cs | Custom Identity user (Name, RefreshToken field; no refresh API yet) | Partial |
+| `Users` | User.cs | Custom Identity user (Name, RefreshToken field; no refresh API yet); **Phase 13:** planned nullable `CompanyId` | Partial |
+| `Companies` | — (planned Phase 13) | Workplace pool; invite code; members via `User.CompanyId` — [plan](changes/phase-13-planned.md) | Planned |
 
 ### Identity Tables (ASP.NET)
 
@@ -58,6 +59,7 @@ List APIs for countries, cities, and stadiums remain for Teams and Schedule UIs.
 - Assigned to a Stadium
 - Has date/time for scheduling
 - Parent for Goals, Cards, TeamStats
+- Optional `ExternalMatchId` (FIFA IdMatch) and `ExternalStageId` (FIFA IdStage) for post-match sync / timeline URLs
 
 ### TeamStats.cs
 

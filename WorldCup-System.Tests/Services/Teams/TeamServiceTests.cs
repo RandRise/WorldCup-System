@@ -53,7 +53,7 @@ namespace WorldCup_System.Tests.Services.Teams
         public async Task AddTeam_WhenCountryHasNoTeam_CreatesAndSaves()
         {
             Country country = new Country { Id = 5, Name = "France" };
-            Group group = new Group { Id = 3, Name = "B" };
+            Group group = new Group { Id = 3, Name = "B", WorldCupId = 1 };
             AddTeamDTO addTeamDto = new AddTeamDTO { CountryId = 5, GroupId = 3 };
 
             _countryRepositoryMock.Setup(countryRepository => countryRepository.GetByIdAsync(5)).ReturnsAsync(country);
@@ -75,37 +75,97 @@ namespace WorldCup_System.Tests.Services.Teams
         }
 
         [Fact]
-        public async Task AddTeam_WhenCountryAlreadyHasTeam_ThrowsInvalidOperationException()
+        public async Task AddTeam_WhenCountryAlreadyHasTeamInSameWorldCup_ThrowsInvalidOperationException()
         {
             Country country = new Country { Id = 5, Name = "France" };
-            Group group = new Group { Id = 3, Name = "B" };
+            Group group = new Group { Id = 3, Name = "B", WorldCupId = 1 };
+            Group existingGroup = new Group { Id = 1, Name = "A", WorldCupId = 1 };
             AddTeamDTO addTeamDto = new AddTeamDTO { CountryId = 5, GroupId = 3 };
 
             _countryRepositoryMock.Setup(countryRepository => countryRepository.GetByIdAsync(5)).ReturnsAsync(country);
             _groupRepositoryMock.Setup(groupRepository => groupRepository.GetByIdAsync(3)).ReturnsAsync(group);
             _teamRepositoryMock.Setup(teamRepository => teamRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Team, bool>>>()))
-                .Returns(new List<Team> { new Team { Id = 99, CountryId = 5, GroupId = 1, Country = country, Group = group, Coach = new List<Coach>() } }.AsQueryable());
+                .Returns(new List<Team>
+                {
+                    new Team { Id = 99, CountryId = 5, GroupId = 1, Country = country, Group = existingGroup, Coach = new List<Coach>() }
+                }.AsQueryable());
+            _groupRepositoryMock.Setup(groupRepository => groupRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Group, bool>>>()))
+                .Returns(new List<Group> { existingGroup }.AsQueryable());
 
             await Assert.ThrowsAsync<InvalidOperationException>(() => _teamService.AddTeam(addTeamDto));
+        }
+
+        [Fact]
+        public async Task AddTeam_WhenCountryHasTeamInOtherWorldCup_CreatesAndSaves()
+        {
+            Country country = new Country { Id = 5, Name = "France" };
+            Group group2030 = new Group { Id = 30, Name = "A", WorldCupId = 2 };
+            Group group2026 = new Group { Id = 1, Name = "A", WorldCupId = 1 };
+            AddTeamDTO addTeamDto = new AddTeamDTO { CountryId = 5, GroupId = 30 };
+
+            _countryRepositoryMock.Setup(countryRepository => countryRepository.GetByIdAsync(5)).ReturnsAsync(country);
+            _groupRepositoryMock.Setup(groupRepository => groupRepository.GetByIdAsync(30)).ReturnsAsync(group2030);
+            _teamRepositoryMock.Setup(teamRepository => teamRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Team, bool>>>()))
+                .Returns(new List<Team>
+                {
+                    new Team { Id = 99, CountryId = 5, GroupId = 1, Country = country, Group = group2026, Coach = new List<Coach>() }
+                }.AsQueryable());
+            _groupRepositoryMock.Setup(groupRepository => groupRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Group, bool>>>()))
+                .Returns(new List<Group>().AsQueryable());
+
+            Team? capturedTeam = null;
+            _teamRepositoryMock.Setup(teamRepository => teamRepository.Create(It.IsAny<Team>()))
+                .Callback<Team>(team => capturedTeam = team);
+            _repositoryManagerMock.Setup(repositoryManager => repositoryManager.SaveAsync()).Returns(Task.CompletedTask);
+
+            await _teamService.AddTeam(addTeamDto);
+
+            Assert.NotNull(capturedTeam);
+            Assert.Equal(5, capturedTeam.CountryId);
+            Assert.Equal(30, capturedTeam.GroupId);
+            _repositoryManagerMock.Verify(repositoryManager => repositoryManager.SaveAsync(), Times.Once);
         }
 
         [Fact]
         public async Task AssignTeamToGroup_UpdatesGroupAndSaves()
         {
             Country country = new Country { Id = 1, Name = "Spain" };
-            Group oldGroup = new Group { Id = 1, Name = "A" };
-            Group newGroup = new Group { Id = 4, Name = "C" };
+            Group oldGroup = new Group { Id = 1, Name = "A", WorldCupId = 1 };
+            Group newGroup = new Group { Id = 4, Name = "C", WorldCupId = 1 };
             Team team = new Team { Id = 7, CountryId = 1, GroupId = 1, Country = country, Group = oldGroup, Coach = new List<Coach>() };
             AssignTeamToGroupDTO assignDto = new AssignTeamToGroupDTO { TeamId = 7, GroupId = 4 };
 
             _teamRepositoryMock.Setup(teamRepository => teamRepository.GetByIdAsync(7)).ReturnsAsync(team);
+            _groupRepositoryMock.Setup(groupRepository => groupRepository.GetByIdAsync(1)).ReturnsAsync(oldGroup);
             _groupRepositoryMock.Setup(groupRepository => groupRepository.GetByIdAsync(4)).ReturnsAsync(newGroup);
+            _teamRepositoryMock.Setup(teamRepository => teamRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Team, bool>>>()))
+                .Returns(new List<Team>().AsQueryable());
             _repositoryManagerMock.Setup(repositoryManager => repositoryManager.SaveAsync()).Returns(Task.CompletedTask);
 
             await _teamService.AssignTeamToGroup(assignDto);
 
             Assert.Equal(4, team.GroupId);
             _teamRepositoryMock.Verify(teamRepository => teamRepository.Update(team), Times.Once);
+        }
+
+        [Fact]
+        public async Task AssignTeamToGroup_WhenTargetGroupIsOtherWorldCup_ThrowsInvalidOperationException()
+        {
+            Country country = new Country { Id = 1, Name = "Spain" };
+            Group group2030 = new Group { Id = 30, Name = "A", WorldCupId = 2 };
+            Group group2026 = new Group { Id = 1, Name = "A", WorldCupId = 1 };
+            Team team = new Team { Id = 7, CountryId = 1, GroupId = 30, Country = country, Group = group2030, Coach = new List<Coach>() };
+            AssignTeamToGroupDTO assignDto = new AssignTeamToGroupDTO { TeamId = 7, GroupId = 1 };
+
+            _teamRepositoryMock.Setup(teamRepository => teamRepository.GetByIdAsync(7)).ReturnsAsync(team);
+            _groupRepositoryMock.Setup(groupRepository => groupRepository.GetByIdAsync(30)).ReturnsAsync(group2030);
+            _groupRepositoryMock.Setup(groupRepository => groupRepository.GetByIdAsync(1)).ReturnsAsync(group2026);
+
+            InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _teamService.AssignTeamToGroup(assignDto));
+
+            Assert.Contains("Cannot move team 7 from World Cup 2 to World Cup 1", exception.Message);
+            _teamRepositoryMock.Verify(teamRepository => teamRepository.Update(It.IsAny<Team>()), Times.Never);
         }
 
         [Fact]
@@ -131,15 +191,19 @@ namespace WorldCup_System.Tests.Services.Teams
         {
             Country oldCountry = new Country { Id = 1, Name = "Spain" };
             Country newCountry = new Country { Id = 5, Name = "France" };
-            Group group = new Group { Id = 3, Name = "B" };
-            Team team = new Team { Id = 7, CountryId = 1, GroupId = 1, Country = oldCountry, Group = group, Coach = new List<Coach>() };
+            Group currentGroup = new Group { Id = 1, Name = "A", WorldCupId = 1 };
+            Group group = new Group { Id = 3, Name = "B", WorldCupId = 1 };
+            Team team = new Team { Id = 7, CountryId = 1, GroupId = 1, Country = oldCountry, Group = currentGroup, Coach = new List<Coach>() };
             UpdateTeamDTO updateTeamDto = new UpdateTeamDTO { Id = 7, CountryId = 5, GroupId = 3 };
 
             _teamRepositoryMock.Setup(teamRepository => teamRepository.GetByIdAsync(7)).ReturnsAsync(team);
             _countryRepositoryMock.Setup(countryRepository => countryRepository.GetByIdAsync(5)).ReturnsAsync(newCountry);
+            _groupRepositoryMock.Setup(groupRepository => groupRepository.GetByIdAsync(1)).ReturnsAsync(currentGroup);
             _groupRepositoryMock.Setup(groupRepository => groupRepository.GetByIdAsync(3)).ReturnsAsync(group);
             _teamRepositoryMock.Setup(teamRepository => teamRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Team, bool>>>()))
                 .Returns(new List<Team>().AsQueryable());
+            _groupRepositoryMock.Setup(groupRepository => groupRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Group, bool>>>()))
+                .Returns(new List<Group>().AsQueryable());
             _repositoryManagerMock.Setup(repositoryManager => repositoryManager.SaveAsync()).Returns(Task.CompletedTask);
 
             await _teamService.UpdateTeam(updateTeamDto);
@@ -150,18 +214,46 @@ namespace WorldCup_System.Tests.Services.Teams
         }
 
         [Fact]
-        public async Task UpdateTeam_WhenNewCountryAlreadyHasTeam_ThrowsInvalidOperationException()
+        public async Task UpdateTeam_WhenTargetGroupIsOtherWorldCup_ThrowsInvalidOperationException()
+        {
+            Country country = new Country { Id = 1, Name = "Spain" };
+            Group group2030 = new Group { Id = 30, Name = "A", WorldCupId = 2 };
+            Group group2026 = new Group { Id = 3, Name = "B", WorldCupId = 1 };
+            Team team = new Team { Id = 7, CountryId = 1, GroupId = 30, Country = country, Group = group2030, Coach = new List<Coach>() };
+            UpdateTeamDTO updateTeamDto = new UpdateTeamDTO { Id = 7, CountryId = 1, GroupId = 3 };
+
+            _teamRepositoryMock.Setup(teamRepository => teamRepository.GetByIdAsync(7)).ReturnsAsync(team);
+            _groupRepositoryMock.Setup(groupRepository => groupRepository.GetByIdAsync(30)).ReturnsAsync(group2030);
+            _groupRepositoryMock.Setup(groupRepository => groupRepository.GetByIdAsync(3)).ReturnsAsync(group2026);
+
+            InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _teamService.UpdateTeam(updateTeamDto));
+
+            Assert.Contains("Cannot move team 7 from World Cup 2 to World Cup 1", exception.Message);
+            _teamRepositoryMock.Verify(teamRepository => teamRepository.Update(It.IsAny<Team>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task UpdateTeam_WhenNewCountryAlreadyHasTeamInSameWorldCup_ThrowsInvalidOperationException()
         {
             Country oldCountry = new Country { Id = 1, Name = "Spain" };
             Country newCountry = new Country { Id = 5, Name = "France" };
-            Group group = new Group { Id = 3, Name = "B" };
-            Team team = new Team { Id = 7, CountryId = 1, GroupId = 1, Country = oldCountry, Group = group, Coach = new List<Coach>() };
+            Group group = new Group { Id = 3, Name = "B", WorldCupId = 1 };
+            Group existingGroup = new Group { Id = 1, Name = "A", WorldCupId = 1 };
+            Team team = new Team { Id = 7, CountryId = 1, GroupId = 1, Country = oldCountry, Group = existingGroup, Coach = new List<Coach>() };
             UpdateTeamDTO updateTeamDto = new UpdateTeamDTO { Id = 7, CountryId = 5, GroupId = 3 };
 
             _teamRepositoryMock.Setup(teamRepository => teamRepository.GetByIdAsync(7)).ReturnsAsync(team);
             _countryRepositoryMock.Setup(countryRepository => countryRepository.GetByIdAsync(5)).ReturnsAsync(newCountry);
+            _groupRepositoryMock.Setup(groupRepository => groupRepository.GetByIdAsync(1)).ReturnsAsync(existingGroup);
+            _groupRepositoryMock.Setup(groupRepository => groupRepository.GetByIdAsync(3)).ReturnsAsync(group);
             _teamRepositoryMock.Setup(teamRepository => teamRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Team, bool>>>()))
-                .Returns(new List<Team> { new Team { Id = 99, CountryId = 5, GroupId = 1, Country = newCountry, Group = group, Coach = new List<Coach>() } }.AsQueryable());
+                .Returns(new List<Team>
+                {
+                    new Team { Id = 99, CountryId = 5, GroupId = 1, Country = newCountry, Group = existingGroup, Coach = new List<Coach>() }
+                }.AsQueryable());
+            _groupRepositoryMock.Setup(groupRepository => groupRepository.Find(It.IsAny<System.Linq.Expressions.Expression<Func<Group, bool>>>()))
+                .Returns(new List<Group> { existingGroup }.AsQueryable());
 
             await Assert.ThrowsAsync<InvalidOperationException>(() => _teamService.UpdateTeam(updateTeamDto));
         }

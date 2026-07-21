@@ -7,15 +7,15 @@
 ---
 ## Project Dashboard
 
-FIFA World Cup management platform — status as of **17 Jul 2026**.
+FIFA World Cup management platform — status as of **21 Jul 2026**.
 
-> **Success:** **Phases 1–8 complete in code.** **Phase 10 Tasks 1–3 done**; Task 4 cleanup **planned**. **Phase 9** still has Final FT after 19 Jul. See [plan](changes/phase-10-planned.md) · [styling](changes/phase-10-styling.md) · [fixtures UX](changes/phase-10-fixtures-ux.md) · [sync](changes/phase-10-match-sync.md) · [Changes Review](changes-review.md).
+> **Success:** **Phases 1–12 complete.** **Upload gate open** until commit — [whole-project-upload-gate](changes/whole-project-upload-gate.md). **Phase 13 Planned** — company-scoped competitions. **Phase 12 Done**. **Phase 11 Done** (suite **382**). See [phase-13 plan](changes/phase-13-planned.md) · [phase-12 tests gate](changes/phase-12-tests-gate.md) · [phase-11 tests gate](changes/phase-11-tests-gate.md) · [Changes Review](changes-review.md).
 
 > **Info:** Browse these docs with VitePress (`npm run docs:dev` from the workspace root) or open any `.md` file in Cursor preview. Checklists use `[x]` / `[ ]` task items.
 
-- **Overall Plan Progress:** 8 / 10 phases done — [Phase 9 in progress](roadmap.md#phase-9); [Phase 10 in progress](roadmap.md#phase-10) (Tasks 1–3 done; Task 4 open)
-- **Backend API Complete:** 100% Phases 1–8 + Phase 10 Task 1 sync endpoints
-- **Frontend SPA:** 100% Phases 1–8 + Phase 10 Tasks 2–3 (fixtures UX + WC styling)
+- **Overall Plan Progress:** 12 / 13 phases done (Phase 13 planned) — [Phase 12](roadmap.md#phase-12); [Phase 13](roadmap.md#phase-13)
+- **Backend API Complete:** 100% Phases 1–8 + Phase 10 Task 1 sync + Phase 11 (stage / timeline / resolve / apply / sync wire / scorers backfill / honesty; suite **382**)
+- **Frontend SPA:** 100% Phases 1–8 + Phase 10 Tasks 2–3 (fixtures UX + WC styling); canonical path `WorldCup-System/worldcup-client`
 
 ### Component Status
 
@@ -24,18 +24,37 @@ FIFA World Cup management platform — status as of **17 Jul 2026**.
 - Auth & Identity (JWT, roles, GetMe, CORS, secrets)
 - Full domain APIs — teams, coaches, players, matches, knockout bracket, goals, cards, stats, standings, bets
 - Angular SPA — fixtures, bracket, standings, bets, leaderboard, user dashboard, admin hub / live console
-- Offline WC 2026 import — groups A–L + finished matches through both semi-finals
-- Tests (**268** passed), Docker Compose, health checks, Serilog, GitHub Actions CI
+- Offline WC 2026 import — groups A–L + finished matches through Final (Spain champions)
+- Tests (**268** passed baseline; suite **382** with Phase 11), Docker Compose, health checks, Serilog, GitHub Actions CI
 - MCP read-only database server
-- Phase 9 (partial): Final fixture scheduled; Feeder* migration repair confirmed; knockout re-advance UX
+- **Phase 9 Done:** Final FT Argentina 0–1 Spain a.e.t. (Ferran Torres 106', MatchId 116); bets 2/2; scripts + commits `dcb322b` / `7886b40` — [detail](changes/phase-9-ops-closeout.md)
 - **Phase 10 Task 1:** FIFA calendar sync, `ExternalMatchId`, Admin SyncResult / SyncFinishedResults / SetExternalMatchId, orientation + tests; no RabbitMQ
 - **Phase 10 Task 2:** Fixtures Action default, filter chips, Open/Live/Finished sections, jump-to-bet, `fixture-sections` + Jasmine **12** — gate closed
 - **Phase 10 Task 3:** Black/gold theme, night-pitch atmosphere, Bebas Neue + Manrope, brand-first home — gate closed; [detail](changes/phase-10-styling.md)
+- **Phase 10 Task 4:** Removed stale root `worldcup-client` + orphan DB dump; dual docs kept (VitePress + git mirror); README canonical path — [detail](changes/phase-10-cleanup.md)
+- **Phase 11 Task 1:** `Match.ExternalStageId`, migration, SetExternal optional stage, calendar IdStage + SyncResult auto-fill — [detail](changes/phase-11-external-stage.md)
+- **Phase 11 Task 2:** `FifaTimelineEventsProvider` + DTOs + `TimelineBaseUrl` HttpClient; Goal!/Own Goal/Penalty parse — [detail](changes/phase-11-timeline-provider.md)
+- **Phase 11 Task 3:** `TimelinePlayerResolver` + `Player.ExternalPlayerId`; exact → normalized → create; gate closed — [detail](changes/phase-11-player-resolve.md)
+- **Phase 11 Task 4:** `TimelineScorerApplyService` — in-place Goal rewrite when counts align; gate closed (**353**) — [detail](changes/phase-11-scorer-apply.md)
+- **Phase 11 Task 5:** SyncResult / SyncFinishedResults wire timeline + apply (fail-soft); gate closed (**361**) — [detail](changes/phase-11-sync-wire.md)
+- **Phase 11 Task 6:** Admin `SyncScorers` / `SyncScorersForWorldCup` + script; FT/bets unchanged; gate closed (**375**) — [detail](changes/phase-11-backfill.md)
+- **Phase 11 Task 7:** Recent events honesty — omit `"Tournament Scorer"`; gate closed (**380**) — [detail](changes/phase-11-recent-events-honesty.md)
+- **Phase 11 Task 8:** Tests + review gate — Bugbot highs fixed; suite **382** — [detail](changes/phase-11-tests-gate.md)
 
-### ⏳ Phase 9 — Remaining
+### ✅ Phase 9 — Done
 
-- Record **Final** result after FT (19 Jul) — Admin live console, sync API, or extend import
-### 🔄 Phase 10 — In progress
+| # | Item | Status | Doc |
+| --- | --- | --- | --- |
+| 1 | Schedule Final (Argentina vs Spain) | **Done** | [phase-9-ops-closeout](changes/phase-9-ops-closeout.md) |
+| 2 | Record Final FT | **Done** | Argentina 0–1 Spain a.e.t.; Ferran Torres 106' |
+| 3 | Optional ThirdPlace | **Skipped** | — |
+| 4 | `AddMatchStage` + Feeder* repair | **Done** | same |
+| 5 | Commit Phase 7–8 tree | **Done** | `dcb322b` + `7886b40` |
+| 6 | Knockout re-advance UX | **Done** | same |
+
+Full checklist: [Roadmap Phase 9](roadmap.md#phase-9).
+
+### ✅ Phase 10 — Done
 
 | # | Item | Status | Doc |
 | --- | --- | --- | --- |
@@ -43,9 +62,49 @@ FIFA World Cup management platform — status as of **17 Jul 2026**.
 | — | No RabbitMQ in v1 | **Done** | same |
 | 2 | Fixtures UX — bettable / live first | **Done** | [phase-10-fixtures-ux](changes/phase-10-fixtures-ux.md) |
 | 3 | WC professional styling | **Done** | [phase-10-styling](changes/phase-10-styling.md) |
-| 4 | Project cleanup — duplicates / unused | Planned | [phase-10-planned](changes/phase-10-planned.md#4--project-cleanup-duplicates--unused) |
+| 4 | Project cleanup — duplicates / unused | **Done** | [phase-10-cleanup](changes/phase-10-cleanup.md) |
 
 Full checklist: [Roadmap Phase 10](roadmap.md#phase-10).
+
+### ✅ Phase 11 — Done
+
+| # | Item | Status | Doc |
+| --- | --- | --- | --- |
+| 1 | External stage id for timeline URLs | **Done** | [phase-11-external-stage](changes/phase-11-external-stage.md) |
+| 2 | FIFA timeline events provider | **Done** | [phase-11-timeline-provider](changes/phase-11-timeline-provider.md) |
+| 3 | Player identity resolution | **Done** | [phase-11-player-resolve](changes/phase-11-player-resolve.md) |
+| 4 | Real-scorer apply (idempotent) | **Done** | [phase-11-scorer-apply](changes/phase-11-scorer-apply.md) |
+| 5 | Wire SyncResult / SyncFinishedResults | **Done** | [phase-11-sync-wire](changes/phase-11-sync-wire.md) |
+| 6 | Admin scorers-only backfill | **Done** | [phase-11-backfill](changes/phase-11-backfill.md) |
+| 7 | Recent events honesty (hide placeholders) | **Done** | [phase-11-recent-events-honesty](changes/phase-11-recent-events-honesty.md) |
+| 8 | Tests + review gate | **Done** | [phase-11-tests-gate](changes/phase-11-tests-gate.md) |
+
+Full checklist: [Roadmap Phase 11](roadmap.md#phase-11).
+
+### 📋 Phase 12 — Done
+
+| # | Item | Status | Doc |
+| --- | --- | --- | --- |
+| 1 | Document Phase 12 plan | **Done** | [phase-12-planned](changes/phase-12-planned.md) |
+| 2 | `simulate_wc2030.py` — cup, hosts+random, draw | **Done** | [phase-12-draw](changes/phase-12-draw.md) |
+| 3 | Group fixtures + score simulation | **Done** | [phase-12-group-sim](changes/phase-12-group-sim.md) |
+| 4 | Best thirds + R32→Final bracket | **Done** | [phase-12-bracket](changes/phase-12-bracket.md) |
+| 5 | Smoke run + tests + review gate | **Done** | [phase-12-tests-gate](changes/phase-12-tests-gate.md) |
+
+Full checklist: [Roadmap Phase 12](roadmap.md#phase-12).
+
+### 📋 Phase 13 — Planned
+
+| # | Item | Status | Doc |
+| --- | --- | --- | --- |
+| 1 | Document Phase 13 plan | **Done** | [phase-13-planned](changes/phase-13-planned.md) |
+| 2 | Company model + migration | Planned | same |
+| 3 | Company API (create / join / admin) | Planned | same |
+| 4 | Leaderboard company scope | Planned | same |
+| 5 | SPA join + company board | Planned | same |
+| 6 | Tests + review gate | Planned | same |
+
+Full checklist: [Roadmap Phase 13](roadmap.md#phase-13).
 
 ### Phase snapshot
 
@@ -59,14 +118,17 @@ Full checklist: [Roadmap Phase 10](roadmap.md#phase-10).
 | 6 | [Quality & Ops](roadmap.md#phase-6) | Done |
 | 7 | [Post-Launch / Live](roadmap.md#phase-7) | Done |
 | 8 | [User & Admin Dashboards](roadmap.md#phase-8) | Done |
-| 9 | [Ops & Tournament Close-Out](roadmap.md#phase-9) | In progress |
-| 10 | [Match Sync, Fixtures UX, Styling & Cleanup](roadmap.md#phase-10) | In progress (Tasks 1–3 done; Task 4 open) |
+| 9 | [Ops & Tournament Close-Out](roadmap.md#phase-9) | Done |
+| 10 | [Match Sync, Fixtures UX, Styling & Cleanup](roadmap.md#phase-10) | Done |
+| 11 | [Real Goalscorers (FIFA Timeline)](roadmap.md#phase-11) | Done |
+| 12 | [2030 World Cup Simulation](roadmap.md#phase-12) | Done |
+| 13 | [Company-Scoped Competitions](roadmap.md#phase-13) | Planned |
 
 ### Quick Navigation
 
 #### 🗺️ Completion Roadmap
 
-10 phases with checklists reflecting the latest code review.
+13 phases with checklists reflecting the latest code review.
 
 #### ⚙️ Dev Workflow
 
@@ -86,17 +148,21 @@ Tech stack, folder structure, and architecture.
 
 #### 🔍 Changes Review
 
-Phase 10 complete (sync, fixtures UX, WC styling); Phase 9 ops close-out; Phase 8 dashboards; Phase 7 bugfixes; prior phases.
+Phase 13 Planned (company pools); Phase 12 Done (unittest **23** / smoke **103**); Phase 11 Done (suite **382**). Upload packaging checklist: [whole-project-upload-gate](changes/whole-project-upload-gate.md). See [Changes Review](changes-review.md).
 
 ### Recommended next work
 
-#### Phase 10 Task 4 — Project cleanup
+#### Upload packaging
 
-Scan and remove duplicates / unused (stale root `worldcup-client`, dual docs, etc.) — see [plan](changes/phase-10-planned.md#4--project-cleanup-duplicates--unused).
+Commit the uncommitted Phases 9–12 tree (migrations + MatchSync + WC 2030 scripts + docs) — [whole-project-upload-gate](changes/whole-project-upload-gate.md) · [Changes Review](changes-review.md).
 
-#### Phase 9 — Final FT
+#### Phase 13 — Company-scoped competitions
 
-After 19 Jul, record the Final score (live console, sync API, or import).
+Implement when ready: invite-code companies + isolated leaderboards — [phase-13-planned](changes/phase-13-planned.md) · [Roadmap Phase 13](roadmap.md#phase-13).
+
+#### Maintenance / polish
+
+Phases **1–12** Done. Prefer ops hygiene (avoid accidental wipe re-import of WC 2026) alongside Phase 13 — [Changes Review](changes-review.md) · [Phase 9 detail](changes/phase-9-ops-closeout.md).
 
 ### Local Dev URLs
 

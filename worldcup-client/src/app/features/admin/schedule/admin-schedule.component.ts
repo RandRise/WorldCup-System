@@ -34,6 +34,8 @@ export class AdminScheduleComponent implements OnInit {
   private readonly referenceApi = inject(ReferenceApiService);
   protected readonly context = inject(WorldCupContextService);
 
+  private loadToken = 0;
+
   protected readonly stageOptions = MATCH_STAGE_OPTIONS;
   protected readonly MatchStages = MatchStages;
 
@@ -72,14 +74,13 @@ export class AdminScheduleComponent implements OnInit {
 
   constructor() {
     effect(() => {
-      this.context.selectedWorldCupId();
-      void this.loadMatches();
+      const worldCupId = this.context.selectedWorldCupId();
+      void this.loadMatches(worldCupId);
     });
   }
 
   async ngOnInit(): Promise<void> {
     await this.reloadLookups();
-    await this.loadMatches();
   }
 
   async reloadLookups(): Promise<void> {
@@ -92,20 +93,31 @@ export class AdminScheduleComponent implements OnInit {
     this.initFormDefaults();
   }
 
-  async loadMatches(): Promise<void> {
-    const worldCupId = this.context.selectedWorldCupId();
+  async loadMatches(
+    worldCupId: number | null = this.context.selectedWorldCupId(),
+  ): Promise<void> {
+    const token = ++this.loadToken;
     if (worldCupId == null) {
       this.matches.set([]);
+      this.isLoading.set(false);
       return;
     }
     this.isLoading.set(true);
     try {
       const fixtures = await this.matchApi.getFixturesByWorldCup(worldCupId);
+      if (token !== this.loadToken || this.context.selectedWorldCupId() !== worldCupId) {
+        return;
+      }
       this.matches.set(fixtures);
     } catch {
+      if (token !== this.loadToken || this.context.selectedWorldCupId() !== worldCupId) {
+        return;
+      }
       this.errorMessage.set('Failed to load matches.');
     } finally {
-      this.isLoading.set(false);
+      if (token === this.loadToken) {
+        this.isLoading.set(false);
+      }
     }
   }
 

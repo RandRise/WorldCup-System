@@ -9,6 +9,10 @@ import { MatchApiService } from '../../../core/api/match-api.service';
 import { TeamStatsApiService } from '../../../core/api/team-stats-api.service';
 import { TournamentApiService } from '../../../core/api/tournament-api.service';
 import { MatchDetail, Player, ResolveBetsResult } from '../../../core/models/api.models';
+import {
+  PLACEHOLDER_SCORER_NAME,
+  toHonestPlayerName,
+} from '../../../core/utils/placeholder-scorer';
 
 @Component({
   selector: 'app-admin-live-console',
@@ -93,9 +97,9 @@ export class AdminLiveConsoleComponent implements OnInit {
       this.teamTwoPlayers.set(teamTwoPlayers);
 
       this.goalForm.teamId = match.teamOneId;
-      this.goalForm.playerId = teamOnePlayers[0]?.id ?? 0;
+      this.goalForm.playerId = this.playersForTeam(match.teamOneId)[0]?.id ?? 0;
       this.cardForm.teamId = match.teamOneId;
-      this.cardForm.playerId = teamOnePlayers[0]?.id ?? 0;
+      this.cardForm.playerId = this.playersForTeam(match.teamOneId)[0]?.id ?? 0;
 
       const teamOneStats = match.teamOneStats;
       const teamTwoStats = match.teamTwoStats;
@@ -116,12 +120,17 @@ export class AdminLiveConsoleComponent implements OnInit {
     }
   }
 
+  /** Squad picker for live events — excludes import/sync placeholder "Tournament Scorer". */
   playersForTeam(teamId: number): Player[] {
     const match = this.match();
     if (!match) {
       return [];
     }
-    return teamId === match.teamOneId ? this.teamOnePlayers() : this.teamTwoPlayers();
+    const players =
+      teamId === match.teamOneId ? this.teamOnePlayers() : this.teamTwoPlayers();
+    return players.filter(
+      (player) => player.name !== PLACEHOLDER_SCORER_NAME && player.number !== 99,
+    );
   }
 
   onGoalTeamChange(): void {
@@ -278,38 +287,44 @@ export class AdminLiveConsoleComponent implements OnInit {
     const events: { id: number; type: string; minute: number; label: string; teamName?: string | null }[] = [];
 
     for (const goal of match.teamOneStats?.goals ?? []) {
+      const honestName = toHonestPlayerName(goal.playerName);
       events.push({
         id: goal.id,
         type: 'goal',
         minute: goal.minute,
-        label: `${goal.playerName ?? 'Player'}${goal.isOwnGoal ? ' (OG)' : ''}`,
+        label: `${honestName ?? 'Goal'}${goal.isOwnGoal ? ' (OG)' : ''}`,
         teamName: match.teamOneName,
       });
     }
     for (const goal of match.teamTwoStats?.goals ?? []) {
+      const honestName = toHonestPlayerName(goal.playerName);
       events.push({
         id: goal.id,
         type: 'goal',
         minute: goal.minute,
-        label: `${goal.playerName ?? 'Player'}${goal.isOwnGoal ? ' (OG)' : ''}`,
+        label: `${honestName ?? 'Goal'}${goal.isOwnGoal ? ' (OG)' : ''}`,
         teamName: match.teamTwoName,
       });
     }
     for (const card of match.teamOneStats?.cards ?? []) {
+      const honestName = toHonestPlayerName(card.playerName);
+      const cardType = card.type ?? 'Card';
       events.push({
         id: card.id,
         type: 'card',
         minute: card.minute,
-        label: `${card.type} — ${card.playerName ?? 'Player'}`,
+        label: honestName ? `${cardType} — ${honestName}` : cardType,
         teamName: match.teamOneName,
       });
     }
     for (const card of match.teamTwoStats?.cards ?? []) {
+      const honestName = toHonestPlayerName(card.playerName);
+      const cardType = card.type ?? 'Card';
       events.push({
         id: card.id,
         type: 'card',
         minute: card.minute,
-        label: `${card.type} — ${card.playerName ?? 'Player'}`,
+        label: honestName ? `${cardType} — ${honestName}` : cardType,
         teamName: match.teamTwoName,
       });
     }

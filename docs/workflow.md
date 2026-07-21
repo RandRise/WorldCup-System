@@ -119,7 +119,7 @@ Click "Authorize" in Swagger UI, enter `Bearer {token}`.
 
 #### Test protected endpoints
 
-Currently only `User/RemoveUser` and `WeatherForecast` require auth. Expand coverage in Phase 1.
+Mutating endpoints require JWT auth with Admin/User role policies (Phase 1). Use Swagger **Authorize** with `Bearer {token}` after login.
 
 ### 6. MCP Database Exploration
 

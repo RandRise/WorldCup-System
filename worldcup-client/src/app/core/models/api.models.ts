@@ -48,6 +48,7 @@ export interface Player {
   teamId: number;
   positionId: number;
   positionName?: string | null;
+  externalPlayerId?: string | null;
 }
 
 export interface PlayerPosition {
@@ -73,6 +74,7 @@ export interface Match {
   status: string;
   canBet: boolean;
   externalMatchId?: string | null;
+  externalStageId?: string | null;
 }
 
 /** Mirrors Data.Entities.MatchStage */
@@ -354,11 +356,14 @@ export interface ResolveBetsWorldCupResult {
 export interface SetExternalMatchIdRequest {
   matchId: number;
   externalMatchId: string;
+  /** Optional FIFA IdStage for timeline URLs. */
+  externalStageId?: string | null;
 }
 
 export interface SyncMatchResult {
   matchId: number;
   externalMatchId?: string | null;
+  externalStageId?: string | null;
   applied: boolean;
   scoreChanged: boolean;
   teamOneScore: number;
@@ -367,6 +372,10 @@ export interface SyncMatchResult {
   message: string;
   warning?: string | null;
   resolveResult?: ResolveBetsResult | null;
+  /** Applied | AlreadyMatched | Skipped | Warning — null when scorers not attempted. */
+  scorerStatus?: string | null;
+  scorerGoalsUpdated?: number;
+  scorerMessage?: string | null;
 }
 
 export interface SyncFinishedResults {
@@ -374,6 +383,8 @@ export interface SyncFinishedResults {
   matchesAttempted: number;
   matchesApplied: number;
   totalBetsResolved: number;
+  scorersApplied?: number;
+  scorerWarnings?: number;
   message: string;
   results: SyncMatchResult[];
 }

@@ -76,11 +76,12 @@ namespace Data.Context
             modelBuilder.Entity<Team>(e =>
             {
                 e.ToTable("Team");
+                // One Team per Country per World Cup (enforced in TeamService via Group.WorldCupId).
                 e.HasIndex(p => p.CountryId)
-                .IsUnique(true);
+                .IsUnique(false);
                 e.HasOne(e => e.Country)
-                .WithOne(c => c.Team)
-                .HasForeignKey<Team>(e => e.CountryId)
+                .WithMany(c => c.Teams)
+                .HasForeignKey(e => e.CountryId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Country_Team");
                 e.HasOne(e => e.Group)
@@ -89,6 +90,7 @@ namespace Data.Context
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Group_Team");
             });
+
 
             modelBuilder.Entity<Coach>(e =>
             {
@@ -124,6 +126,8 @@ namespace Data.Context
                 e.HasIndex(match => match.ExternalMatchId)
                     .IsUnique()
                     .HasFilter("\"ExternalMatchId\" IS NOT NULL");
+                e.Property(match => match.ExternalStageId)
+                    .HasMaxLength(64);
                 e.HasOne(e => e.Stadium)
                 .WithMany(p => p.Match)
                 .HasForeignKey(e => e.StadiumId)
@@ -166,6 +170,11 @@ namespace Data.Context
                 {
                     player.HasCheckConstraint("CK_Player_Name_Length_Less_Than_64", "Length(\"Name\")<= 64");
                 });
+                e.Property(player => player.ExternalPlayerId)
+                    .HasMaxLength(64);
+                e.HasIndex(player => player.ExternalPlayerId)
+                    .IsUnique()
+                    .HasFilter("\"ExternalPlayerId\" IS NOT NULL");
                 e.HasIndex(p => p.TeamId);
                 e.HasOne(e => e.Team)
                 .WithMany(p => p.Player)

@@ -178,5 +178,44 @@ namespace WorldCup_System.Controllers
                 return ApiErrorHelper.FromException(ex);
             }
         }
+
+        /// <summary>
+        /// Scorers-only backfill for one mapped match (FT score and bets unchanged).
+        /// </summary>
+        [Authorize(Roles = "Admin")]
+        [HttpPost("{matchId}")]
+        public async Task<IActionResult> SyncScorers(int matchId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                SyncMatchResultDTO result = await _matchResultSyncService.SyncScorers(matchId, cancellationToken);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return ApiErrorHelper.FromException(ex);
+            }
+        }
+
+        /// <summary>
+        /// Scorers-only backfill for all mapped fixtures in a World Cup.
+        /// </summary>
+        [Authorize(Roles = "Admin")]
+        [HttpPost]
+        public async Task<IActionResult> SyncScorersForWorldCup(
+            [FromQuery] int worldCupId,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                SyncFinishedResultsDTO result =
+                    await _matchResultSyncService.SyncScorersForWorldCup(worldCupId, cancellationToken);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return ApiErrorHelper.FromException(ex);
+            }
+        }
     }
 }

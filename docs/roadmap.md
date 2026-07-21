@@ -7,9 +7,9 @@
 ---
 ## Completion Roadmap
 
-Ten phases. Checkboxes below reflect a **code audit as of 17 Jul 2026** — checkboxes use Markdown task lists (`[x]` / `[ ]`).
+Thirteen phases. Checkboxes below reflect a **code audit as of 21 Jul 2026** — checkboxes use Markdown task lists (`[x]` / `[ ]`).
 
-> **Success:** **Where you are:** Phases 1–8 complete in code. **Phase 9** — Final scheduled; Final FT after 19 Jul still open. **Phase 10 Tasks 1–3 done**; Task 4 cleanup **planned**. See [plan](changes/phase-10-planned.md) · [styling](changes/phase-10-styling.md) · [fixtures UX](changes/phase-10-fixtures-ux.md) · [sync](changes/phase-10-match-sync.md) · [Changes Review](changes-review.md).
+> **Success:** **Where you are:** Phases 1–12 complete. **Upload packaging open** until commit — [whole-project-upload-gate](changes/whole-project-upload-gate.md). **Phase 13 Planned** — company-scoped competitions (invite code + isolated leaderboards). **Phase 12 Done** (2030 draw + group sim + bracket; unittest **23** / smoke **103**). **Phase 11 Done** (suite **382**). See [phase-13 plan](changes/phase-13-planned.md) · [phase-12 tests gate](changes/phase-12-tests-gate.md) · [phase-12 plan](changes/phase-12-planned.md) · [phase-11 tests gate](changes/phase-11-tests-gate.md) · [Changes Review](changes-review.md).
 
 <a id="phase-1"></a>
 
@@ -131,12 +131,12 @@ User/admin hubs, live console, bet resolve hardening. See [Changes Review](chang
 <a id="phase-9"></a>
 <a id="whats-left"></a>
 
-### Phase 9 — Ops Hardening & Tournament Close-Out **[In progress]**
+### Phase 9 — Ops Hardening & Tournament Close-Out **[Done]**
 
-Ship the Phase 7–8 working tree, keep WC 2026 data current through the Final, and clear accepted knockout debt. Product phases 1–8 are done; this phase is ops / polish.
+Ship the Phase 7–8 working tree, keep WC 2026 data current through the Final, and clear accepted knockout debt. Product phases 1–8 are done; this phase is ops / polish. Detail: [phase-9-ops-closeout](changes/phase-9-ops-closeout.md).
 
 - [x] Schedule Final fixture (Argentina vs Spain, 19 Jul) for betting — *`scripts/add_sf2_and_final.py` — MatchId 116 present*
-- [ ] Record Final result after FT — *Admin live console or extend `import_wc2026_finished_matches.py` (after 19 Jul)*
+- [x] Record Final result after FT — *Argentina 0–1 Spain a.e.t. (Ferran Torres 106'); `add_sf2_and_final.py` apply + import MATCHES; bets resolved*
 - [x] Optional ThirdPlace match — *Skipped for this tournament path*
 - [x] Apply `AddMatchStage` migration + Feeder* repair on API start — *`MigrateAsync` + IF NOT EXISTS in `Program.cs`; Feeder* columns confirmed*
 - [x] Commit Phase 7–8 working tree — *`dcb322b` (sync/knockout) + `7886b40` (SPA/scripts/standings)*
@@ -144,9 +144,9 @@ Ship the Phase 7–8 working tree, keep WC 2026 data current through the Final, 
 
 <a id="phase-10"></a>
 
-### Phase 10 — Match Sync, Fixtures UX, Visual Polish & Cleanup **[In progress]**
+### Phase 10 — Match Sync, Fixtures UX, Visual Polish & Cleanup **[Done]**
 
-Post-match result sync + bet resolve, fixtures betting priority UX, World Cup–fitting visual polish, and workspace cleanup. **Tasks 1–3 complete** (reviewed + tested); Task 4 not started. Detail: [phase-10-match-sync](changes/phase-10-match-sync.md) · [phase-10-fixtures-ux](changes/phase-10-fixtures-ux.md) · [phase-10-styling](changes/phase-10-styling.md) · [phase-10-planned](changes/phase-10-planned.md).
+Post-match result sync + bet resolve, fixtures betting priority UX, World Cup–fitting visual polish, and workspace cleanup. **Tasks 1–4 complete.** Detail: [phase-10-match-sync](changes/phase-10-match-sync.md) · [phase-10-fixtures-ux](changes/phase-10-fixtures-ux.md) · [phase-10-styling](changes/phase-10-styling.md) · [phase-10-cleanup](changes/phase-10-cleanup.md) · [phase-10-planned](changes/phase-10-planned.md).
 
 **Task 1 — Post-match sync (done)**
 
@@ -166,6 +166,97 @@ Post-match result sync + bet resolve, fixtures betting priority UX, World Cup–
 
 - [x] Professional World Cup styling — black/white/gold atmosphere, stadium-fit backgrounds, stronger typography across SPA — *theme tokens + public pages; [detail](changes/phase-10-styling.md); Jasmine **25** + API **268***
 
-**Task 4 — still open**
+**Task 4 — cleanup (done)**
 
-- [ ] Project cleanup scan — remove duplicates, dead code, and assets we will never use — *workspace + solution; keep one canonical client/docs tree*
+- [x] Project cleanup scan — remove duplicates, dead code, and assets we will never use — *removed stale root `worldcup-client` + orphan dump; dual docs kept as VitePress + git mirror; [detail](changes/phase-10-cleanup.md)*
+
+<a id="phase-11"></a>
+
+### Phase 11 — Real Goalscorers from FIFA Timeline **[Done]**
+
+Post-match import of real Goal! events from FIFA’s timeline API so Recent events and match timelines show true scorers (not round-robin squad forwards / `"Tournament Scorer"`). Extends Phase 10 score-only sync. **Tasks 1–8 done** (gate closed; Bugbot highs fixed; suite **382**). Detail: [phase-11-tests-gate](changes/phase-11-tests-gate.md) · [phase-11-planned](changes/phase-11-planned.md) · [Task 1](changes/phase-11-external-stage.md) · [Task 2](changes/phase-11-timeline-provider.md) · [Task 3](changes/phase-11-player-resolve.md) · [Task 4](changes/phase-11-scorer-apply.md) · [Task 5](changes/phase-11-sync-wire.md) · [Task 6](changes/phase-11-backfill.md) · [Task 7](changes/phase-11-recent-events-honesty.md).
+
+**Task 1 — External stage id (`p11-external-stage`) (done)**
+
+- [x] Persist or resolve FIFA `IdStage` for timeline URLs — *column `ExternalStageId`; calendar parse + auto-persist on sync; `SetExternalMatchId` accepts optional stage; migration `AddMatchExternalStageId`*
+
+**Task 2 — Timeline provider (`p11-timeline-provider`) (done)**
+
+- [x] FIFA timeline HTTP provider — parse Goal! (and own-goal / penalty as decided) → minute, team, player name/id — *`FifaTimelineEventsProvider` + `TimelineBaseUrl`; Goal!/Own Goal/Penalty Goal*
+
+**Task 3 — Player identity (`p11-player-resolve`) (done)**
+
+- [x] Resolve FIFA player → local `Player` — *`TimelinePlayerResolver`; `ExternalPlayerId` column; exact → normalized → create; no Tournament Scorer when real name exists* — *[detail](changes/phase-11-player-resolve.md)*
+
+**Task 4 — Scorer apply (`p11-scorer-apply`) (done)**
+
+- [x] Idempotent Goal rewrite when timeline counts align with FT — *`TimelineScorerApplyService`; update PlayerId + TimeScored + IsOwnGoal; count mismatch throws; no bets/knockout* — *[detail](changes/phase-11-scorer-apply.md)*
+
+**Task 5 — Wire sync APIs (`p11-sync-wire`) (done; gate closed)**
+
+- [x] Call timeline + apply from `SyncResult` / `SyncFinishedResults` — *scorer outcome in sync DTO/message; batch continues on per-match warnings; `BatchDelayMilliseconds`; Bugbot clean; **8** wiring + suite **361*** — *[detail](changes/phase-11-sync-wire.md)*
+
+**Task 6 — Backfill (`p11-backfill`) (done; gate closed)**
+
+- [x] Admin scorers-only sync for finished mapped matches — *`SyncScorers` / `SyncScorersForWorldCup` + `scripts/sync_scorers_backfill.ps1`; no FT/bets; empty timeline → Skipped; Bugbot highs fixed; **14** backfill + suite **375*** — *[detail](changes/phase-11-backfill.md)*
+
+**Task 7 — Recent events honesty (`p11-recent-events-honesty`) (done; gate closed)**
+
+- [x] Hide or omit `"Tournament Scorer"` / placeholder names in Recent events (and match timelines) — *API `ToHonestPlayerName` + fixtures/admin client sanitizer; name-only (not jersey 99 alone); Bugbot clean; honesty **3** + suite **380*** — *[detail](changes/phase-11-recent-events-honesty.md)*
+
+**Task 8 — Tests & review gate (`p11-tests-gate`) (done; gate closed)**
+
+- [x] Unit tests + Bugbot/docs review + `dotnet test` green — *Bugbot highs fixed (cancel rethrow + jersey-99 name-only); **+2** regressions; suite **382*** — *[detail](changes/phase-11-tests-gate.md)*
+
+<a id="phase-12"></a>
+
+### Phase 12 — 2030 World Cup Simulation **[Done]**
+
+Offline Python simulation: lock six 2030 hosts, random 42 other teams, 12 groups, simulate group stage, then R32→Final bracket from standings (knockout scores open for Admin). **Tasks 1–4 done** (cup + draw + 72 group + bracket + smoke/unittest gate closed). Detail: [phase-12-planned](changes/phase-12-planned.md) · [Task 4 gate](changes/phase-12-tests-gate.md) · [Task 1 draw](changes/phase-12-draw.md) · [Task 2 group sim](changes/phase-12-group-sim.md) · [Task 3 bracket](changes/phase-12-bracket.md).
+
+**Task 1 — Draw (`p12-draw`) (done)**
+
+- [x] Document Phase 12 plan (hosts+random, hybrid sim, Python scripts) — *`docs/changes/phase-12-planned.md`*
+- [x] `simulate_wc2030.py` — ensure WorldCup 2030, hosts + random 42, draw groups A–L — *multi-cup: non-unique `Team.CountryId`; [detail](changes/phase-12-draw.md)*
+
+**Task 2 — Group simulation (`p12-group-sim`) (done)**
+
+- [x] Schedule 72 group matches; simulate scores/goals/stats — *Poisson λ≈1.35; `--wipe-matches` 2030-only; unittest **14**; [detail](changes/phase-12-group-sim.md)*
+
+**Task 3 — Qualify + bracket (`p12-bracket`) (done)**
+
+- [x] Best-thirds qualification + R32→Final bracket with feeder FKs — *FIFA Art. 12 skeleton; 31 KO matches; unittest **22**; smoke 103; [detail](changes/phase-12-bracket.md)*
+
+**Task 4 — Smoke + gate (`p12-tests-gate`) (done)**
+
+- [x] Smoke run + Bugbot/docs review gate — *unittest **23** OK; smoke **103**; Bugbot highs fixed (cross-cup + demo kickoffs); [detail](changes/phase-12-tests-gate.md)*
+
+<a id="phase-13"></a>
+
+### Phase 13 — Company-Scoped Competitions **[Planned]**
+
+Soft multi-tenancy for workplace prediction pools: shared World Cup data, isolated membership and leaderboards. Portfolio-scoped v1 (invite codes; no branding/subdomains/billing). Detail: [phase-13-planned](changes/phase-13-planned.md).
+
+**Task 1 — Docs (`docs`) (done)**
+
+- [x] Document Phase 13 plan (company model, invite join, scoped leaderboard, non-goals) — *`docs/changes/phase-13-planned.md`*
+
+**Task 2 — Company model (`p13-company-model`) (planned)**
+
+- [ ] `Company` entity + `User.CompanyId` + migration + repos — *invite code unique; seed `CompanyAdmin` role*
+
+**Task 3 — Company API (`p13-company-api`) (planned)**
+
+- [ ] Create / join / mine / rotate invite / members endpoints — *Admin creates; User joins by code; CompanyAdmin rotates*
+
+**Task 4 — Leaderboard scope (`p13-leaderboard-scope`) (planned)**
+
+- [ ] Authorize + filter `GetLeaderboard` by caller’s company — *no cross-company rows; optional `worldCupId` kept*
+
+**Task 5 — SPA (`p13-spa`) (planned)**
+
+- [ ] Join-company UX + company-scoped leaderboard + light CompanyAdmin UI — *reuse existing theme; no branding work*
+
+**Task 6 — Tests & gate (`p13-tests-gate`) (planned)**
+
+- [ ] Unit/integration isolation tests + Bugbot/docs review + `dotnet test` green — *two-company leak regression required*

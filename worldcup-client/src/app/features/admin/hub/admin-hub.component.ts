@@ -22,6 +22,8 @@ export class AdminHubComponent implements OnInit {
   private readonly referenceApi = inject(ReferenceApiService);
   protected readonly context = inject(WorldCupContextService);
 
+  private loadToken = 0;
+
   protected readonly isLoading = signal(false);
   protected readonly message = signal<string | null>(null);
   protected readonly errorMessage = signal<string | null>(null);
@@ -34,8 +36,8 @@ export class AdminHubComponent implements OnInit {
 
   constructor() {
     effect(() => {
-      this.context.selectedWorldCupId();
-      void this.loadCounts();
+      const worldCupId = this.context.selectedWorldCupId();
+      void this.loadCounts(worldCupId);
     });
   }
 
@@ -49,26 +51,36 @@ export class AdminHubComponent implements OnInit {
     kickoff.setUTCDate(kickoff.getUTCDate() + 1);
     kickoff.setUTCHours(18, 0, 0, 0);
     this.bracketKickoff.set(kickoff.toISOString().slice(0, 16));
-    await this.loadCounts();
   }
 
-  async loadCounts(): Promise<void> {
-    const worldCupId = this.context.selectedWorldCupId();
+  async loadCounts(
+    worldCupId: number | null = this.context.selectedWorldCupId(),
+  ): Promise<void> {
+    const token = ++this.loadToken;
     if (worldCupId == null) {
       this.liveMatchCount.set(0);
       this.finishedMatchCount.set(0);
+      this.isLoading.set(false);
       return;
     }
 
     this.isLoading.set(true);
     try {
       const fixtures = await this.matchApi.getFixturesByWorldCup(worldCupId);
+      if (token !== this.loadToken || this.context.selectedWorldCupId() !== worldCupId) {
+        return;
+      }
       this.liveMatchCount.set(fixtures.filter((match) => match.status === 'Live').length);
       this.finishedMatchCount.set(fixtures.filter((match) => match.status === 'Finished').length);
     } catch {
+      if (token !== this.loadToken || this.context.selectedWorldCupId() !== worldCupId) {
+        return;
+      }
       this.errorMessage.set('Failed to load match counts.');
     } finally {
-      this.isLoading.set(false);
+      if (token === this.loadToken) {
+        this.isLoading.set(false);
+      }
     }
   }
 

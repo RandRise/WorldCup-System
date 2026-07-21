@@ -266,6 +266,10 @@ namespace Data.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<string>("ExternalStageId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<int>("StadiumId")
                         .HasColumnType("integer");
 
@@ -309,6 +313,10 @@ namespace Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("ExternalPlayerId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -323,6 +331,10 @@ namespace Data.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ExternalPlayerId")
+                        .IsUnique()
+                        .HasFilter("\"ExternalPlayerId\" IS NOT NULL");
 
                     b.HasIndex("PositionId");
 
@@ -396,8 +408,7 @@ namespace Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CountryId")
-                        .IsUnique();
+                    b.HasIndex("CountryId");
 
                     b.HasIndex("GroupId");
 
@@ -405,6 +416,7 @@ namespace Data.Migrations
                 });
 
             modelBuilder.Entity("Data.Entities.TeamStats", b =>
+
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -827,8 +839,8 @@ namespace Data.Migrations
             modelBuilder.Entity("Data.Entities.Team", b =>
                 {
                     b.HasOne("Data.Entities.Country", "Country")
-                        .WithOne("Team")
-                        .HasForeignKey("Data.Entities.Team", "CountryId")
+                        .WithMany("Teams")
+                        .HasForeignKey("CountryId")
                         .IsRequired()
                         .HasConstraintName("FK_Country_Team");
 
@@ -842,6 +854,7 @@ namespace Data.Migrations
 
                     b.Navigation("Group");
                 });
+
 
             modelBuilder.Entity("Data.Entities.TeamStats", b =>
                 {
@@ -927,8 +940,7 @@ namespace Data.Migrations
                 {
                     b.Navigation("Cities");
 
-                    b.Navigation("Team")
-                        .IsRequired();
+                    b.Navigation("Teams");
                 });
 
             modelBuilder.Entity("Data.Entities.Group", b =>

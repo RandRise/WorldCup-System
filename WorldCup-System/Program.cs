@@ -119,6 +119,8 @@ builder.Services.AddScoped<IStandingsService, StandingsService>();
 builder.Services.AddScoped<IBetService, BetService>();
 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 builder.Services.AddScoped<IMatchResultSyncService, MatchResultSyncService>();
+builder.Services.AddScoped<ITimelinePlayerResolver, TimelinePlayerResolver>();
+builder.Services.AddScoped<ITimelineScorerApplyService, TimelineScorerApplyService>();
 builder.Services.Configure<MatchResultSyncOptions>(
     builder.Configuration.GetSection(MatchResultSyncOptions.SectionName));
 builder.Services.AddHttpClient<IExternalMatchResultProvider, FifaCalendarMatchResultProvider>((serviceProvider, client) =>
@@ -127,6 +129,15 @@ builder.Services.AddHttpClient<IExternalMatchResultProvider, FifaCalendarMatchRe
         .GetRequiredService<Microsoft.Extensions.Options.IOptions<MatchResultSyncOptions>>()
         .Value;
     client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(30);
+    client.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "application/json");
+});
+builder.Services.AddHttpClient<IExternalMatchEventsProvider, FifaTimelineEventsProvider>((serviceProvider, client) =>
+{
+    MatchResultSyncOptions options = serviceProvider
+        .GetRequiredService<Microsoft.Extensions.Options.IOptions<MatchResultSyncOptions>>()
+        .Value;
+    client.BaseAddress = new Uri(options.TimelineBaseUrl.TrimEnd('/') + "/");
     client.Timeout = TimeSpan.FromSeconds(30);
     client.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "application/json");
 });
@@ -243,6 +254,11 @@ using (var scope = app.Services.CreateScope())
             CREATE INDEX IF NOT EXISTS "IX_Match_Stage" ON "Match" ("Stage");
             ALTER TABLE "Match" ADD COLUMN IF NOT EXISTS "ExternalMatchId" character varying(64) NULL;
             CREATE UNIQUE INDEX IF NOT EXISTS "IX_Match_ExternalMatchId" ON "Match" ("ExternalMatchId") WHERE "ExternalMatchId" IS NOT NULL;
+            ALTER TABLE "Match" ADD COLUMN IF NOT EXISTS "ExternalStageId" character varying(64) NULL;
+            ALTER TABLE "Player" ADD COLUMN IF NOT EXISTS "ExternalPlayerId" character varying(64) NULL;
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_Player_ExternalPlayerId" ON "Player" ("ExternalPlayerId") WHERE "ExternalPlayerId" IS NOT NULL;
+            DROP INDEX IF EXISTS "IX_Team_CountryId";
+            CREATE INDEX IF NOT EXISTS "IX_Team_CountryId" ON "Team" ("CountryId");
             """);
     }
 

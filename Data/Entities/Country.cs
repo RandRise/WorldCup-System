@@ -9,7 +9,7 @@
         public string? Flag { get; set; }
 
         public ICollection<City> Cities { get; set; }
-        public Team Team { get; set; }
+        public ICollection<Team> Teams { get; set; } = new List<Team>();
 
     }
 }

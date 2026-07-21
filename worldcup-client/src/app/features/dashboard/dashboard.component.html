@@ -2,8 +2,9 @@
   <header class="page-header">
     <div>
       <h1>Your dashboard</h1>
-      <p>Welcome back, {{ auth.currentUser()?.name }}.</p>
+      <p>Welcome back, {{ auth.currentUser()?.name }}. Showing {{ context.selectedWorldCupLabel() }}.</p>
     </div>
+    <app-world-cup-selector />
   </header>
 
   @if (errorMessage()) {

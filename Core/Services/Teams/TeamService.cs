@@ -50,10 +50,10 @@ namespace Core.Services.Teams
             Country country = await _repository.Country.GetByIdAsync(teamDto.CountryId);
             Group group = await _repository.Group.GetByIdAsync(teamDto.GroupId);
 
-            bool countryHasTeam = _repository.Team.Find(team => team.CountryId == teamDto.CountryId).Any();
-            if (countryHasTeam)
+            if (CountryAlreadyHasTeamInWorldCup(teamDto.CountryId, group.WorldCupId, excludeTeamId: null))
             {
-                throw new InvalidOperationException($"Country with ID {teamDto.CountryId} already has a team.");
+                throw new InvalidOperationException(
+                    $"Country with ID {teamDto.CountryId} already has a team in World Cup {group.WorldCupId}.");
             }
 
             Team team = new Team
@@ -72,23 +72,28 @@ namespace Core.Services.Teams
         public async Task UpdateTeam(UpdateTeamDTO teamDto)
         {
             Team team = await _repository.Team.GetByIdAsync(teamDto.Id);
+            Group group = await _repository.Group.GetByIdAsync(teamDto.GroupId);
+            Group currentGroup = await _repository.Group.GetByIdAsync(team.GroupId);
+
+            EnsureSameWorldCup(team.Id, currentGroup.WorldCupId, group.WorldCupId);
+
+            if (team.CountryId != teamDto.CountryId
+                || team.GroupId != teamDto.GroupId)
+            {
+                if (CountryAlreadyHasTeamInWorldCup(teamDto.CountryId, group.WorldCupId, excludeTeamId: teamDto.Id))
+                {
+                    throw new InvalidOperationException(
+                        $"Country with ID {teamDto.CountryId} already has a team in World Cup {group.WorldCupId}.");
+                }
+            }
 
             if (team.CountryId != teamDto.CountryId)
             {
                 Country country = await _repository.Country.GetByIdAsync(teamDto.CountryId);
-                bool countryHasTeam = _repository.Team
-                    .Find(existingTeam => existingTeam.CountryId == teamDto.CountryId && existingTeam.Id != teamDto.Id)
-                    .Any();
-                if (countryHasTeam)
-                {
-                    throw new InvalidOperationException($"Country with ID {teamDto.CountryId} already has a team.");
-                }
-
                 team.CountryId = teamDto.CountryId;
                 team.Country = country;
             }
 
-            Group group = await _repository.Group.GetByIdAsync(teamDto.GroupId);
             team.GroupId = teamDto.GroupId;
             team.Group = group;
 
@@ -100,6 +105,16 @@ namespace Core.Services.Teams
         {
             Team team = await _repository.Team.GetByIdAsync(assignDto.TeamId);
             Group group = await _repository.Group.GetByIdAsync(assignDto.GroupId);
+            Group currentGroup = await _repository.Group.GetByIdAsync(team.GroupId);
+
+            EnsureSameWorldCup(team.Id, currentGroup.WorldCupId, group.WorldCupId);
+
+            if (team.GroupId != assignDto.GroupId
+                && CountryAlreadyHasTeamInWorldCup(team.CountryId, group.WorldCupId, excludeTeamId: team.Id))
+            {
+                throw new InvalidOperationException(
+                    $"Country with ID {team.CountryId} already has a team in World Cup {group.WorldCupId}.");
+            }
 
             team.GroupId = assignDto.GroupId;
             team.Group = group;
@@ -145,6 +160,39 @@ namespace Core.Services.Teams
 
             _repository.Team.Delete(team);
             await _repository.SaveAsync();
+        }
+
+        /// <summary>
+        /// Multi-cup: a team stays inside one World Cup; never reassign across cups.
+        /// </summary>
+        private static void EnsureSameWorldCup(int teamId, int currentWorldCupId, int targetWorldCupId)
+        {
+            if (currentWorldCupId != targetWorldCupId)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot move team {teamId} from World Cup {currentWorldCupId} to World Cup {targetWorldCupId}.");
+            }
+        }
+
+        /// <summary>
+        /// Same country may appear in multiple World Cups, but only once per cup.
+        /// </summary>
+        private bool CountryAlreadyHasTeamInWorldCup(int countryId, int worldCupId, int? excludeTeamId)
+        {
+            List<Team> countryTeams = _repository.Team
+                .Find(existingTeam => existingTeam.CountryId == countryId)
+                .Where(existingTeam => !excludeTeamId.HasValue || existingTeam.Id != excludeTeamId.Value)
+                .ToList();
+
+            if (countryTeams.Count == 0)
+            {
+                return false;
+            }
+
+            HashSet<int> groupIds = countryTeams.Select(existingTeam => existingTeam.GroupId).ToHashSet();
+            return _repository.Group
+                .Find(group => groupIds.Contains(group.Id) && group.WorldCupId == worldCupId)
+                .Any();
         }
     }
 }

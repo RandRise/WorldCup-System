@@ -98,7 +98,8 @@ namespace Core.Services.Players
                 Number = player.Number,
                 TeamId = player.TeamId,
                 PositionId = player.PositionId,
-                PositionName = positions.FirstOrDefault(position => position.Id == player.PositionId)?.Name
+                PositionName = positions.FirstOrDefault(position => position.Id == player.PositionId)?.Name,
+                ExternalPlayerId = player.ExternalPlayerId
             };
         }
     }

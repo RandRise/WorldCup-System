@@ -1,0 +1,313 @@
+country,number,name,position
+# Group A
+Mexico,1,Luis Malagón,GK
+Mexico,5,Johan Vásquez,DEF
+Mexico,4,Edson Álvarez,MID
+Mexico,10,Alexis Vega,FWD
+Mexico,9,Santiago Giménez,FWD
+Mexico,22,Hirving Lozano,FWD
+South Korea,1,Kim Seung-gyu,GK
+South Korea,4,Kim Min-jae,DEF
+South Korea,6,Hwang In-beom,MID
+South Korea,7,Son Heung-min,FWD
+South Korea,9,Cho Gue-sung,FWD
+South Korea,18,Lee Kang-in,MID
+South Africa,1,Ronwen Williams,GK
+South Africa,5,Khuliso Mudau,DEF
+South Africa,8,Teboho Mokoena,MID
+South Africa,9,Evidence Makgopa,FWD
+South Africa,10,Percy Tau,FWD
+South Africa,17,Themba Zwane,MID
+Czech Republic,1,Jindřich Staněk,GK
+Czech Republic,3,Tomáš Holeš,DEF
+Czech Republic,8,Tomáš Souček,MID
+Czech Republic,9,Patrik Schick,FWD
+Czech Republic,10,Adam Hložek,FWD
+Czech Republic,14,Lukáš Provod,MID
+# Group B
+Canada,1,Maxime Crépeau,GK
+Canada,4,Kamal Miller,DEF
+Canada,7,Stephen Eustáquio,MID
+Canada,10,Jonathan David,FWD
+Canada,17,Cyle Larin,FWD
+Canada,19,Alphonso Davies,MID
+Switzerland,1,Yann Sommer,GK
+Switzerland,5,Manuel Akanji,DEF
+Switzerland,8,Remo Freuler,MID
+Switzerland,7,Breel Embolo,FWD
+Switzerland,9,Noah Okafor,FWD
+Switzerland,17,Ruben Vargas,FWD
+Qatar,1,Meshaal Barsham,GK
+Qatar,5,Tarek Salman,DEF
+Qatar,8,Abdulaziz Hatem,MID
+Qatar,10,Akram Afif,FWD
+Qatar,11,Almoez Ali,FWD
+Qatar,19,Almahdi Ali,MID
+Bosnia and Herzegovina,1,Nikola Vasilj,GK
+Bosnia and Herzegovina,4,Ermin Bičakčić,DEF
+Bosnia and Herzegovina,8,Amir Hadžiahmetović,MID
+Bosnia and Herzegovina,9,Edin Džeko,FWD
+Bosnia and Herzegovina,10,Ermedin Demirović,FWD
+Bosnia and Herzegovina,11,Edin Višća,MID
+# Group C
+Brazil,1,Alisson,GK
+Brazil,4,Marquinhos,DEF
+Brazil,5,Casemiro,MID
+Brazil,10,Vinícius Júnior,FWD
+Brazil,9,Richarlison,FWD
+Brazil,11,Raphinha,FWD
+Brazil,20,Rodrygo,FWD
+Morocco,1,Yassine Bounou,GK
+Morocco,2,Achraf Hakimi,DEF
+Morocco,4,Sofyan Amrabat,MID
+Morocco,7,Hakim Ziyech,MID
+Morocco,9,Youssef En-Nesyri,FWD
+Morocco,17,Sofiane Boufal,FWD
+Scotland,1,Angus Gunn,GK
+Scotland,5,Scott McKenna,DEF
+Scotland,8,John McGinn,MID
+Scotland,9,Lyndon Dykes,FWD
+Scotland,10,Che Adams,FWD
+Scotland,11,Ryan Christie,MID
+Haiti,1,Johny Placide,GK
+Haiti,4,Ricardo Adé,DEF
+Haiti,8,Bryan Alceus,MID
+Haiti,9,Duckens Nazon,FWD
+Haiti,10,Frantzdy Pierrot,FWD
+Haiti,11,Derrick Etienne,MID
+# Group D
+United States,1,Matt Turner,GK
+United States,3,Antonee Robinson,DEF
+United States,8,Weston McKennie,MID
+United States,7,Christian Pulisic,FWD
+United States,9,Folarin Balogun,FWD
+United States,10,Timothy Weah,FWD
+United States,21,Ricardo Pepi,FWD
+Paraguay,1,Antony Silva,GK
+Paraguay,5,Gustavo Gómez,DEF
+Paraguay,8,Mathías Villasanti,MID
+Paraguay,9,Antonio Sanabria,FWD
+Paraguay,10,Miguel Almirón,FWD
+Paraguay,11,Julio Enciso,FWD
+Australia,1,Mathew Ryan,GK
+Australia,4,Harry Souttar,DEF
+Australia,8,Jackson Irvine,MID
+Australia,7,Mathew Leckie,FWD
+Australia,9,Jamie Maclaren,FWD
+Australia,10,Ajdin Hrustic,MID
+Turkey,1,Uğurcan Çakır,GK
+Turkey,4,Çağlar Söyüncü,DEF
+Turkey,6,Hakan Çalhanoğlu,MID
+Turkey,7,Kerem Aktürkoğlu,FWD
+Turkey,9,Cenk Tosun,FWD
+Turkey,10,Arda Güler,MID
+# Group E
+Germany,1,Manuel Neuer,GK
+Germany,2,Antonio Rüdiger,DEF
+Germany,6,Joshua Kimmich,MID
+Germany,7,Kai Havertz,FWD
+Germany,9,Niclas Füllkrug,FWD
+Germany,10,Jamal Musiala,MID
+Germany,19,Leroy Sané,FWD
+Ecuador,1,Hernán Galíndez,GK
+Ecuador,3,Piero Hincapié,DEF
+Ecuador,8,Carlos Gruezo,MID
+Ecuador,9,Enner Valencia,FWD
+Ecuador,10,Kendry Páez,MID
+Ecuador,13,Leonardo Campana,FWD
+Côte d'Ivoire,1,Yahia Fofana,GK
+Côte d'Ivoire,5,Wilfried Singo,DEF
+Côte d'Ivoire,8,Franck Kessié,MID
+Côte d'Ivoire,9,Sébastien Haller,FWD
+Côte d'Ivoire,10,Nicolas Pépé,FWD
+Côte d'Ivoire,11,Jean-Philippe Mateta,FWD
+Curaçao,1,Eloy Room,GK
+Curaçao,4,Cuco Martina,DEF
+Curaçao,8,Leandro Bacuna,MID
+Curaçao,9,Jurgen Locadia,FWD
+Curaçao,10,Juninho Bacuna,MID
+Curaçao,11,Kenji Gorré,FWD
+# Group F
+Netherlands,1,Bart Verbruggen,GK
+Netherlands,4,Virgil van Dijk,DEF
+Netherlands,8,Frenkie de Jong,MID
+Netherlands,7,Xavi Simons,MID
+Netherlands,9,Wout Weghorst,FWD
+Netherlands,10,Memphis Depay,FWD
+Netherlands,11,Cody Gakpo,FWD
+Japan,1,Zion Suzuki,GK
+Japan,4,Ko Itakura,DEF
+Japan,6,Wataru Endo,MID
+Japan,8,Takumi Minamino,MID
+Japan,9,Ayase Ueda,FWD
+Japan,10,Takefusa Kubo,FWD
+Tunisia,1,Aymen Dahmen,GK
+Tunisia,3,Montassar Talbi,DEF
+Tunisia,8,Ellyes Skhiri,MID
+Tunisia,9,Seifeddine Jaziri,FWD
+Tunisia,10,Wahbi Khazri,FWD
+Tunisia,7,Youssef Msakni,FWD
+Sweden,1,Robin Olsen,GK
+Sweden,3,Victor Lindelöf,DEF
+Sweden,8,Dejan Kulusevski,MID
+Sweden,7,Viktor Gyökeres,FWD
+Sweden,9,Alexander Isak,FWD
+Sweden,10,Emil Forsberg,MID
+# Group G
+Belgium,1,Koen Casteels,GK
+Belgium,2,Timothy Castagne,DEF
+Belgium,6,Amadou Onana,MID
+Belgium,7,Kevin De Bruyne,MID
+Belgium,9,Romelu Lukaku,FWD
+Belgium,10,Youri Tielemans,MID
+Belgium,11,Leandro Trossard,FWD
+Iran,1,Alireza Beiranvand,GK
+Iran,4,Shojae Khalilzadeh,DEF
+Iran,6,Saeid Ezatolahi,MID
+Iran,7,Alireza Jahanbakhsh,FWD
+Iran,9,Mehdi Taremi,FWD
+Iran,10,Sardar Azmoun,FWD
+Egypt,1,Mohamed El Shenawy,GK
+Egypt,6,Ahmed Hegazi,DEF
+Egypt,8,Mohamed Elneny,MID
+Egypt,10,Mohamed Salah,FWD
+Egypt,9,Mostafa Mohamed,FWD
+Egypt,14,Trezeguet,MID
+New Zealand,1,Max Crocombe,GK
+New Zealand,4,Tommy Smith,DEF
+New Zealand,8,Joe Bell,MID
+New Zealand,9,Chris Wood,FWD
+New Zealand,10,Matthew Garbett,MID
+New Zealand,11,Sarpreet Singh,MID
+# Group H
+Spain,1,Unai Simón,GK
+Spain,3,Robin Le Normand,DEF
+Spain,8,Fabián Ruiz,MID
+Spain,9,Álvaro Morata,FWD
+Spain,10,Dani Olmo,MID
+Spain,7,Ferran Torres,FWD
+Spain,11,Nico Williams,FWD
+Spain,19,Lamine Yamal,FWD
+Spain,16,Rodri,MID
+Uruguay,1,Sergio Rochet,GK
+Uruguay,3,Ronald Araújo,DEF
+Uruguay,6,Manuel Ugarte,MID
+Uruguay,9,Luis Suárez,FWD
+Uruguay,11,Darwin Núñez,FWD
+Uruguay,8,Federico Valverde,MID
+Saudi Arabia,1,Mohammed Al-Owais,GK
+Saudi Arabia,4,Ali Al-Bulaihi,DEF
+Saudi Arabia,8,Nasser Al-Dawsari,MID
+Saudi Arabia,9,Firas Al-Buraikan,FWD
+Saudi Arabia,10,Salem Al-Dawsari,FWD
+Saudi Arabia,11,Saleh Al-Shehri,FWD
+Cape Verde,1,Vozinha,GK
+Cape Verde,4,Stopira,DEF
+Cape Verde,8,Jamiro Monteiro,MID
+Cape Verde,9,Garry Rodrigues,FWD
+Cape Verde,10,Ryan Mendes,FWD
+Cape Verde,11,Bebé,FWD
+# Group I
+France,1,Mike Maignan,GK
+France,5,Jules Koundé,DEF
+France,6,Aurélien Tchouaméni,MID
+France,7,Antoine Griezmann,FWD
+France,9,Olivier Giroud,FWD
+France,10,Kylian Mbappé,FWD
+France,11,Ousmane Dembélé,FWD
+Senegal,1,Édouard Mendy,GK
+Senegal,3,Kalidou Koulibaly,DEF
+Senegal,8,Pape Gueye,MID
+Senegal,9,Boulaye Dia,FWD
+Senegal,10,Sadio Mané,FWD
+Senegal,18,Ismaïla Sarr,FWD
+Norway,1,Ørjan Nyland,GK
+Norway,4,Kristoffer Ajer,DEF
+Norway,8,Martin Ødegaard,MID
+Norway,9,Erling Haaland,FWD
+Norway,10,Alexander Sørloth,FWD
+Norway,11,Oscar Bobb,MID
+Iraq,1,Jalal Hassan,GK
+Iraq,4,Ali Adnan,DEF
+Iraq,8,Ibrahim Bayesh,MID
+Iraq,9,Aymen Hussein,FWD
+Iraq,10,Ali Al-Hamadi,FWD
+Iraq,11,Mohannad Abdul-Raheem,FWD
+# Group J
+Argentina,1,Emiliano Martínez,GK
+Argentina,4,Gonzalo Montiel,DEF
+Argentina,7,Rodrigo De Paul,MID
+Argentina,10,Lionel Messi,FWD
+Argentina,9,Julián Álvarez,FWD
+Argentina,11,Ángel Di María,FWD
+Argentina,22,Lautaro Martínez,FWD
+Austria,1,Patrick Pentz,GK
+Austria,3,David Alaba,DEF
+Austria,8,Marcel Sabitzer,MID
+Austria,9,Marko Arnautović,FWD
+Austria,10,Christoph Baumgartner,MID
+Austria,11,Michael Gregoritsch,FWD
+Algeria,1,Anthony Mandrea,GK
+Algeria,4,Aïssa Mandi,DEF
+Algeria,8,Ismaël Bennacer,MID
+Algeria,9,Baghdad Bounedjah,FWD
+Algeria,10,Riyad Mahrez,FWD
+Algeria,7,Said Benrahma,FWD
+Jordan,1,Yazeed Abulaila,GK
+Jordan,4,Abdallah Nasib,DEF
+Jordan,8,Noor Al-Rawabdeh,MID
+Jordan,9,Ali Olwan,FWD
+Jordan,10,Musa Al-Taamari,FWD
+Jordan,11,Yazan Al-Naimat,FWD
+# Group K
+Portugal,1,Diogo Costa,GK
+Portugal,3,Rúben Dias,DEF
+Portugal,8,Bruno Fernandes,MID
+Portugal,7,Cristiano Ronaldo,FWD
+Portugal,9,Gonçalo Ramos,FWD
+Portugal,10,Bernardo Silva,MID
+Portugal,17,Rafael Leão,FWD
+Colombia,1,Camilo Vargas,GK
+Colombia,4,Davinson Sánchez,DEF
+Colombia,6,Jefferson Lerma,MID
+Colombia,7,Luis Díaz,FWD
+Colombia,9,Jhon Córdoba,FWD
+Colombia,10,James Rodríguez,MID
+Uzbekistan,1,Utkir Yusupov,GK
+Uzbekistan,5,Husniddin Aliqulov,DEF
+Uzbekistan,8,Otabek Shukurov,MID
+Uzbekistan,9,Eldor Shomurodov,FWD
+Uzbekistan,10,Jaloliddin Masharipov,MID
+Uzbekistan,11,Igor Sergeev,FWD
+DR Congo,1,Lionel Mpasi,GK
+DR Congo,2,Henock Inonga,DEF
+DR Congo,8,Charles Pickel,MID
+DR Congo,9,Cédric Bakambu,FWD
+DR Congo,10,Yoane Wissa,FWD
+DR Congo,17,Chancel Mbemba,DEF
+# Group L
+England,1,Jordan Pickford,GK
+England,6,Marc Guéhi,DEF
+England,8,Jude Bellingham,MID
+England,9,Harry Kane,FWD
+England,10,Bukayo Saka,FWD
+England,11,Phil Foden,MID
+England,7,Declan Rice,MID
+Croatia,1,Dominik Livaković,GK
+Croatia,4,Joško Gvardiol,DEF
+Croatia,8,Luka Modrić,MID
+Croatia,9,Andrej Kramarić,FWD
+Croatia,10,Luka Sučić,MID
+Croatia,11,Ante Budimir,FWD
+Panama,1,Luis Mejía,GK
+Panama,5,Harold Cummings,DEF
+Panama,8,Aníbal Godoy,MID
+Panama,9,José Fajardo,FWD
+Panama,10,Ismael Díaz,FWD
+Panama,11,Cecilio Waterman,FWD
+Ghana,1,Lawrence Ati-Zigi,GK
+Ghana,4,Alexander Djiku,DEF
+Ghana,8,Thomas Partey,MID
+Ghana,9,Jordan Ayew,FWD
+Ghana,10,Mohammed Kudus,MID
+Ghana,11,Antoine Semenyo,FWD

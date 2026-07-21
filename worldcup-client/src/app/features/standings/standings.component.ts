@@ -14,6 +14,8 @@ export class StandingsComponent {
   private readonly standingsApi = inject(StandingsApiService);
   protected readonly context = inject(WorldCupContextService);
 
+  private loadToken = 0;
+
   protected readonly selectedGroupId = signal<number | null>(null);
   protected readonly standings = signal<Standing[]>([]);
   protected readonly isLoading = signal(false);
@@ -28,7 +30,11 @@ export class StandingsComponent {
 
       if (groups.length === 0) {
         this.selectedGroupId.set(null);
-      } else if (!groupBelongsToSelection) {
+        this.standings.set([]);
+        return;
+      }
+
+      if (!groupBelongsToSelection) {
         this.selectedGroupId.set(groups[0].id);
       }
 
@@ -44,16 +50,25 @@ export class StandingsComponent {
   }
 
   private async loadStandings(groupId: number): Promise<void> {
+    const token = ++this.loadToken;
     this.isLoading.set(true);
     this.errorMessage.set(null);
     try {
       const rows = await this.standingsApi.getGroupStandings(groupId);
+      if (token !== this.loadToken || this.selectedGroupId() !== groupId) {
+        return;
+      }
       this.standings.set(rows);
     } catch {
+      if (token !== this.loadToken || this.selectedGroupId() !== groupId) {
+        return;
+      }
       this.errorMessage.set('Failed to load standings.');
       this.standings.set([]);
     } finally {
-      this.isLoading.set(false);
+      if (token === this.loadToken) {
+        this.isLoading.set(false);
+      }
     }
   }
 }
