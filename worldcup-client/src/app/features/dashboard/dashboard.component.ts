@@ -1,8 +1,9 @@
 import { Component, effect, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { BetApiService } from '../../core/api/bet-api.service';
+import { CompanyApiService } from '../../core/api/company-api.service';
 import { AuthService } from '../../core/auth/auth.service';
-import { Bet, LeaderboardSummary } from '../../core/models/api.models';
+import { Bet, Company, LeaderboardSummary } from '../../core/models/api.models';
 import { WorldCupContextService } from '../../core/services/worldcup-context.service';
 import { WorldCupSelectorComponent } from '../shared/world-cup-selector/world-cup-selector.component';
 
@@ -14,6 +15,7 @@ import { WorldCupSelectorComponent } from '../shared/world-cup-selector/world-cu
 })
 export class DashboardComponent {
   private readonly betApi = inject(BetApiService);
+  private readonly companyApi = inject(CompanyApiService);
   protected readonly auth = inject(AuthService);
   protected readonly context = inject(WorldCupContextService);
 
@@ -21,6 +23,7 @@ export class DashboardComponent {
 
   protected readonly isLoading = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
+  protected readonly company = signal<Company | null>(null);
   protected readonly summary = signal<LeaderboardSummary | null>(null);
   protected readonly activeBets = signal<Bet[]>([]);
 
@@ -36,7 +39,8 @@ export class DashboardComponent {
     this.isLoading.set(true);
     this.errorMessage.set(null);
     try {
-      const [summary, bets] = await Promise.all([
+      const [mine, summary, bets] = await Promise.all([
+        this.companyApi.getMine(),
         this.betApi.getMySummary(worldCupId ?? undefined),
         worldCupId != null
           ? this.betApi.getMyBetsForWorldCup(worldCupId)
@@ -45,6 +49,7 @@ export class DashboardComponent {
       if (token !== this.loadToken || this.context.selectedWorldCupId() !== worldCupId) {
         return;
       }
+      this.company.set(mine.company);
       this.summary.set(summary);
       this.activeBets.set(bets.filter((bet) => bet.isActive));
     } catch {

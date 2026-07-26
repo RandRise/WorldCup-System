@@ -67,4 +67,4 @@ EF Core `ApplicationDbContext`, entities, generic repository, `RepositoryManager
 | --- | --- | --- |
 | External live scores API | — | Cancelled for live — Phase 10 post-match FIFA calendar sync available; Phase 11 timeline scorers **Done** |
 | Recent events wrong scorers | Goals / sync | Phase 11 honesty + real scorers **Done** |
-| Global (cross-company) leaderboard | Betting / leaderboard | Workplace isolation planned in [Phase 13](roadmap.md#phase-13) |
+| Global (cross-company) leaderboard | Betting / leaderboard | Replaced by company-scoped boards in [Phase 13 Task 4](changes/phase-13-leaderboard-scope.md); join via [Task 3 Company API](changes/phase-13-company-api.md) + [Task 5 SPA](changes/phase-13-spa.md) (Task 5 interim / Task 6 full gate still open) |

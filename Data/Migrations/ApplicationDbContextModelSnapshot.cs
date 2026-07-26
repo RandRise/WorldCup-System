@@ -161,6 +161,55 @@ namespace Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Data.Entities.Company", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CreatedByUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("InviteCode")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Slug")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("InviteCode")
+                        .IsUnique()
+                        .HasDatabaseName("Uq_Company_InviteCode");
+
+                    b.HasIndex("Slug")
+                        .IsUnique()
+                        .HasDatabaseName("Uq_Company_Slug")
+                        .HasFilter("\"Slug\" IS NOT NULL");
+
+                    b.ToTable("Company", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Company_InviteCode_Length_Less_Than_32", "Length(\"InviteCode\") <= 32");
+                            t.HasCheckConstraint("CK_Company_Name_Length_Less_Than_128", "Length(\"Name\") <= 128");
+                            t.HasCheckConstraint("CK_Company_Slug_Length_Less_Than_64", "\"Slug\" IS NULL OR Length(\"Slug\") <= 64");
+                        });
+                });
+
             modelBuilder.Entity("Data.Entities.Country", b =>
                 {
                     b.Property<int>("Id")
@@ -470,6 +519,9 @@ namespace Data.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<long?>("CompanyId")
+                        .HasColumnType("bigint");
+
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
 
@@ -514,6 +566,9 @@ namespace Data.Migrations
                         .HasColumnType("character varying(256)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CompanyId")
+                        .HasDatabaseName("IX_AspNetUsers_CompanyId");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -751,6 +806,16 @@ namespace Data.Migrations
                     b.Navigation("Team");
                 });
 
+            modelBuilder.Entity("Data.Entities.Company", b =>
+                {
+                    b.HasOne("Data.Entities.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .HasConstraintName("FK_Company_CreatedByUser");
+
+                    b.Navigation("CreatedByUser");
+                });
+
             modelBuilder.Entity("Data.Entities.Goal", b =>
                 {
                     b.HasOne("Data.Entities.Player", "Player")
@@ -875,6 +940,16 @@ namespace Data.Migrations
                     b.Navigation("Team");
                 });
 
+            modelBuilder.Entity("Data.Entities.User", b =>
+                {
+                    b.HasOne("Data.Entities.Company", "Company")
+                        .WithMany("Members")
+                        .HasForeignKey("CompanyId")
+                        .HasConstraintName("FK_User_Company");
+
+                    b.Navigation("Company");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<long>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<long>", null)
@@ -934,6 +1009,11 @@ namespace Data.Migrations
             modelBuilder.Entity("Data.Entities.City", b =>
                 {
                     b.Navigation("Stadiums");
+                });
+
+            modelBuilder.Entity("Data.Entities.Company", b =>
+                {
+                    b.Navigation("Members");
                 });
 
             modelBuilder.Entity("Data.Entities.Country", b =>

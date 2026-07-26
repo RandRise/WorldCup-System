@@ -33,10 +33,30 @@ namespace WorldCup_System.Controllers
             return _betService.GetScoringRules();
         }
 
+        /// <summary>
+        /// Company-scoped leaderboard. Company comes from the authenticated user's DB membership
+        /// (never a client-supplied companyId). No company → empty list (not 400).
+        /// </summary>
+        [Authorize]
         [HttpGet]
-        public List<LeaderboardEntryDTO> GetLeaderboard([FromQuery] int? worldCupId = null)
+        public async Task<IActionResult> GetLeaderboard([FromQuery] int? worldCupId = null)
         {
-            return _leaderboardService.GetLeaderboard(worldCupId);
+            try
+            {
+                long userId = await ResolveCurrentUserIdAsync();
+                User? user = await _userManager.FindByIdAsync(userId.ToString());
+                if (user == null)
+                {
+                    return Unauthorized();
+                }
+
+                List<LeaderboardEntryDTO> entries = _leaderboardService.GetLeaderboard(user.CompanyId, worldCupId);
+                return Ok(entries);
+            }
+            catch (Exception ex)
+            {
+                return ApiErrorHelper.FromException(ex);
+            }
         }
 
         [Authorize]

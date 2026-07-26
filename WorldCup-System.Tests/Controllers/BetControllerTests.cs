@@ -51,19 +51,108 @@ namespace WorldCup_System.Tests.Controllers
         }
 
         [Fact]
-        public void GetLeaderboard_ReturnsLeaderboardFromService()
+        public async Task GetLeaderboard_WhenAuthenticated_PassesCallerCompanyIdToService()
         {
+            User user = new User
+            {
+                Id = 42,
+                Email = "user@test.com",
+                UserName = "user@test.com",
+                Name = "User",
+                CompanyId = 10
+            };
+            SetUserClaims(new Claim(ClaimTypes.NameIdentifier, "42"));
+            _userManagerMock.Setup(userManager => userManager.FindByIdAsync("42")).ReturnsAsync(user);
+
             List<LeaderboardEntryDTO> entries = new List<LeaderboardEntryDTO>
             {
-                new LeaderboardEntryDTO { Rank = 1, UserId = 1, TotalPoints = 9 }
+                new LeaderboardEntryDTO { Rank = 1, UserId = 42, TotalPoints = 9 }
             };
+            _leaderboardServiceMock
+                .Setup(leaderboardService => leaderboardService.GetLeaderboard(10, null))
+                .Returns(entries);
 
-            _leaderboardServiceMock.Setup(leaderboardService => leaderboardService.GetLeaderboard(null)).Returns(entries);
+            IActionResult actionResult = await _betController.GetLeaderboard();
 
-            List<LeaderboardEntryDTO> result = _betController.GetLeaderboard();
-
+            OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
+            List<LeaderboardEntryDTO> result = Assert.IsType<List<LeaderboardEntryDTO>>(okResult.Value);
             Assert.Single(result);
             Assert.Equal(9, result[0].TotalPoints);
+            _leaderboardServiceMock.Verify(
+                leaderboardService => leaderboardService.GetLeaderboard(10, null),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GetLeaderboard_WhenUserHasNoCompany_PassesNullCompanyId()
+        {
+            User user = new User
+            {
+                Id = 42,
+                Email = "user@test.com",
+                UserName = "user@test.com",
+                Name = "User",
+                CompanyId = null
+            };
+            SetUserClaims(new Claim(ClaimTypes.NameIdentifier, "42"));
+            _userManagerMock.Setup(userManager => userManager.FindByIdAsync("42")).ReturnsAsync(user);
+            _leaderboardServiceMock
+                .Setup(leaderboardService => leaderboardService.GetLeaderboard(null, null))
+                .Returns(new List<LeaderboardEntryDTO>());
+
+            IActionResult actionResult = await _betController.GetLeaderboard();
+
+            OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
+            List<LeaderboardEntryDTO> result = Assert.IsType<List<LeaderboardEntryDTO>>(okResult.Value);
+            Assert.Empty(result);
+            _leaderboardServiceMock.Verify(
+                leaderboardService => leaderboardService.GetLeaderboard(null, null),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GetLeaderboard_WhenWorldCupIdProvided_PassesCompanyIdAndWorldCupId()
+        {
+            User user = new User
+            {
+                Id = 42,
+                Email = "user@test.com",
+                UserName = "user@test.com",
+                Name = "User",
+                CompanyId = 10
+            };
+            SetUserClaims(new Claim(ClaimTypes.NameIdentifier, "42"));
+            _userManagerMock.Setup(userManager => userManager.FindByIdAsync("42")).ReturnsAsync(user);
+            _leaderboardServiceMock
+                .Setup(leaderboardService => leaderboardService.GetLeaderboard(10, 2026))
+                .Returns(new List<LeaderboardEntryDTO>
+                {
+                    new LeaderboardEntryDTO { Rank = 1, UserId = 42, TotalPoints = 3 }
+                });
+
+            IActionResult actionResult = await _betController.GetLeaderboard(2026);
+
+            OkObjectResult okResult = Assert.IsType<OkObjectResult>(actionResult);
+            List<LeaderboardEntryDTO> result = Assert.IsType<List<LeaderboardEntryDTO>>(okResult.Value);
+            Assert.Single(result);
+            _leaderboardServiceMock.Verify(
+                leaderboardService => leaderboardService.GetLeaderboard(10, 2026),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GetLeaderboard_WhenUserNotFound_ReturnsUnauthorized()
+        {
+            SetUserClaims(new Claim(ClaimTypes.NameIdentifier, "42"));
+            _userManagerMock.Setup(userManager => userManager.FindByIdAsync("42"))
+                .ReturnsAsync((User?)null);
+
+            IActionResult actionResult = await _betController.GetLeaderboard();
+
+            Assert.IsType<UnauthorizedResult>(actionResult);
+            _leaderboardServiceMock.Verify(
+                leaderboardService => leaderboardService.GetLeaderboard(It.IsAny<long?>(), It.IsAny<int?>()),
+                Times.Never);
         }
 
         [Fact]

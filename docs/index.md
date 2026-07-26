@@ -9,11 +9,11 @@
 
 FIFA World Cup management platform — status as of **21 Jul 2026**.
 
-> **Success:** **Phases 1–12 complete.** **Upload gate open** until commit — [whole-project-upload-gate](changes/whole-project-upload-gate.md). **Phase 13 Planned** — company-scoped competitions. **Phase 12 Done**. **Phase 11 Done** (suite **382**). See [phase-13 plan](changes/phase-13-planned.md) · [phase-12 tests gate](changes/phase-12-tests-gate.md) · [phase-11 tests gate](changes/phase-11-tests-gate.md) · [Changes Review](changes-review.md).
+> **Success:** **Phases 1–13 complete.** Phase 13 gate closed (Bugbot clean; suite **438**). **Upload gate open** until commit — [whole-project-upload-gate](changes/whole-project-upload-gate.md). See [phase-13 tests gate](changes/phase-13-tests-gate.md) · [phase-13 SPA](changes/phase-13-spa.md) · [Changes Review](changes-review.md).
 
 > **Info:** Browse these docs with VitePress (`npm run docs:dev` from the workspace root) or open any `.md` file in Cursor preview. Checklists use `[x]` / `[ ]` task items.
 
-- **Overall Plan Progress:** 12 / 13 phases done (Phase 13 planned) — [Phase 12](roadmap.md#phase-12); [Phase 13](roadmap.md#phase-13)
+- **Overall Plan Progress:** 13 / 13 phases done — [Phase 13](roadmap.md#phase-13)
 - **Backend API Complete:** 100% Phases 1–8 + Phase 10 Task 1 sync + Phase 11 (stage / timeline / resolve / apply / sync wire / scorers backfill / honesty; suite **382**)
 - **Frontend SPA:** 100% Phases 1–8 + Phase 10 Tasks 2–3 (fixtures UX + WC styling); canonical path `WorldCup-System/worldcup-client`
 
@@ -93,16 +93,16 @@ Full checklist: [Roadmap Phase 11](roadmap.md#phase-11).
 
 Full checklist: [Roadmap Phase 12](roadmap.md#phase-12).
 
-### 📋 Phase 13 — Planned
+### ✅ Phase 13 — Done
 
 | # | Item | Status | Doc |
 | --- | --- | --- | --- |
 | 1 | Document Phase 13 plan | **Done** | [phase-13-planned](changes/phase-13-planned.md) |
-| 2 | Company model + migration | Planned | same |
-| 3 | Company API (create / join / admin) | Planned | same |
-| 4 | Leaderboard company scope | Planned | same |
-| 5 | SPA join + company board | Planned | same |
-| 6 | Tests + review gate | Planned | same |
+| 2 | Company model + migration | **Done** | [phase-13-company-model](changes/phase-13-company-model.md) |
+| 3 | Company API (create / join / admin) | **Done** | [phase-13-company-api](changes/phase-13-company-api.md) |
+| 4 | Leaderboard company scope | **Done** | [phase-13-leaderboard-scope](changes/phase-13-leaderboard-scope.md) |
+| 5 | SPA join + company board | **Done** | [phase-13-spa](changes/phase-13-spa.md) |
+| 6 | Tests + review gate | **Done** (suite **438**; Bugbot clean) | [phase-13-tests-gate](changes/phase-13-tests-gate.md) |
 
 Full checklist: [Roadmap Phase 13](roadmap.md#phase-13).
 
@@ -122,7 +122,7 @@ Full checklist: [Roadmap Phase 13](roadmap.md#phase-13).
 | 10 | [Match Sync, Fixtures UX, Styling & Cleanup](roadmap.md#phase-10) | Done |
 | 11 | [Real Goalscorers (FIFA Timeline)](roadmap.md#phase-11) | Done |
 | 12 | [2030 World Cup Simulation](roadmap.md#phase-12) | Done |
-| 13 | [Company-Scoped Competitions](roadmap.md#phase-13) | Planned |
+| 13 | [Company-Scoped Competitions](roadmap.md#phase-13) | Done |
 
 ### Quick Navigation
 
@@ -148,21 +148,17 @@ Tech stack, folder structure, and architecture.
 
 #### 🔍 Changes Review
 
-Phase 13 Planned (company pools); Phase 12 Done (unittest **23** / smoke **103**); Phase 11 Done (suite **382**). Upload packaging checklist: [whole-project-upload-gate](changes/whole-project-upload-gate.md). See [Changes Review](changes-review.md).
+Phase 13 Done (suite **438**); Phase 12 Done (unittest **23** / smoke **103**); Phase 11 Done (suite **382**). Upload packaging checklist: [whole-project-upload-gate](changes/whole-project-upload-gate.md). See [Changes Review](changes-review.md).
 
 ### Recommended next work
 
 #### Upload packaging
 
-Commit the uncommitted Phases 9–12 tree (migrations + MatchSync + WC 2030 scripts + docs) — [whole-project-upload-gate](changes/whole-project-upload-gate.md) · [Changes Review](changes-review.md).
-
-#### Phase 13 — Company-scoped competitions
-
-Implement when ready: invite-code companies + isolated leaderboards — [phase-13-planned](changes/phase-13-planned.md) · [Roadmap Phase 13](roadmap.md#phase-13).
+Commit the uncommitted Phases 9–13 tree (migrations + MatchSync + WC 2030 scripts + company + docs) — [whole-project-upload-gate](changes/whole-project-upload-gate.md) · [Changes Review](changes-review.md).
 
 #### Maintenance / polish
 
-Phases **1–12** Done. Prefer ops hygiene (avoid accidental wipe re-import of WC 2026) alongside Phase 13 — [Changes Review](changes-review.md) · [Phase 9 detail](changes/phase-9-ops-closeout.md).
+Phases **1–13** Done. Prefer ops hygiene (avoid accidental wipe re-import of WC 2026) — [Changes Review](changes-review.md) · [Phase 9 detail](changes/phase-9-ops-closeout.md).
 
 ### Local Dev URLs
 

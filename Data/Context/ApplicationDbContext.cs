@@ -27,9 +27,54 @@ namespace Data.Context
         public DbSet<Goal> Goals { get; set; }
         public DbSet<Bet> Bets { get; set; }
         public DbSet<BetResult> BetResults { get; set; }
+        public DbSet<Company> Companies { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Company>(e =>
+            {
+                e.ToTable("Company", company =>
+                {
+                    company.HasCheckConstraint("CK_Company_Name_Length_Less_Than_128", "Length(\"Name\") <= 128");
+                    company.HasCheckConstraint("CK_Company_InviteCode_Length_Less_Than_32", "Length(\"InviteCode\") <= 32");
+                    company.HasCheckConstraint("CK_Company_Slug_Length_Less_Than_64", "\"Slug\" IS NULL OR Length(\"Slug\") <= 64");
+                });
+
+                e.Property(company => company.Name)
+                    .HasMaxLength(128)
+                    .IsRequired();
+                e.Property(company => company.InviteCode)
+                    .HasMaxLength(32)
+                    .IsRequired();
+                e.Property(company => company.Slug)
+                    .HasMaxLength(64);
+
+                e.HasIndex(company => company.InviteCode)
+                    .IsUnique()
+                    .HasDatabaseName("Uq_Company_InviteCode");
+                e.HasIndex(company => company.Slug)
+                    .IsUnique()
+                    .HasFilter("\"Slug\" IS NOT NULL")
+                    .HasDatabaseName("Uq_Company_Slug");
+
+                e.HasOne(company => company.CreatedByUser)
+                    .WithMany()
+                    .HasForeignKey(company => company.CreatedByUserId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Company_CreatedByUser");
+            });
+
+            modelBuilder.Entity<User>(e =>
+            {
+                e.HasOne(user => user.Company)
+                    .WithMany(company => company.Members)
+                    .HasForeignKey(user => user.CompanyId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_User_Company");
+                e.HasIndex(user => user.CompanyId)
+                    .HasDatabaseName("IX_AspNetUsers_CompanyId");
+            });
 
             modelBuilder.Entity<City>(e =>
             {

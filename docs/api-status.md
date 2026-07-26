@@ -9,8 +9,8 @@
 
 All domain controllers implemented (audit 17 Jul 2026). Base URL: `http://localhost:5055`. Knockout bracket API + offline WC 2026 schedule import in place. Live scores: manual import / Admin console; **post-match** FIFA calendar sync (Phase 10 Task 1) also available.
 
-- **Controllers:** 17
-- **Domain Services:** 20 (19 interfaces + `BetScoringRules`; includes `IMatchResultSyncService` / FIFA provider)
+- **Controllers:** 19
+- **Domain Services:** 21 (20 interfaces + `BetScoringRules`; includes `IMatchResultSyncService` / FIFA provider + `ICompanyService`)
 - **Missing Domains:** 0
 
 ### Implemented Controllers
@@ -33,7 +33,8 @@ All domain controllers implemented (audit 17 Jul 2026). Base URL: `http://localh
 | `CardController` | `GetCardsByMatch`; Admin `AddCard`, `DeleteCard` | Admin on mutating | Done |
 | `TeamStatsController` | `GetTeamStatsByMatch`; Admin `UpdateTeamStats` | Admin on update | Done |
 | `StandingController` | `GetGroupStandings` | None | Done |
-| `BetController` | `GetScoringRules`, `GetLeaderboard`, `GetMySummary`; `GetMyBetsForWorldCup`, `GetMyBetForMatch`; `PlaceBet`, `GetMyBets`, `GetMyActiveBets`; Admin `ResolveBetsForMatch` (per-user +3/0 breakdown), `ResolveBetsForWorldCup` | JWT on place/view; Admin on resolve | Done |
+| `BetController` | `GetScoringRules`, `GetLeaderboard` (JWT + company-scoped), `GetMySummary`; `GetMyBetsForWorldCup`, `GetMyBetForMatch`; `PlaceBet`, `GetMyBets`, `GetMyActiveBets`; Admin `ResolveBetsForMatch` (per-user +3/0 breakdown), `ResolveBetsForWorldCup` | JWT on place/view/leaderboard; Admin on resolve | Done |
+| `CompanyController` | `Create`, `Join`, `Mine`, `RotateInviteCode`, `Members`, `GetAll` | Admin create/list; JWT join/mine; CompanyAdmin/Admin rotate + members | Done (Phase 13 Task 3) |
 
 ### Missing Controllers (Schema Exists)
 
@@ -118,6 +119,25 @@ Admin sync responses (`SyncMatchResultDTO` / `SyncFinishedResultsDTO`; client `S
 
 Config: `MatchResultSync:BatchDelayMilliseconds` (default **250**; `0` disables). Detail: [phase-11-sync-wire](changes/phase-11-sync-wire.md).
 
+### Phase 13 — Company API + Leaderboard scope + SPA
+
+**Task 3 Done** (interim gate closed): Admin create + invite; JWT join/mine; CompanyAdmin rotate/members; GetAll. Detail: [phase-13-company-api](changes/phase-13-company-api.md) · [Phase 13 checklist](roadmap.md#phase-13).
+
+| Endpoint | Auth | Behavior |
+| --- | --- | --- |
+| `POST Company/Create` | Admin | Name + optional slug → company + uppercase invite |
+| `POST Company/Join` | JWT | Invite code → `User.CompanyId`; first joiner → CompanyAdmin + JWT re-issue |
+| `GET Company/Mine` | JWT | Company summary (`Company: null` if none); invite for CompanyAdmin/Admin |
+| `POST Company/RotateInviteCode` | CompanyAdmin / Admin | New invite; Admin may pass `companyId` |
+| `GET Company/Members` | CompanyAdmin / Admin | Same-company members only |
+| `GET Company/GetAll` | Admin | All companies (ops) |
+
+**Task 4 Done** (interim gate closed): `GET Bet/GetLeaderboard` requires JWT; company from caller `User.CompanyId` (never client `companyId`); null company → `[]`; optional `worldCupId` kept. Detail: [phase-13-leaderboard-scope](changes/phase-13-leaderboard-scope.md).
+
+**Task 5 Done** (interim gate pending): SPA `/company` join + CompanyAdmin; leaderboard `authGuard` + company name / join CTA; Admin create on company page. Detail: [phase-13-spa](changes/phase-13-spa.md).
+
+**Task 6 Open** (full phase gate): isolation tests / formal Bugbot+docs — [phase-13-tests-gate](changes/phase-13-tests-gate.md).
+
 ### Repository Manager Coverage
 
 ### ✅ In RepositoryManager
@@ -138,6 +158,7 @@ Config: `MatchResultSync:BatchDelayMilliseconds` (default **250**; `0` disables)
 - TeamStats
 - Bet
 - BetResult
+- Company
 
 ### ❌ Not in RepositoryManager
 
@@ -153,6 +174,7 @@ Config: `MatchResultSync:BatchDelayMilliseconds` (default **250**; `0` disables)
 | City | City | ✅ | ✅ | ✅ | ✅ |
 | Stadium | Stadium | ✅ | ✅ | ✅ | ✅ |
 | User | Users | ✅ | ✅ | ✅ | ✅ |
+| Company | Company | ✅ | ✅ | ✅ | ✅ |
 | Team | Team | ✅ | ✅ | ✅ | ✅ |
 | Coach | Coach | ✅ | ✅ | ✅ | ✅ |
 | Player | Player | ✅ | ✅ | ✅ | ✅ |

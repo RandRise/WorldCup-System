@@ -13,9 +13,9 @@ namespace Core.Services.Bets
             _repository = repository;
         }
 
-        public List<LeaderboardEntryDTO> GetLeaderboard(int? worldCupId = null)
+        public List<LeaderboardEntryDTO> GetLeaderboard(long? companyId, int? worldCupId = null)
         {
-            return BuildLeaderboard(worldCupId);
+            return BuildLeaderboard(companyId, worldCupId);
         }
 
         public LeaderboardSummaryDTO GetMySummary(long userId, int? worldCupId = null)
@@ -48,7 +48,8 @@ namespace Core.Services.Bets
             int resolvedBets = userResults.Count;
             int activeBets = userBets.Count(bet => !resolvedBetIds.Contains(bet.Id));
 
-            List<LeaderboardEntryDTO> leaderboard = BuildLeaderboard(worldCupId);
+            // Rank is within the caller's company board only (null company → no rank).
+            List<LeaderboardEntryDTO> leaderboard = BuildLeaderboard(user?.CompanyId, worldCupId);
             LeaderboardEntryDTO? entry = leaderboard.FirstOrDefault(existingEntry => existingEntry.UserId == userId);
 
             return new LeaderboardSummaryDTO
@@ -62,9 +63,25 @@ namespace Core.Services.Bets
             };
         }
 
-        private List<LeaderboardEntryDTO> BuildLeaderboard(int? worldCupId)
+        private List<LeaderboardEntryDTO> BuildLeaderboard(long? companyId, int? worldCupId)
         {
-            List<Bet> scopedBets = GetScopedBets(worldCupId);
+            if (!companyId.HasValue)
+            {
+                return new List<LeaderboardEntryDTO>();
+            }
+
+            List<User> companyUsers = _repository.User
+                .Find(existingUser => existingUser.CompanyId == companyId.Value)
+                .ToList();
+            if (companyUsers.Count == 0)
+            {
+                return new List<LeaderboardEntryDTO>();
+            }
+
+            HashSet<long> companyUserIds = companyUsers.Select(existingUser => existingUser.Id).ToHashSet();
+            List<Bet> scopedBets = GetScopedBets(worldCupId)
+                .Where(bet => companyUserIds.Contains(bet.UserId))
+                .ToList();
             if (scopedBets.Count == 0)
             {
                 return new List<LeaderboardEntryDTO>();
@@ -75,7 +92,7 @@ namespace Core.Services.Bets
                 .Find(result => betIds.Contains(result.BetId))
                 .ToList();
 
-            List<User> users = _repository.User.GetAllAsync().ToList();
+            Dictionary<long, User> usersById = companyUsers.ToDictionary(existingUser => existingUser.Id);
             Dictionary<long, LeaderboardEntryDTO> totals = new Dictionary<long, LeaderboardEntryDTO>();
             foreach (BetResult result in results)
             {
@@ -87,7 +104,7 @@ namespace Core.Services.Bets
 
                 if (!totals.TryGetValue(bet.UserId, out LeaderboardEntryDTO? entry))
                 {
-                    User? user = users.FirstOrDefault(existingUser => existingUser.Id == bet.UserId);
+                    usersById.TryGetValue(bet.UserId, out User? user);
                     entry = new LeaderboardEntryDTO
                     {
                         UserId = bet.UserId,
@@ -116,7 +133,7 @@ namespace Core.Services.Bets
                     continue;
                 }
 
-                User? user = users.FirstOrDefault(existingUser => existingUser.Id == bet.UserId);
+                usersById.TryGetValue(bet.UserId, out User? user);
                 leaderboard.Add(new LeaderboardEntryDTO
                 {
                     UserId = bet.UserId,

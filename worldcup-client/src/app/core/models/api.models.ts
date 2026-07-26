@@ -152,6 +152,45 @@ export interface LeaderboardSummary {
   activeBets: number;
 }
 
+/** Phase 13 — workplace prediction pool (soft multi-tenancy). */
+export interface Company {
+  id: number;
+  name: string;
+  slug?: string | null;
+  inviteCode?: string | null;
+  createdAt: string;
+  memberCount: number;
+}
+
+export interface CreateCompanyRequest {
+  name: string;
+  slug?: string | null;
+}
+
+export interface JoinCompanyRequest {
+  inviteCode: string;
+}
+
+export interface CompanyMine {
+  company: Company | null;
+  isCompanyAdmin: boolean;
+  becameCompanyAdmin: boolean;
+}
+
+export interface CompanyMember {
+  id: number;
+  name: string;
+  email?: string | null;
+}
+
+export interface JoinCompanyResponse {
+  company: Company;
+  becameCompanyAdmin: boolean;
+  isCompanyAdmin: boolean;
+  token?: string | null;
+  expiration?: string | null;
+}
+
 export interface AddStadiumRequest {
   id: number;
   name: string;

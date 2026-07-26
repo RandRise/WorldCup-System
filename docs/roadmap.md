@@ -9,7 +9,7 @@
 
 Thirteen phases. Checkboxes below reflect a **code audit as of 21 Jul 2026** — checkboxes use Markdown task lists (`[x]` / `[ ]`).
 
-> **Success:** **Where you are:** Phases 1–12 complete. **Upload packaging open** until commit — [whole-project-upload-gate](changes/whole-project-upload-gate.md). **Phase 13 Planned** — company-scoped competitions (invite code + isolated leaderboards). **Phase 12 Done** (2030 draw + group sim + bracket; unittest **23** / smoke **103**). **Phase 11 Done** (suite **382**). See [phase-13 plan](changes/phase-13-planned.md) · [phase-12 tests gate](changes/phase-12-tests-gate.md) · [phase-12 plan](changes/phase-12-planned.md) · [phase-11 tests gate](changes/phase-11-tests-gate.md) · [Changes Review](changes-review.md).
+> **Success:** **Where you are:** Phases **1–13 complete.** Phase 13 gate closed (Bugbot clean; suite **438**). **Upload packaging open** until commit — [whole-project-upload-gate](changes/whole-project-upload-gate.md). **Phase 12 Done** (unittest **23** / smoke **103**). **Phase 11 Done** (suite **382**). See [phase-13 SPA](changes/phase-13-spa.md) · [phase-13 tests gate](changes/phase-13-tests-gate.md) · [Changes Review](changes-review.md).
 
 <a id="phase-1"></a>
 
@@ -233,30 +233,31 @@ Offline Python simulation: lock six 2030 hosts, random 42 other teams, 12 groups
 
 <a id="phase-13"></a>
 
-### Phase 13 — Company-Scoped Competitions **[Planned]**
+### Phase 13 — Company-Scoped Competitions **[Done]**
 
-Soft multi-tenancy for workplace prediction pools: shared World Cup data, isolated membership and leaderboards. Portfolio-scoped v1 (invite codes; no branding/subdomains/billing). Detail: [phase-13-planned](changes/phase-13-planned.md).
+Soft multi-tenancy for workplace prediction pools: shared World Cup data, isolated membership and leaderboards. Portfolio-scoped v1 (invite codes; no branding/subdomains/billing). Detail: [phase-13-planned](changes/phase-13-planned.md) · [Task 2](changes/phase-13-company-model.md) · [Task 4](changes/phase-13-leaderboard-scope.md) · [Task 5 SPA](changes/phase-13-spa.md) · [Task 6 tests](changes/phase-13-tests-gate.md).
 
 **Task 1 — Docs (`docs`) (done)**
 
 - [x] Document Phase 13 plan (company model, invite join, scoped leaderboard, non-goals) — *`docs/changes/phase-13-planned.md`*
 
-**Task 2 — Company model (`p13-company-model`) (planned)**
+**Task 2 — Company model (`p13-company-model`) (done)**
 
-- [ ] `Company` entity + `User.CompanyId` + migration + repos — *invite code unique; seed `CompanyAdmin` role*
+- [x] `Company` entity + `User.CompanyId` + migration + repos — *invite code unique; seed `CompanyAdmin` role; [detail](changes/phase-13-company-model.md)*
 
-**Task 3 — Company API (`p13-company-api`) (planned)**
+**Task 3 — Company API (`p13-company-api`) (done; interim gate closed)**
 
-- [ ] Create / join / mine / rotate invite / members endpoints — *Admin creates; User joins by code; CompanyAdmin rotates*
+- [x] Create / join / mine / rotate invite / members endpoints — *Admin creates; User joins by code; CompanyAdmin rotates; interim gate closed (suite **414**); [detail](changes/phase-13-company-api.md)*
 
-**Task 4 — Leaderboard scope (`p13-leaderboard-scope`) (planned)**
+**Task 4 — Leaderboard scope (`p13-leaderboard-scope`) (done; interim gate closed)**
 
-- [ ] Authorize + filter `GetLeaderboard` by caller’s company — *no cross-company rows; optional `worldCupId` kept*
+- [x] Authorize + filter `GetLeaderboard` by caller’s company — *JWT required; scope from `User.CompanyId`; null → empty; optional `worldCupId` kept; interim gate closed (suite **399**); [detail](changes/phase-13-leaderboard-scope.md)*
 
-**Task 5 — SPA (`p13-spa`) (planned)**
+**Task 5 — SPA (`p13-spa`) (done; interim gate closed)**
 
-- [ ] Join-company UX + company-scoped leaderboard + light CompanyAdmin UI — *reuse existing theme; no branding work*
+- [x] Join-company UX + company-scoped leaderboard + light CompanyAdmin UI — *`/company`; JWT-gated manage actions; leaderboard `authGuard` + join CTA; Admin create; [detail](changes/phase-13-spa.md)*
 
-**Task 6 — Tests & gate (`p13-tests-gate`) (planned)**
+**Task 6 — Tests & gate (`p13-tests-gate`) (done; gate closed)**
 
-- [ ] Unit/integration isolation tests + Bugbot/docs review + `dotnet test` green — *two-company leak regression required*
+- [x] Unit/integration isolation tests + `dotnet test` green — *two-company leak + CompanyController **17**; suite **438**; [detail](changes/phase-13-tests-gate.md)*
+- [x] Bugbot/docs formal Task 6 review — *Bugbot clean after Join JWT session fix; Phase 13 Done*

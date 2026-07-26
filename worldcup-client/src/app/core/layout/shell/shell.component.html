@@ -9,6 +9,9 @@
     @if (auth.isAuthenticated() && !auth.isAdmin()) {
       <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
     }
+    @if (auth.isAuthenticated()) {
+      <a routerLink="/company" routerLinkActive="active">Company</a>
+    }
     <a routerLink="/bets" routerLinkActive="active">My Bets</a>
 
     @if (auth.isAdmin()) {

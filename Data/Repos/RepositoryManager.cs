@@ -21,6 +21,7 @@ namespace Data.Repos
         private IRepository<Card>? _cardRepository;
         private IRepository<Bet>? _betRepository;
         private IRepository<BetResult>? _betResultRepository;
+        private IRepository<Company>? _companyRepository;
         public RepositoryManager(ApplicationDbContext context)
         {
             _context = context;
@@ -183,6 +184,16 @@ namespace Data.Repos
                 if (_betResultRepository == null)
                     _betResultRepository = new Repository<BetResult>(_context);
                 return _betResultRepository;
+            }
+        }
+
+        public IRepository<Company> Company
+        {
+            get
+            {
+                if (_companyRepository == null)
+                    _companyRepository = new Repository<Company>(_context);
+                return _companyRepository;
             }
         }
 

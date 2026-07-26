@@ -40,7 +40,16 @@ namespace WorldCup_System.Tests.Services.Bets
         }
 
         [Fact]
-        public void GetLeaderboard_ReturnsUsersRankedByTotalPoints()
+        public void GetLeaderboard_WhenCompanyIdNull_ReturnsEmptyList()
+        {
+            List<LeaderboardEntryDTO> leaderboard = _leaderboardService.GetLeaderboard(null);
+
+            Assert.Empty(leaderboard);
+            _userRepositoryMock.Verify(userRepository => userRepository.Find(It.IsAny<Expression<Func<User, bool>>>()), Times.Never);
+        }
+
+        [Fact]
+        public void GetLeaderboard_ReturnsUsersRankedByTotalPoints_WithinCompany()
         {
             List<BetResult> results = new List<BetResult>
             {
@@ -58,10 +67,11 @@ namespace WorldCup_System.Tests.Services.Bets
             };
             List<User> users = new List<User>
             {
-                new User { Id = 1, Name = "Alice", Email = "alice@test.com", UserName = "alice@test.com" },
-                new User { Id = 2, Name = "Bob", Email = "bob@test.com", UserName = "bob@test.com" }
+                new User { Id = 1, Name = "Alice", Email = "alice@test.com", UserName = "alice@test.com", CompanyId = 10 },
+                new User { Id = 2, Name = "Bob", Email = "bob@test.com", UserName = "bob@test.com", CompanyId = 10 }
             };
 
+            SetupCompanyUsers(users);
             _betResultRepositoryMock.Setup(betResultRepository => betResultRepository.GetAllAsync())
                 .Returns(results.AsQueryable());
             _betRepositoryMock.Setup(betRepository => betRepository.GetAllAsync())
@@ -73,7 +83,7 @@ namespace WorldCup_System.Tests.Services.Bets
             _userRepositoryMock.Setup(userRepository => userRepository.GetAllAsync())
                 .Returns(users.AsQueryable());
 
-            List<LeaderboardEntryDTO> leaderboard = _leaderboardService.GetLeaderboard();
+            List<LeaderboardEntryDTO> leaderboard = _leaderboardService.GetLeaderboard(10);
 
             Assert.Equal(2, leaderboard.Count);
             Assert.Equal(1, leaderboard[0].Rank);
@@ -85,12 +95,86 @@ namespace WorldCup_System.Tests.Services.Bets
         }
 
         [Fact]
+        public void GetLeaderboard_ExcludesUsersFromOtherCompanies()
+        {
+            List<BetResult> results = new List<BetResult>
+            {
+                new BetResult { Id = 1, BetId = 1, Point = 3 },
+                new BetResult { Id = 2, BetId = 2, Point = 9 }
+            };
+            List<Bet> bets = new List<Bet>
+            {
+                new Bet { Id = 1, UserId = 1, MatchId = 1, TeamId = 10 },
+                new Bet { Id = 2, UserId = 2, MatchId = 1, TeamId = 20 }
+            };
+            List<User> users = new List<User>
+            {
+                new User { Id = 1, Name = "Alice", Email = "alice@test.com", UserName = "alice@test.com", CompanyId = 10 },
+                new User { Id = 2, Name = "Eve", Email = "eve@test.com", UserName = "eve@test.com", CompanyId = 99 }
+            };
+
+            SetupCompanyUsers(users);
+            _betRepositoryMock.Setup(betRepository => betRepository.GetAllAsync()).Returns(bets.AsQueryable());
+            _betResultRepositoryMock.Setup(betResultRepository => betResultRepository.Find(It.IsAny<Expression<Func<BetResult, bool>>>()))
+                .Returns((Expression<Func<BetResult, bool>> predicate) => results.AsQueryable().Where(predicate));
+
+            List<LeaderboardEntryDTO> leaderboard = _leaderboardService.GetLeaderboard(10);
+
+            Assert.Single(leaderboard);
+            Assert.Equal("Alice", leaderboard[0].UserName);
+            Assert.Equal(3, leaderboard[0].TotalPoints);
+            Assert.DoesNotContain(leaderboard, entry => entry.UserName == "Eve");
+        }
+
+        [Fact]
+        public void GetLeaderboard_Bidirectional_NeitherCompanyIncludesTheOther()
+        {
+            List<BetResult> results = new List<BetResult>
+            {
+                new BetResult { Id = 1, BetId = 1, Point = 3 },
+                new BetResult { Id = 2, BetId = 2, Point = 9 }
+            };
+            List<Bet> bets = new List<Bet>
+            {
+                new Bet { Id = 1, UserId = 1, MatchId = 1, TeamId = 10 },
+                new Bet { Id = 2, UserId = 2, MatchId = 1, TeamId = 20 }
+            };
+            List<User> users = new List<User>
+            {
+                new User { Id = 1, Name = "Alice", Email = "alice@test.com", UserName = "alice@test.com", CompanyId = 10 },
+                new User { Id = 2, Name = "Eve", Email = "eve@test.com", UserName = "eve@test.com", CompanyId = 99 }
+            };
+
+            SetupCompanyUsers(users);
+            _betRepositoryMock.Setup(betRepository => betRepository.GetAllAsync()).Returns(bets.AsQueryable());
+            _betResultRepositoryMock.Setup(betResultRepository => betResultRepository.Find(It.IsAny<Expression<Func<BetResult, bool>>>()))
+                .Returns((Expression<Func<BetResult, bool>> predicate) => results.AsQueryable().Where(predicate));
+
+            List<LeaderboardEntryDTO> boardCompany10 = _leaderboardService.GetLeaderboard(10);
+            List<LeaderboardEntryDTO> boardCompany99 = _leaderboardService.GetLeaderboard(99);
+
+            Assert.Single(boardCompany10);
+            Assert.Equal("Alice", boardCompany10[0].UserName);
+            Assert.DoesNotContain(boardCompany10, entry => entry.UserName == "Eve");
+
+            Assert.Single(boardCompany99);
+            Assert.Equal("Eve", boardCompany99[0].UserName);
+            Assert.Equal(9, boardCompany99[0].TotalPoints);
+            Assert.DoesNotContain(boardCompany99, entry => entry.UserName == "Alice");
+        }
+
+        [Fact]
         public void GetLeaderboard_WhenNoBets_ReturnsEmptyList()
         {
+            List<User> users = new List<User>
+            {
+                new User { Id = 1, Name = "Alice", Email = "alice@test.com", UserName = "alice@test.com", CompanyId = 10 }
+            };
+            SetupCompanyUsers(users);
             _betRepositoryMock.Setup(betRepository => betRepository.GetAllAsync())
                 .Returns(new List<Bet>().AsQueryable());
 
-            List<LeaderboardEntryDTO> leaderboard = _leaderboardService.GetLeaderboard();
+            List<LeaderboardEntryDTO> leaderboard = _leaderboardService.GetLeaderboard(10);
 
             Assert.Empty(leaderboard);
         }
@@ -105,16 +189,17 @@ namespace WorldCup_System.Tests.Services.Bets
             };
             List<User> users = new List<User>
             {
-                new User { Id = 1, Name = "Alice", Email = "alice@test.com", UserName = "alice@test.com" },
-                new User { Id = 2, Name = "Bob", Email = "bob@test.com", UserName = "bob@test.com" }
+                new User { Id = 1, Name = "Alice", Email = "alice@test.com", UserName = "alice@test.com", CompanyId = 10 },
+                new User { Id = 2, Name = "Bob", Email = "bob@test.com", UserName = "bob@test.com", CompanyId = 10 }
             };
 
+            SetupCompanyUsers(users);
             _betRepositoryMock.Setup(betRepository => betRepository.GetAllAsync()).Returns(bets.AsQueryable());
             _betResultRepositoryMock.Setup(betResultRepository => betResultRepository.Find(It.IsAny<Expression<Func<BetResult, bool>>>()))
                 .Returns(new List<BetResult>().AsQueryable());
             _userRepositoryMock.Setup(userRepository => userRepository.GetAllAsync()).Returns(users.AsQueryable());
 
-            List<LeaderboardEntryDTO> leaderboard = _leaderboardService.GetLeaderboard();
+            List<LeaderboardEntryDTO> leaderboard = _leaderboardService.GetLeaderboard(10);
 
             Assert.Equal(2, leaderboard.Count);
             Assert.All(leaderboard, entry =>
@@ -127,7 +212,7 @@ namespace WorldCup_System.Tests.Services.Bets
         }
 
         [Fact]
-        public void GetMySummary_ReturnsRankPointsAndBetCounts()
+        public void GetMySummary_ReturnsRankPointsAndBetCounts_WithinCompany()
         {
             List<BetResult> results = new List<BetResult>
             {
@@ -144,10 +229,11 @@ namespace WorldCup_System.Tests.Services.Bets
             };
             List<User> users = new List<User>
             {
-                new User { Id = 1, Name = "Alice", Email = "alice@test.com", UserName = "alice@test.com" },
-                new User { Id = 2, Name = "Bob", Email = "bob@test.com", UserName = "bob@test.com" }
+                new User { Id = 1, Name = "Alice", Email = "alice@test.com", UserName = "alice@test.com", CompanyId = 10 },
+                new User { Id = 2, Name = "Bob", Email = "bob@test.com", UserName = "bob@test.com", CompanyId = 10 }
             };
 
+            SetupCompanyUsers(users);
             _betRepositoryMock.Setup(betRepository => betRepository.GetAllAsync()).Returns(bets.AsQueryable());
             _betResultRepositoryMock.Setup(betResultRepository => betResultRepository.Find(It.IsAny<Expression<Func<BetResult, bool>>>()))
                 .Returns((Expression<Func<BetResult, bool>> predicate) => results.AsQueryable().Where(predicate));
@@ -164,6 +250,86 @@ namespace WorldCup_System.Tests.Services.Bets
             Assert.Equal(3, summary.TotalPoints);
             Assert.Equal(2, summary.ResolvedBets);
             Assert.Equal(1, summary.ActiveBets);
+        }
+
+        [Fact]
+        public void GetMySummary_WhenUserHasNoCompany_ReturnsPointsWithoutRank()
+        {
+            List<BetResult> results = new List<BetResult>
+            {
+                new BetResult { Id = 1, BetId = 1, Point = 3 }
+            };
+            List<Bet> bets = new List<Bet>
+            {
+                new Bet { Id = 1, UserId = 1, MatchId = 1, TeamId = 10 }
+            };
+            List<User> users = new List<User>
+            {
+                new User { Id = 1, Name = "Alice", Email = "alice@test.com", UserName = "alice@test.com", CompanyId = null }
+            };
+
+            _betRepositoryMock.Setup(betRepository => betRepository.GetAllAsync()).Returns(bets.AsQueryable());
+            _betResultRepositoryMock.Setup(betResultRepository => betResultRepository.Find(It.IsAny<Expression<Func<BetResult, bool>>>()))
+                .Returns((Expression<Func<BetResult, bool>> predicate) => results.AsQueryable().Where(predicate));
+            _userRepositoryMock.Setup(userRepository => userRepository.GetAllAsync()).Returns(users.AsQueryable());
+
+            LeaderboardSummaryDTO summary = _leaderboardService.GetMySummary(1);
+
+            Assert.Null(summary.Rank);
+            Assert.Equal(3, summary.TotalPoints);
+            Assert.Equal(1, summary.ResolvedBets);
+            _userRepositoryMock.Verify(
+                userRepository => userRepository.Find(It.IsAny<Expression<Func<User, bool>>>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public void GetMySummary_WhenOtherCompanyHasHigherPoints_RankIgnoresThem()
+        {
+            List<BetResult> results = new List<BetResult>
+            {
+                new BetResult { Id = 1, BetId = 1, Point = 3 },
+                new BetResult { Id = 2, BetId = 2, Point = 9 }
+            };
+            List<Bet> bets = new List<Bet>
+            {
+                new Bet { Id = 1, UserId = 1, MatchId = 1, TeamId = 10 },
+                new Bet { Id = 2, UserId = 2, MatchId = 1, TeamId = 20 }
+            };
+            List<User> users = new List<User>
+            {
+                new User { Id = 1, Name = "Alice", Email = "alice@test.com", UserName = "alice@test.com", CompanyId = 10 },
+                new User { Id = 2, Name = "Eve", Email = "eve@test.com", UserName = "eve@test.com", CompanyId = 99 }
+            };
+
+            SetupCompanyUsers(users);
+            _betRepositoryMock.Setup(betRepository => betRepository.GetAllAsync()).Returns(bets.AsQueryable());
+            _betResultRepositoryMock.Setup(betResultRepository => betResultRepository.Find(It.IsAny<Expression<Func<BetResult, bool>>>()))
+                .Returns((Expression<Func<BetResult, bool>> predicate) => results.AsQueryable().Where(predicate));
+            _userRepositoryMock.Setup(userRepository => userRepository.GetAllAsync()).Returns(users.AsQueryable());
+
+            LeaderboardSummaryDTO summary = _leaderboardService.GetMySummary(1);
+
+            Assert.Equal(1, summary.Rank);
+            Assert.Equal(3, summary.TotalPoints);
+        }
+
+        [Fact]
+        public void GetLeaderboard_WhenCompanyHasNoUsers_ReturnsEmptyList()
+        {
+            SetupCompanyUsers(new List<User>());
+            _betRepositoryMock.Setup(betRepository => betRepository.GetAllAsync())
+                .Returns(new List<Bet>
+                {
+                    new Bet { Id = 1, UserId = 99, MatchId = 1, TeamId = 10 }
+                }.AsQueryable());
+
+            List<LeaderboardEntryDTO> leaderboard = _leaderboardService.GetLeaderboard(10);
+
+            Assert.Empty(leaderboard);
+            _betResultRepositoryMock.Verify(
+                betResultRepository => betResultRepository.Find(It.IsAny<Expression<Func<BetResult, bool>>>()),
+                Times.Never);
         }
 
         [Fact]
@@ -193,10 +359,11 @@ namespace WorldCup_System.Tests.Services.Bets
             };
             List<User> users = new List<User>
             {
-                new User { Id = 1, Name = "Alice", Email = "alice@test.com", UserName = "alice@test.com" },
-                new User { Id = 2, Name = "Bob", Email = "bob@test.com", UserName = "bob@test.com" }
+                new User { Id = 1, Name = "Alice", Email = "alice@test.com", UserName = "alice@test.com", CompanyId = 10 },
+                new User { Id = 2, Name = "Bob", Email = "bob@test.com", UserName = "bob@test.com", CompanyId = 10 }
             };
 
+            SetupCompanyUsers(users);
             _groupRepositoryMock.Setup(groupRepository => groupRepository.Find(It.IsAny<Expression<Func<Group, bool>>>()))
                 .Returns((Expression<Func<Group, bool>> predicate) => groups.AsQueryable().Where(predicate));
             _teamRepositoryMock.Setup(teamRepository => teamRepository.Find(It.IsAny<Expression<Func<Team, bool>>>()))
@@ -209,11 +376,17 @@ namespace WorldCup_System.Tests.Services.Bets
                 .Returns((Expression<Func<BetResult, bool>> predicate) => results.AsQueryable().Where(predicate));
             _userRepositoryMock.Setup(userRepository => userRepository.GetAllAsync()).Returns(users.AsQueryable());
 
-            List<LeaderboardEntryDTO> leaderboard = _leaderboardService.GetLeaderboard(2026);
+            List<LeaderboardEntryDTO> leaderboard = _leaderboardService.GetLeaderboard(10, 2026);
 
             Assert.Single(leaderboard);
             Assert.Equal("Alice", leaderboard[0].UserName);
             Assert.Equal(3, leaderboard[0].TotalPoints);
+        }
+
+        private void SetupCompanyUsers(List<User> users)
+        {
+            _userRepositoryMock.Setup(userRepository => userRepository.Find(It.IsAny<Expression<Func<User, bool>>>()))
+                .Returns((Expression<Func<User, bool>> predicate) => users.AsQueryable().Where(predicate));
         }
 
         private static Team CreateTeam(int id, int groupId)

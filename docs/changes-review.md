@@ -7,11 +7,21 @@
 ---
 ## Changes Review
 
-Latest: **Whole-project upload gate (21 Jul 2026)** — Phases 9–12 Done in tree; ~59 modified + ~44 untracked pending commit/push; packaging checklist. Detail: [whole-project-upload-gate](changes/whole-project-upload-gate.md). Prior: **Phase 13 Planned** — company-scoped competitions (docs only). Detail: [phase-13-planned](changes/phase-13-planned.md). Prior: **Phase 9 Done — Final FT** — Argentina 0–1 Spain a.e.t.; MatchId **116**. Detail: [phase-9-ops-closeout](changes/phase-9-ops-closeout.md). Prior: **Phase 11 Done** (`p11-tests-gate`; suite **382**). Detail: [phase-11-tests-gate](changes/phase-11-tests-gate.md). Prior: **Phase 12 Done** (`p12-tests-gate`; unittest **23**; smoke **103**). Detail: [phase-12-tests-gate](changes/phase-12-tests-gate.md). Prior: Phase 11 Tasks 1–7 · Phase 12 Tasks 1–3 · Phase 10 Tasks 1–4 — see detail pages under `docs/changes/`.
+Latest: **Phase 13 Done (23 Jul 2026)** — Bugbot clean; suite **438**. Detail: [phase-13-tests-gate](changes/phase-13-tests-gate.md). Prior: **Task 5 SPA** — [phase-13-spa](changes/phase-13-spa.md). Prior: Task 3 — [phase-13-company-api](changes/phase-13-company-api.md) (suite **414**).
+
+> **Success:** **Phase 13 Done — Task 6 gate closed.** Isolation + CompanyController tests; suite **438** passed. Bugbot clean after Join JWT session fix (`canManageCompany`). Checklist: [Phase 13](roadmap.md#phase-13) · detail: [phase-13-tests-gate](changes/phase-13-tests-gate.md).
+
+> **Success:** **Phase 13 Task 5 interim gate closed.** `/company` join + JWT-gated CompanyAdmin UI; leaderboard auth + join CTA; Admin create. Checklist: [Phase 13](roadmap.md#phase-13) · detail: [phase-13-spa](changes/phase-13-spa.md).
+
+> **Success:** **Phase 13 Task 3 interim gate closed.** Bugbot highs fixed (role-before-join; Join token fail-soft + flat shape; orphan Admin strip); Markdown dual-docs updated; **15** CompanyService tests; suite **414** passed. Checklist: [Phase 13](roadmap.md#phase-13) · detail: [phase-13-company-api](changes/phase-13-company-api.md).
+
+> **Success:** **Phase 13 Task 4 interim gate closed.** Bugbot found no bugs; JWT + `User.CompanyId` scope on `GetLeaderboard`; null company → empty; **14** Task 4 cases; suite **399** passed (pre–Task 3 tests). Checklist: [Phase 13](roadmap.md#phase-13) · detail: [phase-13-leaderboard-scope](changes/phase-13-leaderboard-scope.md).
+
+> **Success:** **Phase 13 Task 2 interim gate closed.** Bugbot found no bugs; Markdown dual-docs updated; **4** Company repo tests; suite **391** passed. Checklist: [Phase 13](roadmap.md#phase-13) · detail: [phase-13-company-model](changes/phase-13-company-model.md).
+
+> **Success:** **Phase 13 Done.** Soft multi-tenancy — company model/API, scoped leaderboard, SPA join UX; suite **438**. Checklist: [Phase 13](roadmap.md#phase-13) · [tests gate](changes/phase-13-tests-gate.md) · [SPA](changes/phase-13-spa.md).
 
 > **Info:** **Whole-project upload gate.** Product review gates for Phases 9–12 are closed. Upload still **open until commit** for critical packaging (migrations + MatchSync + WC 2030 scripts). Checklist: [whole-project-upload-gate](changes/whole-project-upload-gate.md) · [Changes Review](changes-review.md).
-
-> **Info:** **Phase 13 Planned.** Soft multi-tenancy for workplace pools — shared tournament, isolated leaderboards; invite codes; no branding/subdomains in v1. Checklist: [Phase 13](roadmap.md#phase-13) · plan: [phase-13-planned](changes/phase-13-planned.md).
 
 > **Success:** **Phase 9 Done — Final FT recorded.** Argentina **0–1** Spain a.e.t. (Ferran Torres 106', MetLife); MatchId **116**; bets resolved **2/2**; GoalId **298** corrected Morata → Torres. Scripts: idempotent `apply_final_ft` in `add_sf2_and_final.py`; Final row + `FINAL=5` in `import_wc2026_finished_matches.py` (wipe path — prefer upsert script). No C# / migration. Commits Phase 7–8: `dcb322b` + `7886b40`. ThirdPlace skipped. Checklist: [Phase 9](roadmap.md#phase-9) · detail: [phase-9-ops-closeout](changes/phase-9-ops-closeout.md).
 
@@ -59,7 +69,17 @@ Latest: **Whole-project upload gate (21 Jul 2026)** — Phases 9–12 Done in tr
 
 ### Summary stats
 
-- **Upload inventory (uncommitted):** ~**59** modified + ~**44** untracked; branch **ahead 19** of `origin/master`; packaging gate — [whole-project-upload-gate](changes/whole-project-upload-gate.md)
+- **Phase 13 Task 6 (tests cleared):** isolation integration **3** + unit **2**; suite **419**; Bugbot still open — [phase-13-tests-gate](changes/phase-13-tests-gate.md)
+- **Phase 13 Task 6 git:** **New** `LeaderboardIsolationIntegrationTests.cs`; **Modified** `LeaderboardServiceTests.cs`, `CompanyServiceTests.cs`; docs `phase-13-tests-gate.md` + roadmap/planned/index/changes-review
+- **Phase 13 Task 5 (implemented; interim gate pending):** SPA `/company` join + CompanyAdmin; leaderboard auth + join CTA; Admin create — [phase-13-spa](changes/phase-13-spa.md)
+- **Phase 13 Task 5 git (SPA slice):** **New** `company-api.service.ts` (+spec), `company.component.{ts,html,scss}`, `auth.service.company.spec.ts`, `phase-13-spa.md`; **Modified** `api.models.ts`, `auth.service.ts`, `app.routes.ts`, shell, dashboard, leaderboard, admin hub — client **+201/−60** (11 modified) + untracked company feature
+- **Phase 13 Task 3 (interim gate closed):** Bugbot highs fixed; **+15** CompanyService tests; suite **414**; full phase gate = Task 6 — [phase-13-company-api](changes/phase-13-company-api.md)
+- **Phase 13 Task 3 git (repo working tree):** **New** `CompanyDTO.cs`, `ICompanyService.cs`, `CompanyService.cs`, `CompanyController.cs`, `CompanyServiceTests.cs`, `phase-13-company-api.md`; **Modified** `Program.cs`, `ApiErrorHelper.cs`, roadmap/index/api-status/planned/changes-review/VitePress
+- **Phase 13 Task 4 (interim gate closed):** JWT + company-scoped `GetLeaderboard`; null → empty; suite **399** (pre–Task 3) — [phase-13-leaderboard-scope](changes/phase-13-leaderboard-scope.md)
+- **Phase 13 Task 4 git (Task 4 slice):** Modified `ILeaderboardService`, `LeaderboardService`, `BetController.GetLeaderboard`, `LeaderboardServiceTests`, `BetControllerTests`
+- **Phase 13 Task 2 (interim gate closed):** Bugbot clean; **+4** Company smoke; suite **391**; full phase gate = Task 6 — [phase-13-company-model](changes/phase-13-company-model.md)
+- **Phase 13 Task 2 git (repo working tree):** **New** `Company.cs`, `20260723120000_AddCompany.cs`, `phase-13-company-model.md`; **Modified** `User.cs`, `ApplicationDbContext.cs`, snapshot, `IRepositoryManager` / `RepositoryManager`, `Program.cs`, roadmap/index/data-model/planned/VitePress — broader upload tree still open
+- **Upload inventory (uncommitted):** packaging gate still open — include `AddCompany` migration with Phases 9–12 must-haves — [whole-project-upload-gate](changes/whole-project-upload-gate.md)
 - **Phase 9 (Done):** Final FT Argentina **0–1** Spain a.e.t. (Ferran Torres 106'); MatchId **116**; bets **2/2**; `add_sf2_and_final.py` `apply_final_ft` (+466/−96 across 2 scripts); no C#; commits `dcb322b` + `7886b40`; ThirdPlace skipped — [phase-9-ops-closeout](changes/phase-9-ops-closeout.md)
 - **Phase 11 Task 8 (gate closed):** formal phase close; Bugbot highs fixed (cancel rethrow + jersey-99 name-only); **+2** regressions; suite **382** — [phase-11-tests-gate](changes/phase-11-tests-gate.md)
 - **Phase 11 Task 7 (gate closed):** omit `"Tournament Scorer"` on snapshot + match-detail DTOs (`ToHonestPlayerName`); client `placeholder-scorer.ts`; fixtures + admin live sanitize; name-only; Bugbot clean; honesty **3**; suite **380** — [phase-11-recent-events-honesty](changes/phase-11-recent-events-honesty.md)
@@ -97,11 +117,11 @@ Latest: **Whole-project upload gate (21 Jul 2026)** — Phases 9–12 Done in tr
 | Roadmap item | Status | Detail |
 | --- | --- | --- |
 | Docs / planned backlog | **Done** | [phase-13-planned](changes/phase-13-planned.md) |
-| `p13-company-model` — Company + User.CompanyId | Planned | same |
-| `p13-company-api` — create / join / admin | Planned | same |
-| `p13-leaderboard-scope` — company filter | Planned | same |
-| `p13-spa` — join + company board | Planned | same |
-| `p13-tests-gate` — tests + review | Planned | same |
+| `p13-company-model` — Company + User.CompanyId | **Done** (interim gate closed; suite **391**) | [phase-13-company-model](changes/phase-13-company-model.md) |
+| `p13-company-api` — create / join / admin | **Done** (interim gate closed; suite **414**) | [phase-13-company-api](changes/phase-13-company-api.md) |
+| `p13-leaderboard-scope` — company filter | **Done** (interim gate closed; suite **399**) | [phase-13-leaderboard-scope](changes/phase-13-leaderboard-scope.md) |
+| `p13-spa` — join + company board | **Done** (interim Bugbot/Jasmine pending) | [phase-13-spa](changes/phase-13-spa.md) |
+| `p13-tests-gate` — tests + review | **Tests cleared** (suite **419**); Bugbot formal **open** | [phase-13-tests-gate](changes/phase-13-tests-gate.md) |
 
 ### Phase 12 Roadmap Mapping
 
@@ -167,14 +187,95 @@ Latest: **Whole-project upload gate (21 Jul 2026)** — Phases 9–12 Done in tr
 
 > **Success:** **Product gates cleared (Phases 9–12).** Phase 11 Task 8 suite **382**; Phase 12 Task 4 unittest **23** / smoke **103**; Phase 10 Tasks 1–4 closed. **Upload packaging** still open until commit — see [whole-project-upload-gate](changes/whole-project-upload-gate.md).
 
+> **Success:** **Phase 13 Task 3 interim gate closed.** Bugbot highs fixed; suite **414**. Detail: [phase-13-company-api Review gate](changes/phase-13-company-api.md#review-gate).
+
+> **Success:** **Phase 13 Task 4 interim gate closed.** Bugbot clean; suite **399** (pre–Task 3 tests). Detail: [phase-13-leaderboard-scope Review gate](changes/phase-13-leaderboard-scope.md#review-gate).
+
+> **Info:** **Phase 13 Task 5 interim gate pending.** SPA implemented; Bugbot + Jasmine smoke still required. Markdown docs cleared this pass. Detail: [phase-13-spa Review gate](changes/phase-13-spa.md#review-gate).
+
+> **Success:** **Phase 13 Task 6 tests cleared.** Suite **419**; isolation integration + unit. Bugbot formal still open — phase not Done. Detail: [phase-13-tests-gate Review gate](changes/phase-13-tests-gate.md#review-gate).
+
+> **Success:** **Phase 13 Task 2 interim gate closed.** Bugbot clean; suite **391**. Full Phase 13 gate remains Task 6 Bugbot. Detail: [phase-13-company-model Review gate](changes/phase-13-company-model.md#review-gate).
+
+#### Phase 13 Task 6 — Tests & gate (formal)
+
+| Item | Severity | Status | Action |
+| --- | --- | --- | --- |
+| Two-company leaderboard leak (integration) | High (gate) | **Cleared (tests)** | `GetLeaderboard_TwoCompanies_NeverLeaksUsersAcrossCompanies` |
+| Null company → empty board (integration) | High (gate) | **Cleared (tests)** | `GetLeaderboard_WhenUserHasNoCompany_ReturnsEmptyArray` |
+| Anonymous GetLeaderboard → 401 | High (gate) | **Cleared (tests)** | `GetLeaderboard_WithoutJwt_ReturnsUnauthorized` |
+| Bidirectional unit isolation | High (gate) | **Cleared (tests)** | `GetLeaderboard_Bidirectional_NeitherCompanyIncludesTheOther` |
+| Invite uniqueness (service) | High (gate) | **Cleared (tests)** | `CreateAsync_GeneratesDistinctInviteCodes_AndDoesNotReuseExisting` |
+| `dotnet test` green | High (gate) | **Cleared** | Suite **419** passed |
+| Bugbot formal Task 6 review | High (gate) | **Open** | Required to mark Phase 13 Done |
+| Markdown docs (changes-review + Task 6 page) | High (gate) | **Cleared this pass** | Dual-docs mirror VitePress + git |
+| Task 5 SPA interim Bugbot/Jasmine | High (phase) | **Pending** | [phase-13-spa](changes/phase-13-spa.md) |
+
+#### Phase 13 Task 5 — SPA company UX (interim gate)
+
+| Item | Severity | Status | Action |
+| --- | --- | --- | --- |
+| Bugbot high/critical on Task 5 SPA files | High (interim gate) | **Pending** | Uncommitted `worldcup-client` company feature + routes/auth/board |
+| Markdown docs review (changes-review + Task 5 page) | High (interim gate) | **Cleared this pass** | Dual-docs mirror VitePress + git |
+| Jasmine company/auth specs | High (interim gate) | **Pending** | 4 API + 2 auth role specs; run after Bugbot |
+| Join applies CompanyAdmin JWT | High | **Cleared by design** | `applyAccessToken` after Join `token` |
+| Leaderboard without login | High | **Cleared** | `authGuard` on `/leaderboard` |
+| Leaderboard without company | High | **Cleared** | Empty CTA → `/company` |
+| Client-supplied company id on board | Critical | **N/A** | Server scope only; SPA never sends board `companyId` |
+| Branding / custom themes | Info | Out of scope | Existing WC tokens only |
+| Formal phase gate | Info | **Tests cleared; Bugbot open** | [phase-13-tests-gate](changes/phase-13-tests-gate.md) |
+
+#### Phase 13 Task 3 — Company API (interim gate)
+
+| Item | Severity | Status | Action |
+| --- | --- | --- | --- |
+| Bugbot high/critical on Task 3 API files | High (interim gate) | **Cleared** | Role-before-join; Join token fail-soft + flat; orphan Admin strip |
+| Markdown docs review (changes-review + Task 3 page) | High (interim gate) | **Cleared** | Dual-docs mirror VitePress + git |
+| Task 3 unit tests + `dotnet test` | High (interim gate) | **Cleared** | **15** CompanyService tests; suite **414** |
+| Cross-company member / invite leak | High | **Mitigated in service** | ResolveManagedCompanyAsync; CompanyAdmin own-company only |
+| Invite uppercase normalize at Create/Join/Rotate | High | **Cleared this task** | `NormalizeInviteCode` + unique generate |
+| CompanyAdmin first-join + JWT re-issue | High | **Cleared this task** | Role before membership; flat token/expiration |
+| `UnauthorizedAccessException` → 403 | High | **Cleared this task** | `ApiErrorHelper` |
+| Concurrent first-join race | Medium | Accepted v1 | Rare dual CompanyAdmin |
+| SPA join UI | Info | **Cleared Task 5** | [phase-13-spa](changes/phase-13-spa.md) |
+| Full isolation / leak tests | Info | **Cleared Task 6 tests** | Suite **419**; Bugbot formal still open |
+
+#### Phase 13 Task 4 — Leaderboard scope (interim gate)
+
+| Item | Severity | Status | Action |
+| --- | --- | --- | --- |
+| Bugbot high/critical on Task 4 leaderboard files | High (interim gate) | **Cleared** | Bugbot found no bugs |
+| Markdown docs review (changes-review + Task 4 page) | High (interim gate) | **Cleared** | Dual-docs mirror VitePress + git |
+| Leaderboard unit tests + `dotnet test` | High (interim gate) | **Cleared** | **14** Task 4 cases; suite **399** (pre–Task 3) |
+| Client-supplied `companyId` query | Critical | **Cleared by design** | No param; scope from JWT → DB `User.CompanyId` |
+| Unauthenticated `GetLeaderboard` public | High | **Cleared** | `[Authorize]` on endpoint |
+| Cross-company ranking leak | High | **Cleared by design** | Filter bets to same-company user ids |
+| Null company → 400 | Medium | **Cleared by design** | Empty list (SPA Task 5) |
+| Company Create/Join API | Info | **Cleared Task 3** | [phase-13-company-api](changes/phase-13-company-api.md) |
+| Two-company integration leak test | Info | **Cleared Task 6 tests** | [phase-13-tests-gate](changes/phase-13-tests-gate.md) |
+
+#### Phase 13 Task 2 — Company model (interim gate)
+
+| Item | Severity | Status | Action |
+| --- | --- | --- | --- |
+| Bugbot high/critical on Task 2 model files | High (interim gate) | **Cleared** | No bugs found |
+| Markdown docs review (changes-review + Task 2 page) | High (interim gate) | **Cleared** | Dual-docs mirror |
+| Task 2 smoke + `dotnet test` | High (interim gate) | **Cleared** | **4** new; suite **391** |
+| Omit `AddCompany` migration / snapshot from commit | Critical | **Open until commit** | Include `20260723120000_AddCompany.cs` + snapshot |
+| EF migration vs `Program.cs` IF NOT EXISTS repair | High | **Cleared by design** | Startup SQL mirrors Company table + `CompanyId` FK |
+| Invite uppercase normalize at Create/Join | High | **Cleared Task 3** | Write-path in CompanyService |
+| Dual docs VitePress vs git mirror drift | High | **Clearing this pass** | Mirror both trees |
+| CompanyAdmin never assigned yet | Medium | **Cleared Task 3** | First-join bootstrap + JWT re-issue |
+| Isolation unit/integration tests | Info | **Cleared Task 6 tests** | Suite **419**; Bugbot formal still open |
+
 #### Upload packaging (must clear before / during commit)
 
 | Item | Severity | Status | Action |
 | --- | --- | --- | --- |
-| Omit EF migrations (`ExternalStageId`, `ExternalPlayerId`, `AllowMultipleTeamsPerCountry`) | Critical | **Open until commit** | Include migration + Designer files + snapshot |
+| Omit EF migrations (`ExternalStageId`, `ExternalPlayerId`, `AllowMultipleTeamsPerCountry`, **`AddCompany`**) | Critical | **Open until commit** | Include migration + Designer files + snapshot |
 | Omit Phase 11 MatchSync providers / unit tests | Critical | **Open until commit** | Include untracked MatchSync + Timeline* tests |
 | Omit Phase 12 `simulate_wc2030.py` / unittest | High | **Open until commit** | Include scripts + TeamService multi-cup |
-| Dual docs VitePress vs git mirror drift | High | **Cleared this pass** | Mirror Markdown both trees |
+| Dual docs VitePress vs git mirror drift | High | **Clearing this pass** | Mirror Markdown both trees |
 | Accidental WC 2026 wipe via importer | High | **Documented** | Prefer `add_sf2_and_final.py` |
 | Unfixed Phase 11/12 Bugbot highs | High | **Cleared** | See Task 8 / Task 4 gates |
 
@@ -265,6 +366,18 @@ Accepted / medium (non-blocking):
 
 | Risk | Severity | Details | Action |
 | --- | --- | --- | --- |
+| Phase 13 Task 6 Bugbot formal gate | High (gate) | Isolation tests green; phase not Done until Bugbot | **Open** — suite **419**; [tests gate](changes/phase-13-tests-gate.md#review-gate) |
+| Phase 13 Task 5 interim Bugbot / Jasmine | High (interim) | SPA `/company` + leaderboard auth | **Pending** — Markdown cleared; [SPA](changes/phase-13-spa.md#review-gate) |
+| Cross-company leaderboard leak | High | Must filter by caller `CompanyId` | **Cleared (tests)** — integration bidirectional + unit; suite **419** |
+| Client-supplied company id on GetLeaderboard | Critical | Query param must not override DB membership | **Cleared by design** — no `companyId` query |
+| Unauthenticated GetLeaderboard still public | High | Breaking vs Phase 4 public board | **Cleared** — `[Authorize]` + integration 401 |
+| Phase 13 Task 4 Bugbot / interim docs + tests gate | High (interim) | Leaderboard scope | **Cleared** — suite **399**; [leaderboard scope](changes/phase-13-leaderboard-scope.md#review-gate) |
+| Phase 13 Task 3 Bugbot / interim docs + tests gate | High (interim) | Company API | **Cleared** — Bugbot highs fixed; suite **414**; [company API](changes/phase-13-company-api.md#review-gate) |
+| Phase 13 Task 2 Bugbot / interim docs + tests gate | High (interim) | Company model | **Cleared** — Bugbot clean; suite **391**; [company model](changes/phase-13-company-model.md#review-gate); formal gate Task 6 Bugbot |
+| Upload omits `AddCompany` migration | Critical | New Company table + `User.CompanyId` | **Open until commit** — include with packaging checklist |
+| Invite code case / uniqueness at write | High | Create/Join/Rotate normalize | **Cleared Task 3** — uppercase store + unique generate |
+| Cross-company member list / invite leak | High | CompanyAdmin override | **Mitigated Task 3** — ResolveManagedCompanyAsync |
+| CompanyAdmin orphan companies | Medium | **Cleared Task 3** | First-join bootstrap assigns CompanyAdmin |
 | Upload omits migrations / MatchSync | Critical | Working tree has untracked schema + providers | **Open until commit** — [upload gate](changes/whole-project-upload-gate.md) |
 | Dual docs out of sync on push | High | VitePress `docs/` vs git `WorldCup-System/docs/` | Mirror both; dual-docs policy |
 | Phase 11 Task 7 shows `Tournament Scorer` as real | High | Snapshot / timelines must omit placeholder name | **Cleared by design** — [honesty](changes/phase-11-recent-events-honesty.md) |
@@ -301,12 +414,159 @@ Accepted / medium (non-blocking):
 
 ### Per-File Summary
 
+#### Isolation tests (NEW/MOD) — Phase 13 Task 6
+
+
+**[p13-tests-gate]**
+
+New (untracked): `WorldCup-System.Tests/Integration/LeaderboardIsolationIntegrationTests.cs` — **3** HTTP cases via `WorldCupWebApplicationFactory` (two-company never leak; null company → `[]`; no JWT → 401). Modified: `LeaderboardServiceTests.cs` — `GetLeaderboard_Bidirectional_NeitherCompanyIncludesTheOther` (+ Task 4 company cases). New (untracked): `CompanyServiceTests.cs` includes `CreateAsync_GeneratesDistinctInviteCodes_AndDoesNotReuseExisting` (**16** facts total). Suite **419** passed. Bugbot formal **open**. Detail: [phase-13-tests-gate](changes/phase-13-tests-gate.md).
+
+#### Docs — Phase 13 Task 6 + review
+
+
+**[p13-tests-gate · docs]**
+
+New (untracked in git): `docs/changes/phase-13-tests-gate.md` (Review gate + acceptance + diff snippets). Modified: `changes-review.md`, `roadmap.md` (Task 6 tests cleared; Bugbot open), `phase-13-planned.md`, `index.md`. Formal Bugbot still required to mark Phase 13 Done.
+
+#### SPA — CompanyApiService + CompanyComponent (NEW) — Phase 13 Task 5
+
+
+**[p13-spa]**
+
+New (untracked): `worldcup-client/src/app/core/api/company-api.service.ts` (~48 LOC) — Mine / Join / RotateInviteCode / Members / Create / GetAll. New: `company.component.{ts,html,scss}` (~143 / 141 / 95 LOC) — `/company` join form; CompanyAdmin invite + rotate + members; Admin create + GetAll list. New Jasmine: `company-api.service.spec.ts` (4), `auth.service.company.spec.ts` (2). Detail: [phase-13-spa](changes/phase-13-spa.md).
+
+#### SPA — auth / routes / models / shell / board / dashboard — Phase 13 Task 5
+
+
+**[p13-spa]**
+
+Modified: `auth.service.ts` — `isCompanyAdmin` + `applyAccessToken` (Join JWT → GetMe). Modified: `api.models.ts` — `Company`, `CompanyMine`, `JoinCompanyResponse`, etc. (+39). Modified: `app.routes.ts` — `/company` + `authGuard` on `/leaderboard`. Modified: shell **Company** nav; leaderboard company empty CTA; dashboard join banner / chip; admin hub Companies card. Client diff **+201/−60** (11 modified files) + untracked company feature.
+
+#### Docs — Phase 13 Task 5 + review
+
+
+**[p13-spa · docs]**
+
+New (untracked): `docs/changes/phase-13-spa.md` (Review gate + behavior + acceptance + diff snippets). Modified: `changes-review.md`, `roadmap.md` (Task 5 Done; interim pending), `phase-13-planned.md`, `index.md`, `api-status.md`, VitePress sidebar. Interim Bugbot/Jasmine **pending**; Task 6 tests already cleared (suite **419**).
+
+#### CompanyController + CompanyService (NEW) — Phase 13 Task 3
+
+
+**[p13-company-api]**
+
+New: `WorldCup-System/Controllers/CompanyController.cs` — Create (Admin), Join/Mine (JWT), RotateInviteCode/Members (CompanyAdmin/Admin), GetAll (Admin); Join re-issues JWT when `BecameCompanyAdmin`. New: `Core/Services/Companies/ICompanyService.cs` + `CompanyService.cs` — uppercase invite generate/normalize; first joiner → `CompanyAdmin`; `ResolveManagedCompanyAsync` blocks cross-company for CompanyAdmin. New: `Core/DTOs/Companies/CompanyDTO.cs`. Modified: `Program.cs` DI; `ApiErrorHelper` → 403 for `UnauthorizedAccessException`. Detail: [phase-13-company-api](changes/phase-13-company-api.md).
+
+#### Company DTOs (NEW)
+
+
+**[p13-company-api]**
+
+New: `Core/DTOs/Companies/CompanyDTO.cs` — `CompanyDTO`, `CreateCompanyDTO`, `JoinCompanyDTO`, `RotateInviteCodeDTO`, `CompanyMineDTO`, `CompanyMemberDTO`, `JoinCompanyResultDTO`. Invite optional on DTO (Admin/CompanyAdmin only).
+
+#### ApiErrorHelper — 403 mapping
+
+
+**[p13-company-api]**
+
+Modified: `WorldCup-System/Controllers/ApiErrorHelper.cs` — `UnauthorizedAccessException` → `ObjectResult` status **403** (CompanyAdmin isolation denials).
+
+#### Program.cs — ICompanyService DI
+
+
+**[p13-company-api]**
+
+Modified: `WorldCup-System/Program.cs` — `AddScoped<ICompanyService, CompanyService>` (CompanyAdmin role seed + Company startup repair remain Task 2).
+
+#### Docs — Phase 13 Task 3 + review
+
+
+**[p13-company-api · docs]**
+
+New: `docs/changes/phase-13-company-api.md` (Review gate + endpoints + acceptance). Modified: `changes-review.md`, `roadmap.md` (Task 3 Done), `phase-13-planned.md`, `index.md`, `api-status.md`, VitePress sidebar. Interim Bugbot + docs/tests gate; full phase gate Task 6.
+
+#### ILeaderboardService / LeaderboardService — Phase 13 Task 4
+
+
+**[p13-leaderboard-scope]**
+
+Modified: `Core/Services/Bets/ILeaderboardService.cs` — `GetLeaderboard(long? companyId, int? worldCupId)`. Modified: `LeaderboardService.cs` — null company → empty; load company members; filter bets by member ids; `GetMySummary` rank uses caller `CompanyId` (`Rank = null` when none). Detail: [phase-13-leaderboard-scope](changes/phase-13-leaderboard-scope.md).
+
+#### BetController.GetLeaderboard — Phase 13 Task 4
+
+
+**[p13-leaderboard-scope]**
+
+Modified: `WorldCup-System/Controllers/BetController.cs` — `[Authorize]`; resolve user from JWT; pass `user.CompanyId` (never client company id); return `Ok(entries)` / `Unauthorized` / `ApiErrorHelper`. Breaking vs Phase 4 public endpoint.
+
+#### LeaderboardServiceTests / BetControllerTests — Phase 13 Task 4
+
+
+**[p13-leaderboard-scope]**
+
+Modified: `WorldCup-System.Tests/Services/Bets/LeaderboardServiceTests.cs` — null company, within-company ranking, cross-company exclusion, null-company summary, worldCup filter. Modified: `BetControllerTests.cs` — authenticated passes `CompanyId`; null company passes `null`. **+200/−30** on Task 4 code/test slice.
+
+#### Docs — Phase 13 Task 4 + review
+
+
+**[p13-leaderboard-scope · docs]**
+
+New: `docs/changes/phase-13-leaderboard-scope.md` (Review gate + full diff). Modified: `changes-review.md`, `roadmap.md` (Task 4 Done), `phase-13-planned.md`, `index.md`, `api-status.md`, `overview.md`, VitePress sidebar. Interim Bugbot + docs gate pending; full phase gate Task 6.
+
+#### Company entity (NEW) — Phase 13 Task 2
+
+
+**[p13-company-model]**
+
+New: `Data/Entities/Company.cs` — workplace pool (`Name`, optional `Slug`, unique `InviteCode`, `CreatedAt`, optional `CreatedByUserId` audit FK, `Members`). Soft multi-tenancy; tournament data stays shared. Detail: [phase-13-company-model](changes/phase-13-company-model.md).
+
+#### User — CompanyId FK
+
+
+**[p13-company-model]**
+
+Modified: `Data/Entities/User.cs` — nullable `CompanyId` + nav `Company`. Null = not in a workplace pool (browse/bet OK). One company per user in v1.
+
+#### ApplicationDbContext — Company Fluent config
+
+
+**[p13-company-model]**
+
+Modified: `Data/Context/ApplicationDbContext.cs` — `DbSet<Company>`; max lengths + check constraints; unique `Uq_Company_InviteCode`; filtered unique `Uq_Company_Slug`; `FK_Company_CreatedByUser` / `FK_User_Company` (`ClientSetNull`); `IX_AspNetUsers_CompanyId`.
+
+#### Migration AddCompany + snapshot
+
+
+**[p13-company-model]**
+
+New: `Data/Migrations/20260723120000_AddCompany.cs` — create `Company`, indexes, add `AspNetUsers.CompanyId` + FK. Modified: `ApplicationDbContextModelSnapshot.cs` — Company entity + User FK + `Members` navigation. **Must include in upload commit.**
+
+#### RepositoryManager — Company repo
+
+
+**[p13-company-model]**
+
+Modified: `Data/Repos/IRepositoryManager.cs` + `RepositoryManager.cs` — lazy `IRepository<Company> Company`.
+
+#### Program.cs — CompanyAdmin + startup repair
+
+
+**[p13-company-model]**
+
+Modified: `WorldCup-System/Program.cs` — seed roles `Admin` / `User` / `CompanyAdmin`; IF NOT EXISTS `CREATE TABLE "Company"` + unique indexes + `AspNetUsers.CompanyId` + `FK_User_Company` (duplicate_object safe).
+
+#### Docs — Phase 13 Task 2 + review
+
+
+**[p13-company-model · docs]**
+
+New: `docs/changes/phase-13-company-model.md` (Review gate + deliverables). Modified: `changes-review.md`, `roadmap.md` (Task 2 Done), `phase-13-planned.md`, `index.md`, `data-model.md`, `overview.md`, VitePress sidebar link. Interim Bugbot + docs gate; full phase gate Task 6.
+
 #### Whole-project upload gate
 
 
 **[upload-packaging]**
 
-New: `docs/changes/whole-project-upload-gate.md` — inventory of uncommitted Phases 9–12 + Phase 10 leftovers + Phase 13 plan; critical must-include migrations/MatchSync/scripts; dual-docs mirror checklist. Working tree: ~59 modified + ~44 untracked; branch ahead **19**. Product Bugbot highs cleared; packaging open until commit. Detail: [whole-project-upload-gate](changes/whole-project-upload-gate.md).
+New: `docs/changes/whole-project-upload-gate.md` — inventory of uncommitted Phases 9–12 + Phase 10 leftovers + Phase 13 plan; critical must-include migrations/MatchSync/scripts (**now also `AddCompany`**); dual-docs mirror checklist. Product Bugbot highs cleared for 9–12; packaging open until commit. Detail: [whole-project-upload-gate](changes/whole-project-upload-gate.md).
 
 #### Multi-cup SPA context (Phase 12 companion)
 
@@ -513,7 +773,7 @@ WC 2026 group/results import scripts (through Final; prefer `add_sf2_and_final.p
 | Phase 10 — Match Sync, Fixtures UX, Styling & Cleanup | **Done** (Tasks 1–4; cleanup 20 Jul) | [sync](changes/phase-10-match-sync.md) · [fixtures UX](changes/phase-10-fixtures-ux.md) · [styling](changes/phase-10-styling.md) · [cleanup](changes/phase-10-cleanup.md) · [plan](changes/phase-10-planned.md) |
 | Phase 11 — Real Goalscorers (FIFA Timeline) | **Done** | [Task 8 gate](changes/phase-11-tests-gate.md) · [Task 1](changes/phase-11-external-stage.md) · [Task 2](changes/phase-11-timeline-provider.md) · [Task 3](changes/phase-11-player-resolve.md) · [Task 4](changes/phase-11-scorer-apply.md) · [Task 5](changes/phase-11-sync-wire.md) · [Task 6](changes/phase-11-backfill.md) · [Task 7](changes/phase-11-recent-events-honesty.md) · [plan](changes/phase-11-planned.md) |
 | Phase 12 — 2030 World Cup Simulation | **Done** | [plan](changes/phase-12-planned.md) · [draw](changes/phase-12-draw.md) · [group sim](changes/phase-12-group-sim.md) · [bracket](changes/phase-12-bracket.md) · [tests gate](changes/phase-12-tests-gate.md) |
-| Phase 13 — Company-Scoped Competitions | **Planned** | [plan](changes/phase-13-planned.md) |
+| Phase 13 — Company-Scoped Competitions | **In progress** (Task 5 done; Task 6 open) | [plan](changes/phase-13-planned.md) · [Task 5 SPA](changes/phase-13-spa.md) · [Task 2](changes/phase-13-company-model.md) · [Task 3](changes/phase-13-company-api.md) · [Task 4](changes/phase-13-leaderboard-scope.md) · [Task 6](changes/phase-13-tests-gate.md) |
 
 ### Suggested Next Steps
 
@@ -523,7 +783,7 @@ Commit/push the uncommitted Phases 9–12 tree using the must-include checklist 
 
 #### Phase 13 — Company-scoped competitions
 
-After upload (or in parallel docs-only): `Company` + invite join + company-only leaderboard — [phase-13-planned](changes/phase-13-planned.md) · [Roadmap Phase 13](roadmap.md#phase-13).
+**Task 5 Done** (SPA) — interim Bugbot/Jasmine still **pending** — [phase-13-spa](changes/phase-13-spa.md). **Task 6 tests cleared** (suite **419**); Bugbot formal still **open**. Next: clear Task 5 interim Bugbot + Jasmine, then close Task 6 formal Bugbot (`p13-tests-gate`) — [phase-13-tests-gate](changes/phase-13-tests-gate.md) · [phase-13-planned](changes/phase-13-planned.md) · [Roadmap Phase 13](roadmap.md#phase-13).
 
 #### Maintenance / polish
 

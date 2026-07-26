@@ -2,7 +2,13 @@
   <header class="page-header">
     <div>
       <h1>Leaderboard</h1>
-      <p>Prediction pool rankings by total points — {{ context.selectedWorldCupLabel() }}.</p>
+      @if (company(); as companyRow) {
+        <p>
+          {{ companyRow.name }} prediction pool — {{ context.selectedWorldCupLabel() }}.
+        </p>
+      } @else {
+        <p>Company-scoped rankings for {{ context.selectedWorldCupLabel() }}.</p>
+      }
     </div>
     <app-world-cup-selector />
   </header>
@@ -11,44 +17,51 @@
     <p class="alert alert-error" role="alert">{{ errorMessage() }}</p>
   }
 
-  @if (summary(); as mySummary) {
-    <div class="my-summary card">
-      <h2>Your standing</h2>
-      <dl>
-        <div><dt>Rank</dt><dd>{{ mySummary.rank ?? '—' }}</dd></div>
-        <div><dt>Points</dt><dd>{{ mySummary.totalPoints }}</dd></div>
-        <div><dt>Resolved</dt><dd>{{ mySummary.resolvedBets }}</dd></div>
-        <div><dt>Active bets</dt><dd>{{ mySummary.activeBets }}</dd></div>
-      </dl>
-    </div>
-  }
-
   @if (isLoading()) {
     <p class="muted">Loading leaderboard…</p>
-  } @else if (entries().length === 0) {
-    <p class="muted">No scores yet. Place bets and resolve matches to appear here.</p>
-  } @else {
-    <div class="table-wrap">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Rank</th>
-            <th>Player</th>
-            <th>Points</th>
-            <th>Resolved bets</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (entry of entries(); track entry.userId) {
-            <tr [class.highlight]="isCurrentUser(entry)">
-              <td>{{ entry.rank }}</td>
-              <td>{{ entry.userName }}</td>
-              <td><strong>{{ entry.totalPoints }}</strong></td>
-              <td>{{ entry.resolvedBets }}</td>
-            </tr>
-          }
-        </tbody>
-      </table>
+  } @else if (!company()) {
+    <div class="empty-company">
+      <p>Join a company to see your workplace leaderboard.</p>
+      <a routerLink="/company" class="btn btn-primary">Join company</a>
     </div>
+  } @else {
+    @if (summary(); as mySummary) {
+      <div class="my-summary card">
+        <h2>Your standing</h2>
+        <dl>
+          <div><dt>Rank</dt><dd>{{ mySummary.rank ?? '—' }}</dd></div>
+          <div><dt>Points</dt><dd>{{ mySummary.totalPoints }}</dd></div>
+          <div><dt>Resolved</dt><dd>{{ mySummary.resolvedBets }}</dd></div>
+          <div><dt>Active bets</dt><dd>{{ mySummary.activeBets }}</dd></div>
+        </dl>
+      </div>
+    }
+
+    @if (entries().length === 0) {
+      <p class="muted">No scores yet in {{ company()?.name }}. Place bets and resolve matches to appear here.</p>
+    } @else {
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Player</th>
+              <th>Points</th>
+              <th>Resolved bets</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of entries(); track entry.userId) {
+              <tr [class.highlight]="isCurrentUser(entry)">
+                <td>{{ entry.rank }}</td>
+                <td>{{ entry.userName }}</td>
+                <td><strong>{{ entry.totalPoints }}</strong></td>
+                <td>{{ entry.resolvedBets }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
   }
 </section>

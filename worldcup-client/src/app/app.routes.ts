@@ -15,6 +15,7 @@ import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { BracketComponent } from './features/bracket/bracket.component';
 import { FixturesComponent } from './features/fixtures/fixtures.component';
 import { HomeComponent } from './features/home/home.component';
+import { CompanyComponent } from './features/company/company.component';
 import { LeaderboardComponent } from './features/leaderboard/leaderboard.component';
 import { StandingsComponent } from './features/standings/standings.component';
 
@@ -27,10 +28,11 @@ export const routes: Routes = [
       { path: 'login', component: LoginComponent, canActivate: [guestGuard] },
       { path: 'register', component: RegisterComponent, canActivate: [guestGuard] },
       { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
+      { path: 'company', component: CompanyComponent, canActivate: [authGuard] },
       { path: 'fixtures', component: FixturesComponent },
       { path: 'bracket', component: BracketComponent },
       { path: 'standings', component: StandingsComponent },
-      { path: 'leaderboard', component: LeaderboardComponent },
+      { path: 'leaderboard', component: LeaderboardComponent, canActivate: [authGuard] },
       { path: 'bets', component: MyBetsComponent, canActivate: [authGuard] },
       {
         path: 'admin',

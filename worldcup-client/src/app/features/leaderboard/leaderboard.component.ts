@@ -1,23 +1,27 @@
 import { Component, effect, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { BetApiService } from '../../core/api/bet-api.service';
+import { CompanyApiService } from '../../core/api/company-api.service';
 import { AuthService } from '../../core/auth/auth.service';
-import { LeaderboardEntry, LeaderboardSummary } from '../../core/models/api.models';
+import { Company, LeaderboardEntry, LeaderboardSummary } from '../../core/models/api.models';
 import { WorldCupContextService } from '../../core/services/worldcup-context.service';
 import { WorldCupSelectorComponent } from '../shared/world-cup-selector/world-cup-selector.component';
 
 @Component({
   selector: 'app-leaderboard',
-  imports: [WorldCupSelectorComponent],
+  imports: [RouterLink, WorldCupSelectorComponent],
   templateUrl: './leaderboard.component.html',
   styleUrl: './leaderboard.component.scss',
 })
 export class LeaderboardComponent {
   private readonly betApi = inject(BetApiService);
+  private readonly companyApi = inject(CompanyApiService);
   protected readonly auth = inject(AuthService);
   protected readonly context = inject(WorldCupContextService);
 
   private loadToken = 0;
 
+  protected readonly company = signal<Company | null>(null);
   protected readonly entries = signal<LeaderboardEntry[]>([]);
   protected readonly summary = signal<LeaderboardSummary | null>(null);
   protected readonly isLoading = signal(false);
@@ -37,27 +41,27 @@ export class LeaderboardComponent {
     this.isLoading.set(true);
     this.errorMessage.set(null);
     try {
-      const requests: Promise<void>[] = [
-        this.betApi.getLeaderboard(scopedId).then((rows) => {
-          if (token !== this.loadToken || this.context.selectedWorldCupId() !== worldCupId) {
-            return;
-          }
-          this.entries.set(rows);
-        }),
-      ];
-      if (this.auth.isAuthenticated()) {
-        requests.push(
-          this.betApi.getMySummary(scopedId).then((row) => {
-            if (token !== this.loadToken || this.context.selectedWorldCupId() !== worldCupId) {
-              return;
-            }
-            this.summary.set(row);
-          }),
-        );
-      } else {
-        this.summary.set(null);
+      const mine = await this.companyApi.getMine();
+      if (token !== this.loadToken || this.context.selectedWorldCupId() !== worldCupId) {
+        return;
       }
-      await Promise.all(requests);
+      this.company.set(mine.company);
+
+      if (mine.company == null) {
+        this.entries.set([]);
+        this.summary.set(null);
+        return;
+      }
+
+      const [rows, summary] = await Promise.all([
+        this.betApi.getLeaderboard(scopedId),
+        this.betApi.getMySummary(scopedId),
+      ]);
+      if (token !== this.loadToken || this.context.selectedWorldCupId() !== worldCupId) {
+        return;
+      }
+      this.entries.set(rows);
+      this.summary.set(summary);
     } catch {
       if (token !== this.loadToken || this.context.selectedWorldCupId() !== worldCupId) {
         return;

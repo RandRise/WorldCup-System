@@ -14,6 +14,18 @@
   @if (isLoading()) {
     <p class="muted">Loading…</p>
   } @else {
+    @if (!company()) {
+      <div class="join-banner">
+        <div>
+          <h2>Join your company pool</h2>
+          <p>Enter an invite code to see company rankings and compete with coworkers.</p>
+        </div>
+        <a routerLink="/company" class="btn btn-primary">Join company</a>
+      </div>
+    } @else {
+      <p class="company-chip">Pool: <strong>{{ company()?.name }}</strong></p>
+    }
+
     <div class="stats-grid">
       <article class="stat-card">
         <span class="stat-label">Rank</span>
@@ -38,6 +50,7 @@
       <a routerLink="/fixtures" class="btn btn-primary">View fixtures</a>
       <a routerLink="/bets" class="btn btn-secondary">My bets</a>
       <a routerLink="/leaderboard" class="btn btn-secondary">Leaderboard</a>
+      <a routerLink="/company" class="btn btn-secondary">Company</a>
       <a routerLink="/standings" class="btn btn-secondary">Standings</a>
     </div>
 

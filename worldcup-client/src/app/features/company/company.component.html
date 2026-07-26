@@ -1,0 +1,152 @@
+<section class="card">
+  <header class="page-header">
+    <div>
+      <h1>Your company</h1>
+      <p>Join a workplace prediction pool with an invite code. Rankings stay private to your company.</p>
+    </div>
+  </header>
+
+  @if (errorMessage()) {
+    <p class="alert alert-error" role="alert">{{ errorMessage() }}</p>
+  }
+  @if (successMessage()) {
+    <p class="alert alert-success" role="status">{{ successMessage() }}</p>
+  }
+
+  @if (isLoading()) {
+    <p class="muted">Loading…</p>
+  } @else {
+    @if (mine()?.company; as company) {
+      <div class="company-summary">
+        <h2>{{ company.name }}</h2>
+        <dl>
+          <div>
+            <dt>Members</dt>
+            <dd>{{ company.memberCount }}</dd>
+          </div>
+          <div>
+            <dt>Your role</dt>
+            <dd>{{ mine()?.isCompanyAdmin ? 'Company admin' : 'Member' }}</dd>
+          </div>
+          @if (company.inviteCode) {
+            <div class="invite-row">
+              <dt>Invite code</dt>
+              <dd>
+                <code>{{ company.inviteCode }}</code>
+                @if (canManageCompany()) {
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-sm"
+                    [disabled]="isSubmitting()"
+                    (click)="rotateInvite()"
+                  >
+                    Rotate
+                  </button>
+                }
+              </dd>
+            </div>
+          }
+        </dl>
+        @if (needsCompanyAdminRelogin()) {
+          <p class="alert alert-error" role="status">
+            Your company admin role is saved, but this session is out of date. Log out and log in
+            again to manage invites and members.
+          </p>
+        }
+        <p class="muted">
+          Company leaderboard is scoped to these members —
+          <a routerLink="/leaderboard">view rankings</a>.
+        </p>
+      </div>
+
+      @if (canManageCompany() && members().length > 0) {
+        <h2 class="section-title">Members</h2>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (member of members(); track member.id) {
+                <tr>
+                  <td>{{ member.name }}</td>
+                  <td>{{ member.email ?? '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    } @else {
+      <div class="join-panel">
+        <h2>Join with invite code</h2>
+        <p class="muted">Ask your company admin for the code. You can only join one company.</p>
+        <form [formGroup]="joinForm" (ngSubmit)="join()">
+          <label>
+            Invite code
+            <input
+              type="text"
+              formControlName="inviteCode"
+              autocomplete="off"
+              spellcheck="false"
+              maxlength="32"
+            />
+            @if (joinForm.controls.inviteCode.touched && joinForm.controls.inviteCode.invalid) {
+              <span class="field-error">Enter a valid invite code (4–32 characters).</span>
+            }
+          </label>
+          <button type="submit" class="btn btn-primary" [disabled]="isSubmitting()">
+            {{ isSubmitting() ? 'Joining…' : 'Join company' }}
+          </button>
+        </form>
+      </div>
+    }
+
+    @if (auth.isAdmin()) {
+      <h2 class="section-title">Admin — create company</h2>
+      <form class="create-panel" [formGroup]="createForm" (ngSubmit)="createCompany()">
+        <label>
+          Name
+          <input type="text" formControlName="name" maxlength="128" />
+        </label>
+        <label>
+          Slug (optional)
+          <input type="text" formControlName="slug" maxlength="64" placeholder="acme-corp" />
+          @if (createForm.controls.slug.touched && createForm.controls.slug.invalid) {
+            <span class="field-error">Use lowercase letters, numbers, and hyphens.</span>
+          }
+        </label>
+        <button type="submit" class="btn btn-secondary" [disabled]="isSubmitting()">
+          Create company
+        </button>
+      </form>
+
+      @if (allCompanies().length > 0) {
+        <h2 class="section-title">All companies</h2>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Invite</th>
+                <th>Members</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of allCompanies(); track row.id) {
+                <tr>
+                  <td>{{ row.name }}</td>
+                  <td><code>{{ row.inviteCode ?? '—' }}</code></td>
+                  <td>{{ row.memberCount }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+  }
+</section>

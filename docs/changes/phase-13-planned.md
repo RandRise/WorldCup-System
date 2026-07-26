@@ -9,7 +9,7 @@
 
 ## Phase 13 — Company-Scoped Competitions
 
-**Status: Planned** — docs only **21 Jul 2026**. Checklist: [Roadmap Phase 13](../roadmap.md#phase-13).
+**Status: In progress** — Tasks 1–5 done; Task 6 **tests** cleared (suite **419**); Bugbot formal gate still open. Checklist: [Roadmap Phase 13](../roadmap.md#phase-13) · [tests gate](phase-13-tests-gate.md).
 
 Soft multi-tenancy so workplaces can run private World Cup prediction pools on one deployment: **shared tournament data**, **isolated people / rankings**. Portfolio-friendly scope — no branding, billing, or per-company hosting.
 
@@ -50,11 +50,11 @@ Platform Admin creates Company (name + invite code)
 | # | Task id | Theme | Outcome | Status |
 | --- | --- | --- | --- | --- |
 | 1 | docs | Docs | Roadmap Phase 13 + this planned doc | **Done** (this file) |
-| 2 | `p13-company-model` | Data | `Company` entity, `User.CompanyId`, migration, repos | Planned |
-| 3 | `p13-company-api` | API | Create company (Admin), join by code, my company, rotate code (CompanyAdmin) | Planned |
-| 4 | `p13-leaderboard-scope` | Betting | Scope `LeaderboardService` + authorize `GetLeaderboard`; no cross-company leak | Planned |
-| 5 | `p13-spa` | Client | Join company UI; company-scoped leaderboard; CompanyAdmin basics | Planned |
-| 6 | `p13-tests-gate` | Gate | Unit/integration tests + Bugbot/docs review + `dotnet test` green | Planned |
+| 2 | `p13-company-model` | Data | `Company` entity, `User.CompanyId`, migration, repos | **Done** — [detail](phase-13-company-model.md) (interim Bugbot/docs gate; full gate Task 6) |
+| 3 | `p13-company-api` | API | Create company (Admin), join by code, my company, rotate code (CompanyAdmin) | **Done** — [detail](phase-13-company-api.md) (interim Bugbot/docs gate; full gate Task 6) |
+| 4 | `p13-leaderboard-scope` | Betting | Scope `LeaderboardService` + authorize `GetLeaderboard`; no cross-company leak | **Done** — [detail](phase-13-leaderboard-scope.md) (interim gate; full gate Task 6) |
+| 5 | `p13-spa` | Client | Join company UI; company-scoped leaderboard; CompanyAdmin basics | **Done** — [detail](phase-13-spa.md) (interim Bugbot/Jasmine pending) |
+| 6 | `p13-tests-gate` | Gate | Unit/integration isolation + `dotnet test` green; Bugbot/docs formal close | **Tests cleared** (suite **419**) — Bugbot formal **open** — [detail](phase-13-tests-gate.md) |
 
 ---
 
@@ -71,53 +71,61 @@ Platform Admin creates Company (name + invite code)
 | `CreatedAt` | UTC |
 | `CreatedByUserId` | Optional audit |
 
-**User:** nullable `CompanyId` FK → `Companies`. Users with null company: can browse tournament data and place bets, but leaderboard returns empty / “join a company” (decide at implement: empty list vs 400).
+**User:** nullable `CompanyId` FK → `Company`. Users with null company: can browse tournament data and place bets; company leaderboard returns an **empty list** (SPA prompts join) — not HTTP 400.
 
-**Roles:** seed `CompanyAdmin`. First joiner of a new company may become CompanyAdmin, **or** only platform Admin assigns CompanyAdmin — pick one at implement and document.
+**Roles:** seed `CompanyAdmin` at startup. **Bootstrap:** first successful join when the company has zero members becomes CompanyAdmin; platform Admin may also assign the role. Documented in [Task 2](phase-13-company-model.md); enforced in Task 3 Join.
 
-**Migration:** EF migration; update `ApplicationDbContext`, `RepositoryManager`, Identity role seed.
+**Migration:** EF migration `AddCompany`; update `ApplicationDbContext`, `RepositoryManager`, Identity role seed. Done — see [Task 2](phase-13-company-model.md). **Interim review:** Bugbot + docs running for Task 2; full phase gate remains Task 6.
 
 ---
 
 ### Task 3 — Company API (`p13-company-api`)
 
-Suggested surface (names flexible):
+**Done** — see [phase-13-company-api](phase-13-company-api.md).
 
 | Endpoint | Auth | Behavior |
 | --- | --- | --- |
 | `POST Company/Create` | Admin | Create company + generate invite code |
-| `POST Company/Join` | User | Body: invite code → set `User.CompanyId` (reject if already in another company in v1) |
-| `GET Company/Mine` | User | Current company summary + whether caller is CompanyAdmin |
+| `POST Company/Join` | JWT | Body: invite code → set `User.CompanyId` (reject if already in a company); first joiner → CompanyAdmin + JWT re-issue |
+| `GET Company/Mine` | JWT | Current company summary + whether caller is CompanyAdmin (`Company: null` if none) |
 | `POST Company/RotateInviteCode` | CompanyAdmin (or Admin) | New code; invalidate old |
 | `GET Company/Members` | CompanyAdmin (or Admin) | Same-company members only |
-
-Platform `Admin` may list all companies (optional `GET Company/GetAll`) for ops/demo seeding.
-
----
-
-### Task 4 — Leaderboard scope (`p13-leaderboard-scope`)
-
-- Change `LeaderboardService` to require a company scope derived from the current user (or explicit Admin override later — not required in v1).
-- `GET Bet/GetLeaderboard` — add `[Authorize]`; filter to callers in the same company; keep optional `worldCupId`.
-- Regression: unauthenticated or cross-company access must not return other companies’ rows.
-- Betting place/resolve rules unchanged (scoring still 3/0); only **visibility** of rankings (and member lists) is tenant-scoped.
+| `GET Company/GetAll` | Admin | List all companies (ops/demo) |
 
 ---
 
-### Task 5 — SPA (`p13-spa`)
+### Task 4 — Leaderboard scope (`p13-leaderboard-scope`) — **Done**
 
-- After login / dashboard: if no company → prompt to enter invite code.
-- Leaderboard page: show company name; only same-company ranks.
-- Lightweight CompanyAdmin: show invite code + rotate + member list (no design system / branding work).
-- Reuse existing WC styling tokens; no new brand identity.
+Implemented — see [phase-13-leaderboard-scope](phase-13-leaderboard-scope.md).
+
+- `LeaderboardService.GetLeaderboard(long? companyId, …)` — null company → empty; filter bets to same-company users.
+- `GET Bet/GetLeaderboard` — `[Authorize]`; company from JWT → DB `User.CompanyId` (never client company id); optional `worldCupId` kept.
+- `GetMySummary` rank uses company-scoped board (`Rank = null` when no company).
+- Betting place/resolve unchanged; SPA empty-state / login prompt delivered in Task 5.
+- Interim Bugbot/docs/test gate closed for Task 4; full phase gate remains Task 6 (**open**).
 
 ---
 
-### Task 6 — Tests & gate (`p13-tests-gate`)
+### Task 5 — SPA (`p13-spa`) — **Done**
 
-- Unit: join validation, leaderboard filter by company, invite uniqueness.
-- Integration: two companies → leaderboard A never includes users from B.
-- Phase gate: Bugbot + markdown changes doc, then `dotnet test` on `WorldCup-System.Tests` (no `dotnet build` unless consented).
+Implemented — see [phase-13-spa](phase-13-spa.md).
+
+- `/company` — join by invite; CompanyAdmin invite + rotate + members; Admin create + GetAll.
+- Dashboard join banner / company chip; shell **Company** nav link.
+- Leaderboard `authGuard`; company name header; no-company → join CTA.
+- Reused existing WC styling tokens; no branding work.
+- Interim Bugbot/docs/Jasmine gate pending; full phase gate remains Task 6.
+
+---
+
+### Task 6 — Tests & gate (`p13-tests-gate`) — **Open**
+
+Formal phase gate still **open**. Tests portion may already exist — see [phase-13-tests-gate](phase-13-tests-gate.md).
+
+- Unit: join validation, leaderboard filter by company, invite uniqueness — covered (+ bidirectional leak + invite non-reuse).
+- Integration: two companies → leaderboard A never includes users from B — may be cleared (`LeaderboardIsolationIntegrationTests`).
+- `dotnet test` suite may show **419** — does not close Phase 13 alone.
+- Remaining: Bugbot + markdown formal review to mark Phase 13 Done.
 
 ### Explicit non-goals (v1)
 
@@ -148,15 +156,15 @@ README blurb (when implemented): workplace prediction pools; tournament shared, 
 | Roadmap item | This doc |
 | --- | --- |
 | Docs / planned backlog | This file |
-| Company model + migration | Task 2 (`p13-company-model`) |
-| Company API | Task 3 (`p13-company-api`) |
-| Leaderboard isolation | Task 4 (`p13-leaderboard-scope`) |
-| SPA join + board | Task 5 (`p13-spa`) |
-| Tests + review gate | Task 6 (`p13-tests-gate`) |
+| Company model + migration | Task 2 (`p13-company-model`) — **Done** · [detail](phase-13-company-model.md) |
+| Company API | Task 3 (`p13-company-api`) — **Done** · [detail](phase-13-company-api.md) |
+| Leaderboard isolation | Task 4 (`p13-leaderboard-scope`) — **Done** · [detail](phase-13-leaderboard-scope.md) |
+| SPA join + board | Task 5 (`p13-spa`) — **Done** · [detail](phase-13-spa.md) (interim Bugbot/Jasmine pending) |
+| Tests + review gate | Task 6 (`p13-tests-gate`) — **Open** · [detail](phase-13-tests-gate.md) (tests may exist; formal Bugbot/docs still open) |
 
 ### Related
 
 - [Roadmap Phase 13](../roadmap.md#phase-13)
 - [Phase 4 — Betting](phase-4-betting.md) — scoring / leaderboard origin
-- [Data Model](../data-model.md) — planned `Companies` row when Task 2 lands
+- [Data Model](../data-model.md) — `Company` + `User.CompanyId` (Task 2)
 - [Changes Review](../changes-review.md)

@@ -26,9 +26,27 @@ export class AuthService {
   readonly isAdmin = computed(() =>
     (this.currentUserSignal()?.roles ?? []).includes('Admin'),
   );
+  readonly isCompanyAdmin = computed(() =>
+    (this.currentUserSignal()?.roles ?? []).includes('CompanyAdmin'),
+  );
 
   getToken(): string | null {
     return localStorage.getItem(TOKEN_STORAGE_KEY);
+  }
+
+  /** Persist a re-issued JWT (e.g. Join → CompanyAdmin) and refresh GetMe.
+   *  Does not clear the session if GetMe fails — membership may already be saved. */
+  async applyAccessToken(token: string): Promise<boolean> {
+    localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    try {
+      const user = await firstValueFrom(
+        this.http.get<CurrentUser>(`${environment.apiUrl}/User/GetMe`),
+      );
+      this.currentUserSignal.set(user);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async initializeSession(): Promise<void> {

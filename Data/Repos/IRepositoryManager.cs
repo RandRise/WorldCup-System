@@ -25,6 +25,7 @@ namespace Data.Repos
         IRepository<Card> Card { get; }
         IRepository<Bet> Bet { get; }
         IRepository<BetResult> BetResult { get; }
+        IRepository<Company> Company { get; }
         Task SaveAsync();
     }
 }

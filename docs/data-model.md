@@ -31,8 +31,8 @@ Entity relationships and table inventory. All entities live in `WorldCup-System/
 | `Standings` | — (computed) | Group table from match results; no DB table | Done |
 | `Bet` | Bet.cs | User prediction on Match outcome | Done |
 | `BetResult` | BetResult.cs | Points earned from a Bet (via `BetController`) | Done |
-| `Users` | User.cs | Custom Identity user (Name, RefreshToken field; no refresh API yet); **Phase 13:** planned nullable `CompanyId` | Partial |
-| `Companies` | — (planned Phase 13) | Workplace pool; invite code; members via `User.CompanyId` — [plan](changes/phase-13-planned.md) | Planned |
+| `Users` | User.cs | Custom Identity user (Name, RefreshToken); nullable `CompanyId` (Phase 13) | Done |
+| `Company` | Company.cs | Workplace pool; unique `InviteCode`; optional `Slug`; members via `User.CompanyId` — [Task 2](changes/phase-13-company-model.md) · [Task 3 API](changes/phase-13-company-api.md) | Done |
 
 ### Identity Tables (ASP.NET)
 
