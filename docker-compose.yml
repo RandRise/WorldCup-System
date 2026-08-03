@@ -10,7 +10,8 @@ services:
     volumes:
       - worldcup_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-WorldCupDb}"]
+      # Use container env ($$ → $) so prod override's POSTGRES_* from PROD_* still match.
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -27,6 +28,7 @@ services:
       JWT__Secret: ${JWT_SECRET:-docker-dev-jwt-secret-key-at-least-32-characters}
       JWT__ValidIssuer: ${JWT_VALID_ISSUER:-http://localhost:5000}
       JWT__ValidAudience: ${JWT_VALID_AUDIENCE:-http://localhost:4200}
+      Cors__AllowedOrigins: ${CORS_ALLOWED_ORIGINS:-http://localhost:4200}
       DevAdmin__Email: ${DEV_ADMIN_EMAIL:-admin@localhost}
       DevAdmin__Password: ${DEV_ADMIN_PASSWORD:-Admin123!}
       DevUser__Email: ${DEV_USER_EMAIL:-user@localhost}

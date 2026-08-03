@@ -9,9 +9,9 @@
 
 ## Whole-project upload readiness (Phases 9–13 docs + 10 leftovers + 11–12 code)
 
-Opened **21 Jul 2026**. Purpose: one place to judge whether the **uncommitted working tree** is safe to commit / push after Phases 9–12 closed their individual review gates.
+Opened **21 Jul 2026**. **Status (27 Jul 2026): packaging closed on origin.** Commits: `ac0608e` (Phases 11–12 + upload gate) · `5fdd1c4` (Phase 13, pushed — Phase 14 Task 1 **Done**). This page is **historical** — do not re-run the packaging checklist. Deploy work: [phase-14-planned](phase-14-planned.md) (Tasks 1–6 Done — [phase-14-migrate-smoke](phase-14-migrate-smoke.md); next Task 7 gate).
 
-> **Success (docs gate):** Phase detail pages for **10–12** are present and map to [roadmap](../roadmap.md). Product gates already closed: Phase 11 suite **382**; Phase 12 unittest **23** / smoke **103**. Remaining work for upload is **git packaging** (include migrations + dual docs), not reopening phase logic.
+> **Success (docs gate):** Phase detail pages for **10–13** map to [roadmap](../roadmap.md). Product gates closed. **Do not** treat “omit migrations / MatchSync” as still open — those landed in git. For deploy work use [phase-14-planned](phase-14-planned.md).
 
 ### Review gate
 
@@ -19,31 +19,34 @@ High/critical items that must be clear **before** treating the upload as complet
 
 | Item | Severity | Status | Action |
 | --- | --- | --- | --- |
-| Omit EF migrations from commit | **Critical** | **Open until commit** | Include all three: `AddMatchExternalStageId` (+ Designer), `AddPlayerExternalPlayerId` (+ Designer), `AllowMultipleTeamsPerCountry` + model snapshot |
-| Omit Phase 11 MatchSync providers / tests | **Critical** | **Open until commit** | Include untracked `FifaTimeline*`, `TimelinePlayer*`, `TimelineScorer*`, and their test files |
-| Omit Phase 12 simulator scripts | **High** | **Open until commit** | Include `simulate_wc2030.py`, `test_simulate_wc2030_draw.py` |
-| Dual docs drift (VitePress `docs/` vs git `WorldCup-System/docs/`) | **High** | **Cleared for this pass** | Mirror Markdown both trees; keep [phase-10-cleanup](phase-10-cleanup.md) dual-docs policy |
+| Omit EF migrations from commit | **Critical** | **Cleared** | Landed with Phases 11–12 / 13 commits |
+| Omit Phase 11 MatchSync providers / tests | **Critical** | **Cleared** | Landed in `ac0608e` |
+| Omit Phase 12 simulator scripts | **High** | **Cleared** | Landed in `ac0608e` |
+| Dual docs drift (VitePress `docs/` vs git `WorldCup-System/docs/`) | **High** | **Cleared for packaging pass** | Keep dual-docs policy; Phase 14 continues the mirror |
 | Accidental WC 2026 wipe via importer in ops notes | **High** | **Documented** | Prefer `add_sf2_and_final.py`; importer wipe path warned — [phase-9-ops-closeout](phase-9-ops-closeout.md) |
 | Unfixed Phase 11 / 12 Bugbot highs | **High** | **Cleared** | [phase-11-tests-gate](phase-11-tests-gate.md) · [phase-12-tests-gate](phase-12-tests-gate.md) |
-| Suite / smoke regressions before push | **High** | **Cleared at last gate** | API **382**; Python **23** / smoke **103** — re-run if code changes after this doc |
-| Phase 13 implementation incomplete | Info | **N/A** | Docs-only planned backlog — safe to ship plan file without code |
+| Suite / smoke regressions before push | **High** | **Cleared at last gate** | Re-run only if code changes; Phase 13 suite **438** |
+| Phase 13 not on origin | **High** | **Cleared** | Pushed `5fdd1c4` to `origin/master` (27 Jul 2026) — [phase-14-planned](phase-14-planned.md) Task 1 |
+| Phase 13 implementation incomplete | Info | **Cleared** | Phase 13 Done |
 
-**Gate verdict (docs):** ready to **package** Phases 9–12 + Phase 10 leftovers + Phase 13 plan into git. Do **not** start Phase 13 implementation until the upload commit lands (optional process preference).
+**Gate verdict (docs):** packaging **complete** on origin. Next: [Phase 14 Deploy Readiness](phase-14-planned.md) Task 7 (gate) — Task 6 migrate/smoke Done ([phase-14-migrate-smoke](phase-14-migrate-smoke.md)).
 
-### Working-tree inventory (`git status` 21 Jul 2026)
+### Working-tree inventory (historical — `git status` 21 Jul 2026)
 
-Git repo: `WorldCup-System/` · branch `master` **ahead of `origin/master` by 19** · **~59 modified** · **~44 untracked**.
+**Superseded.** Snapshot below was taken **before** packaging commits. As of **27 Jul 2026**, `origin/master` includes `ac0608e` + Phase 13 `5fdd1c4`. Do not treat “ahead by 19” or “Phase 13 plan only” as current.
 
-| Bucket | Roadmap | What lands in upload |
+Git repo: `WorldCup-System/` · branch `master` **was** ahead of `origin/master` by 19 · **~59 modified** · **~44 untracked** (21 Jul snapshot).
+
+| Bucket | Roadmap | What landed in upload |
 | --- | --- | --- |
 | Phase 9 ops | [phase-9](../roadmap.md#phase-9) | `scripts/add_sf2_and_final.py`, `import_wc2026_finished_matches.py`, [phase-9-ops-closeout](phase-9-ops-closeout.md) |
 | Phase 10 leftovers | [phase-10](../roadmap.md#phase-10) | Docs polish (`phase-10-cleanup`, planned, match-sync notes); SPA already mostly committed Tasks 1–3 |
 | Phase 11 timeline / scorers | [phase-11](../roadmap.md#phase-11) | MatchSync timeline + resolve + apply + SyncScorers + honesty; 3 migrations; Admin + client; suite growth → **382** |
 | Phase 12 WC 2030 | [phase-12](../roadmap.md#phase-12) | `simulate_wc2030.py` + tests; multi-cup `Team.CountryId`; TeamService `EnsureSameWorldCup`; SPA WC picker persistence |
-| Phase 13 plan only | [phase-13](../roadmap.md#phase-13) | [phase-13-planned](phase-13-planned.md) — **no** company code yet |
+| Phase 13 (was plan-only on 21 Jul) | [phase-13](../roadmap.md#phase-13) | Later: full company model/API/SPA — **Done** on origin as `5fdd1c4` |
 | Extra scripts (ops) | — | Optional: `seed_wc2026_players.py`, `sync_scorers_backfill.ps1`, `reassign_placeholder_goals.py`, `simulate_betting_demo.py`, `scripts/data/wc2026_players.csv` |
 
-### Roadmap mapping (upload scope)
+### Roadmap mapping (upload scope — closed)
 
 | Phase | Status | Detail pages |
 | --- | --- | --- |
@@ -51,7 +54,7 @@ Git repo: `WorldCup-System/` · branch `master` **ahead of `origin/master` by 19
 | 10 | **Done** (Tasks 1–4) | [cleanup](phase-10-cleanup.md) · [match-sync](phase-10-match-sync.md) · [fixtures](phase-10-fixtures-ux.md) · [styling](phase-10-styling.md) · [planned](phase-10-planned.md) |
 | 11 | **Done** (Tasks 1–8) | [tests-gate](phase-11-tests-gate.md) · [planned](phase-11-planned.md) · Tasks 1–7 detail pages |
 | 12 | **Done** (Tasks 1–4) | [tests-gate](phase-12-tests-gate.md) · [planned](phase-12-planned.md) · [draw](phase-12-draw.md) · [group-sim](phase-12-group-sim.md) · [bracket](phase-12-bracket.md) |
-| 13 | **Planned** | [phase-13-planned](phase-13-planned.md) |
+| 13 | **Done** | [phase-13-tests-gate](phase-13-tests-gate.md) · [phase-13-planned](phase-13-planned.md) |
 
 ### Must-include file checklist (critical paths)
 
@@ -91,16 +94,13 @@ Git repo: `WorldCup-System/` · branch `master` **ahead of `origin/master` by 19
 
 ### Suggested commit packaging (when user asks to commit)
 
-1. Migrations + entities + snapshot first (schema).
-2. Phase 11 MatchSync + tests + client honesty/sync.
-3. Phase 12 scripts + TeamService + SPA WC context.
-4. Docs (changes-review + phase pages + this gate).
-5. Optional ops scripts / CSV in a follow-up if noise is a concern.
+Historical — packaging commits already landed. For new Phase 14 work, commit only when the user asks; keep secrets out of git.
 
-Do **not** force-push; branch is already **19** commits ahead of origin.
+Do **not** force-push.
 
 ### Related
 
+- [Phase 14 planned — Deploy Readiness](phase-14-planned.md)
 - [Changes Review](../changes-review.md)
 - [Phase 11 tests gate](phase-11-tests-gate.md)
 - [Phase 12 tests gate](phase-12-tests-gate.md)

@@ -1,0 +1,33 @@
+# Production override for docker-compose.yml
+# Usage (from this directory):
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Required env uses PROD_* names so a local Dev `.env` (from .env.example) cannot
+# silently satisfy production. Export on the host or use a separate gitignored file.
+# Detail: docs/changes/phase-14-compose.md
+
+services:
+  db:
+    environment:
+      POSTGRES_USER: ${PROD_POSTGRES_USER:?Set PROD_POSTGRES_USER for production}
+      POSTGRES_PASSWORD: ${PROD_POSTGRES_PASSWORD:?Set PROD_POSTGRES_PASSWORD for production}
+      POSTGRES_DB: ${PROD_POSTGRES_DB:?Set PROD_POSTGRES_DB for production}
+    # Healthcheck stays on base compose: pg_isready uses $$POSTGRES_USER / $$POSTGRES_DB
+    # (container env), so these PROD_* remaps are what the check hits — not host Dev .env.
+    # Note: base docker-compose.yml still publishes 5432:5432 (Compose merges lists by
+    # append). Firewall or stop publishing on the host for real deploys — do not add
+    # a second ports entry here (duplicate host bind).
+
+  api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=${PROD_POSTGRES_DB:?Set PROD_POSTGRES_DB for production};Username=${PROD_POSTGRES_USER:?Set PROD_POSTGRES_USER for production};Password=${PROD_POSTGRES_PASSWORD:?Set PROD_POSTGRES_PASSWORD for production}
+      JWT__Secret: ${PROD_JWT_SECRET:?Set PROD_JWT_SECRET (≥32 chars) for production}
+      JWT__ValidIssuer: ${PROD_JWT_VALID_ISSUER:?Set PROD_JWT_VALID_ISSUER for production}
+      JWT__ValidAudience: ${PROD_JWT_VALID_AUDIENCE:?Set PROD_JWT_VALID_AUDIENCE for production}
+      Cors__AllowedOrigins: ${PROD_CORS_ALLOWED_ORIGINS:?Set PROD_CORS_ALLOWED_ORIGINS for production}
+      # Clear Dev seed vars merged from docker-compose.yml (seed runs only in Development).
+      DevAdmin__Email: ""
+      DevAdmin__Password: ""
+      DevUser__Email: ""
+      DevUser__Password: ""

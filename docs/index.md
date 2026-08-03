@@ -7,13 +7,13 @@
 ---
 ## Project Dashboard
 
-FIFA World Cup management platform — status as of **21 Jul 2026**.
+FIFA World Cup management platform — status as of **3 Aug 2026**.
 
-> **Success:** **Phases 1–13 complete.** Phase 13 gate closed (Bugbot clean; suite **438**). **Upload gate open** until commit — [whole-project-upload-gate](changes/whole-project-upload-gate.md). See [phase-13 tests gate](changes/phase-13-tests-gate.md) · [phase-13 SPA](changes/phase-13-spa.md) · [Changes Review](changes-review.md).
+> **Success:** **Phases 1–14 complete.** Phase 14 gate closed (Bugbot high fixed; suite **462**) — [phase-14-gate](changes/phase-14-gate.md) · [phase-14-planned](changes/phase-14-planned.md). See [Changes Review](changes-review.md).
 
 > **Info:** Browse these docs with VitePress (`npm run docs:dev` from the workspace root) or open any `.md` file in Cursor preview. Checklists use `[x]` / `[ ]` task items.
 
-- **Overall Plan Progress:** 13 / 13 phases done — [Phase 13](roadmap.md#phase-13)
+- **Overall Plan Progress:** 14 / 14 phases done — product + deploy readiness complete — [Phase 14](roadmap.md#phase-14)
 - **Backend API Complete:** 100% Phases 1–8 + Phase 10 Task 1 sync + Phase 11 (stage / timeline / resolve / apply / sync wire / scorers backfill / honesty; suite **382**)
 - **Frontend SPA:** 100% Phases 1–8 + Phase 10 Tasks 2–3 (fixtures UX + WC styling); canonical path `WorldCup-System/worldcup-client`
 
@@ -106,6 +106,20 @@ Full checklist: [Roadmap Phase 12](roadmap.md#phase-12).
 
 Full checklist: [Roadmap Phase 13](roadmap.md#phase-13).
 
+### ✅ Phase 14 — Deploy Readiness (Done)
+
+| # | Item | Status | Doc |
+| --- | --- | --- | --- |
+| 1 | Push Phase 13 to origin | **Done** (`5fdd1c4`) | [phase-14-planned](changes/phase-14-planned.md) |
+| 2 | Prod secrets inventory | **Done** | [phase-14-secrets](changes/phase-14-secrets.md) |
+| 3 | CORS + JWT for production | **Done** | [phase-14-cors](changes/phase-14-cors.md) |
+| 4 | Production Compose override | **Done** | [phase-14-compose](changes/phase-14-compose.md) |
+| 5 | SPA production build / apiUrl | **Done** | [phase-14-spa-prod](changes/phase-14-spa-prod.md) |
+| 6 | Migrate + smoke checklist | **Done** | [phase-14-migrate-smoke](changes/phase-14-migrate-smoke.md) |
+| 7 | Review gate | **Done** (suite **462**) | [phase-14-gate](changes/phase-14-gate.md) |
+
+Full checklist: [Roadmap Phase 14](roadmap.md#phase-14) · agent rules in [phase-14-planned](changes/phase-14-planned.md).
+
 ### Phase snapshot
 
 | Phase | Name | Status |
@@ -123,12 +137,13 @@ Full checklist: [Roadmap Phase 13](roadmap.md#phase-13).
 | 11 | [Real Goalscorers (FIFA Timeline)](roadmap.md#phase-11) | Done |
 | 12 | [2030 World Cup Simulation](roadmap.md#phase-12) | Done |
 | 13 | [Company-Scoped Competitions](roadmap.md#phase-13) | Done |
+| 14 | [Deploy Readiness](roadmap.md#phase-14) | Done (suite **462**) |
 
 ### Quick Navigation
 
 #### 🗺️ Completion Roadmap
 
-13 phases with checklists reflecting the latest code review.
+14 phases with checklists reflecting the latest code review.
 
 #### ⚙️ Dev Workflow
 
@@ -148,17 +163,17 @@ Tech stack, folder structure, and architecture.
 
 #### 🔍 Changes Review
 
-Phase 13 Done (suite **438**); Phase 12 Done (unittest **23** / smoke **103**); Phase 11 Done (suite **382**). Upload packaging checklist: [whole-project-upload-gate](changes/whole-project-upload-gate.md). See [Changes Review](changes-review.md).
+Phases **1–14** Done. See [Changes Review](changes-review.md) · [phase-14-gate](changes/phase-14-gate.md).
 
 ### Recommended next work
 
-#### Upload packaging
+#### Ship / ops
 
-Commit the uncommitted Phases 9–13 tree (migrations + MatchSync + WC 2030 scripts + company + docs) — [whole-project-upload-gate](changes/whole-project-upload-gate.md) · [Changes Review](changes-review.md).
+Commit and push Phase 14 working tree when ready (ask before commit/push). Deploy with [phase-14-secrets](changes/phase-14-secrets.md) · [phase-14-compose](changes/phase-14-compose.md) · [phase-14-migrate-smoke](changes/phase-14-migrate-smoke.md). Replace SPA `REPLACE_ME` before production `ng build`.
 
 #### Maintenance / polish
 
-Phases **1–13** Done. Prefer ops hygiene (avoid accidental wipe re-import of WC 2026) — [Changes Review](changes-review.md) · [Phase 9 detail](changes/phase-9-ops-closeout.md).
+Prefer ops hygiene (avoid accidental wipe re-import of WC 2026) — [Changes Review](changes-review.md) · [Phase 9 detail](changes/phase-9-ops-closeout.md).
 
 ### Local Dev URLs
 

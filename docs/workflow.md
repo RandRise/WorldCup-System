@@ -75,6 +75,8 @@ After implementing all tasks in a roadmap phase, follow this order before starti
 
 Cursor rule: `.cursor/rules/phase-completion-review.mdc` — agent enforces this loop automatically.
 
+**Phase 14 note:** Deploy readiness tasks include explicit **ask-before** push / commit / `dotnet build` / `dotnet test`. Follow [phase-14-planned](changes/phase-14-planned.md) agent rules — do not improvise around those gates.
+
 ### 3. Entity Change Workflow
 
 When modifying the data model:

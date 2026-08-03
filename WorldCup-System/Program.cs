@@ -1,5 +1,6 @@
 using Serilog;
 using Serilog.Formatting.Compact;
+using WorldCup_System.Configuration;
 using Core.Options;
 using Core.Services.Bets;
 using Core.Services.Cards;
@@ -58,11 +59,13 @@ if (string.IsNullOrWhiteSpace(connectionString))
 
 // Add services to the container.
 
+string[] corsOrigins = CorsOriginsResolver.Resolve(configuration);
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AngularDev", policy =>
+    options.AddPolicy(CorsOriginsResolver.PolicyName, policy =>
     {
-        policy.WithOrigins("http://localhost:4200")
+        policy.WithOrigins(corsOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -313,7 +316,7 @@ if (!app.Environment.IsEnvironment("Testing"))
     app.UseHttpsRedirection();
 }
 
-app.UseCors("AngularDev");
+app.UseCors(CorsOriginsResolver.PolicyName);
 
 app.UseAuthentication();
 

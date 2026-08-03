@@ -7,9 +7,9 @@
 ---
 ## Completion Roadmap
 
-Thirteen phases. Checkboxes below reflect a **code audit as of 21 Jul 2026** — checkboxes use Markdown task lists (`[x]` / `[ ]`).
+Fourteen phases. Checkboxes below reflect status as of **3 Aug 2026** — checkboxes use Markdown task lists (`[x]` / `[ ]`).
 
-> **Success:** **Where you are:** Phases **1–13 complete.** Phase 13 gate closed (Bugbot clean; suite **438**). **Upload packaging open** until commit — [whole-project-upload-gate](changes/whole-project-upload-gate.md). **Phase 12 Done** (unittest **23** / smoke **103**). **Phase 11 Done** (suite **382**). See [phase-13 SPA](changes/phase-13-spa.md) · [phase-13 tests gate](changes/phase-13-tests-gate.md) · [Changes Review](changes-review.md).
+> **Success:** **Where you are:** Phases **1–14 complete.** Phase 14 gate closed (Bugbot high fixed; suite **462**). Deploy readiness packaged — [phase-14-gate](changes/phase-14-gate.md) · [phase-14-planned](changes/phase-14-planned.md). Upload packaging for 9–12 **closed** locally — [whole-project-upload-gate](changes/whole-project-upload-gate.md). See [Changes Review](changes-review.md).
 
 <a id="phase-1"></a>
 
@@ -261,3 +261,37 @@ Soft multi-tenancy for workplace prediction pools: shared World Cup data, isolat
 
 - [x] Unit/integration isolation tests + `dotnet test` green — *two-company leak + CompanyController **17**; suite **438**; [detail](changes/phase-13-tests-gate.md)*
 - [x] Bugbot/docs formal Task 6 review — *Bugbot clean after Join JWT session fix; Phase 13 Done*
+
+<a id="phase-14"></a>
+
+### Phase 14 — Deploy Readiness **[Done]**
+
+Ops packaging so a real host can run API + SPA safely. **Not** new product features. Agent-oriented task list with do/don't, verify tables, and ask-before push/commit/build. Detail: [phase-14-planned](changes/phase-14-planned.md). **Tasks 1–7 Done** (gate closed **3 Aug 2026**; suite **462**) — [phase-14-gate](changes/phase-14-gate.md).
+
+**Task 1 — Push Phase 13 (`p14-push`) (done)**
+
+- [x] Push local Phase 13 commit so `origin/master` matches — *`ce8502c..5fdd1c4` on `origin/master` (27 Jul 2026); [plan](changes/phase-14-planned.md#task-1--push-phase-13-p14-push)*
+
+**Task 2 — Prod secrets inventory (`p14-secrets`) (done)**
+
+- [x] Document required Production env vars (placeholders only) + README/Compose pointer — *[detail](changes/phase-14-secrets.md); [plan](changes/phase-14-planned.md#task-2--prod-secrets-inventory-p14-secrets)*
+
+**Task 3 — CORS + JWT for production (`p14-cors`) (done)**
+
+- [x] Config-driven CORS origins + JWT issuer/audience for real SPA host — *`CorsOriginsResolver` + `Cors__AllowedOrigins`; policy `Spa`; keep localhost Dev defaults; [detail](changes/phase-14-cors.md); [plan](changes/phase-14-planned.md#task-3--cors--jwt-for-production-p14-cors)*
+
+**Task 4 — Production Compose (`p14-compose`) (done)**
+
+- [x] Prod Compose override (`ASPNETCORE_ENVIRONMENT=Production`, no DevAdmin seed) — *`docker-compose.prod.yml`; required `PROD_*` secrets via `${VAR:?…}`; [detail](changes/phase-14-compose.md); [plan](changes/phase-14-planned.md#task-4--production-compose-p14-compose)*
+
+**Task 5 — SPA production build (`p14-spa-prod`) (done)**
+
+- [x] Production `apiUrl` + build/serve docs for `worldcup-client` — *`REPLACE_ME` placeholder; `dist/worldcup-client/browser/`; [detail](changes/phase-14-spa-prod.md); [plan](changes/phase-14-planned.md#task-5--spa-production-build-p14-spa-prod)*
+
+**Task 6 — Migrate + smoke checklist (`p14-migrate-smoke`) (done)**
+
+- [x] Target DB `ef database update` steps + health/company smoke table — *wipe warnings; [detail](changes/phase-14-migrate-smoke.md); [plan](changes/phase-14-planned.md#task-6--migrate--smoke-checklist-p14-migrate-smoke)*
+
+**Task 7 — Gate (`p14-gate`) (done)**
+
+- [x] Dual-docs close + review; `dotnet test` with consent — *Bugbot high fixed (prod DB healthcheck `$$POSTGRES_*`); suite **462**; [detail](changes/phase-14-gate.md); [plan](changes/phase-14-planned.md#task-7--gate-p14-gate)*

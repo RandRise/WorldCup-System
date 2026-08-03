@@ -28,13 +28,23 @@ ng generate --help
 
 ## Building
 
-To build the project run:
+### Development
+
+`npm start` / `ng serve` uses the **development** configuration and `src/environments/environment.development.ts` (`apiUrl: http://localhost:5055`).
+
+### Production
+
+1. Set the public API base in `src/environments/environment.ts` (`apiUrl` — no trailing slash). The checked-in value is a `REPLACE_ME` placeholder so a prod build cannot silently keep localhost.
+2. Build:
 
 ```bash
-ng build
+npm ci
+npm run build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Artifacts land in `dist/worldcup-client/browser/` — serve that folder as static files (or behind a reverse proxy with SPA fallback to `index.html`). Do not use `ng serve` for production.
+
+Detail: `../docs/changes/phase-14-spa-prod.md` (nested git docs; VitePress twin under workspace `docs/changes/`).
 
 ## Running unit tests
 
