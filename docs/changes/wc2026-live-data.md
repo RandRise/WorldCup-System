@@ -44,8 +44,10 @@ Re-run the import (or Admin live console) on your local DB if the DB was last lo
 
 ### How to re-run (dev)
 
+> **Ops hygiene (Phase 15):** Prefer upsert for Final corrections. Full wipe/reload destroys MatchIds and bets — confirm flag required. See [phase-15-data-hygiene](phase-15-data-hygiene.md).
+
 ```
-# Groups + teams (idempotent SQL)
+# Groups + teams (idempotent SQL; year-scoped WC 2026; multi-cup safe Team UPDATE)
 psql -h localhost -U postgres -d TestDatabase -f WorldCup-System/scripts/seed-wc2026-groups.sql
 
 # Squad / key players (idempotent upsert by team + jersey; does not touch Tournament Scorer #99)
@@ -56,12 +58,12 @@ python WorldCup-System/scripts/seed_wc2026_players.py
 # Re-point existing placeholder goals onto squad forwards (no score change)
 python WorldCup-System/scripts/reassign_placeholder_goals.py
 
-# Finished matches (clears Match/TeamStats/Goal/Bet rows, then reloads through both SFs)
-python WorldCup-System/scripts/import_wc2026_finished_matches.py
-# Optional: set WC_DB="host=... dbname=... user=... password=..."
-
-# Idempotent: ensure SF2 + Final FT (Argentina 0-1 Spain, Torres 106')
+# Prefer: idempotent SF2 + Final FT (Argentina 0-1 Spain, Torres 106') — NO wipe
 python WorldCup-System/scripts/add_sf2_and_final.py
+
+# DANGER — full wipe + reload of WC 2026 matches (destroys MatchIds / bets). Confirm flag required:
+python WorldCup-System/scripts/import_wc2026_finished_matches.py --i-understand-this-wipes-wc2026
+# Optional: set WC_DB="host=... dbname=... user=... password=..."
 ```
 
 Edit `scripts/data/wc2026_players.csv` (`country,number,name,position`) to add or correct names, then re-run the player seed. Country aliases match the match-import script (e.g. `USA` → United States). Positions: `GK` / `DEF` / `MID` / `FWD` (or full names).

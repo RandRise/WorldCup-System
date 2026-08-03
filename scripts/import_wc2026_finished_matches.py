@@ -5,19 +5,26 @@ Import finished FIFA World Cup 2026 matches (group stage + knockouts through Fin
 Sources: FIFA match centre / schedule page + Yahoo Sports / ESPN results
 (through Spain 1-0 Argentina Final a.e.t., Ferran Torres 106').
 
-WARNING: This script wipes Match/TeamStats/Goal/Bet rows for WC 2026 then reloads.
-For Final-only upsert without wipe, use add_sf2_and_final.py instead.
+DANGER — WIPE PATH: deletes Match / TeamStats / Goal / Card / Bet / BetResult
+for WC 2026 only, then reloads. MatchIds change; resolved bets are destroyed.
 
-Usage:
-  python import_wc2026_finished_matches.py
+Prefer Final-only upsert without wipe:
+  python add_sf2_and_final.py
+
+Full wipe/reload requires an explicit confirm flag (Phase 15 data hygiene):
+  python import_wc2026_finished_matches.py --i-understand-this-wipes-wc2026
 """
 
 from __future__ import annotations
 
+import argparse
 import os
+import sys
 from datetime import datetime, timedelta, timezone
 
 import psycopg2
+
+WIPE_CONFIRM_FLAG = "--i-understand-this-wipes-wc2026"
 
 CONN = os.environ.get(
     "WC_DB",
@@ -377,7 +384,46 @@ def find_player_id(cur, team_id: int, name: str) -> int | None:
     return int(row[0]) if row else None
 
 
-def main() -> None:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description=(
+            "WIPE + reload finished WC 2026 matches. "
+            "Prefer add_sf2_and_final.py for Final-only corrections."
+        ),
+        epilog=(
+            f"Refuses to run without {WIPE_CONFIRM_FLAG}. "
+            "Scope is WC 2026 only (teams via Group.WorldCupId)."
+        ),
+    )
+    parser.add_argument(
+        WIPE_CONFIRM_FLAG,
+        dest="confirm_wipe",
+        action="store_true",
+        help="Required: acknowledge destructive wipe of WC 2026 Match/Goal/Bet rows",
+    )
+    return parser.parse_args(argv)
+
+
+def require_wipe_confirmation(args: argparse.Namespace) -> None:
+    if args.confirm_wipe:
+        return
+    raise SystemExit(
+        "Refusing to wipe WC 2026 matches without confirmation.\n"
+        f"  Prefer upsert:  python add_sf2_and_final.py\n"
+        f"  Full wipe:      python import_wc2026_finished_matches.py {WIPE_CONFIRM_FLAG}\n"
+        "See docs/changes/phase-15-data-hygiene.md"
+    )
+
+
+def main(argv: list[str] | None = None) -> None:
+    args = parse_args(argv)
+    require_wipe_confirmation(args)
+
+    print(
+        "WARNING: Wiping WC 2026 Match/TeamStats/Goal/Card/Bet rows, then reloading.",
+        file=sys.stderr,
+    )
+
     conn = psycopg2.connect(CONN)
     conn.autocommit = False
     cur = conn.cursor()
@@ -531,4 +577,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

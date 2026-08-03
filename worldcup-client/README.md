@@ -34,7 +34,7 @@ ng generate --help
 
 ### Production
 
-1. Set the public API base in `src/environments/environment.ts` (`apiUrl` — no trailing slash). The checked-in value is a `REPLACE_ME` placeholder so a prod build cannot silently keep localhost.
+1. `src/environments/environment.ts` `apiUrl` (no trailing slash) is set for **local ship rehearsal** to `http://localhost:5055` (Phase 15 Task 1). When you have a real public API host, replace that value and rebuild.
 2. Build:
 
 ```bash
@@ -44,7 +44,7 @@ npm run build
 
 Artifacts land in `dist/worldcup-client/browser/` — serve that folder as static files (or behind a reverse proxy with SPA fallback to `index.html`). Do not use `ng serve` for production.
 
-Detail: `../docs/changes/phase-14-spa-prod.md` (nested git docs; VitePress twin under workspace `docs/changes/`).
+Detail: `../docs/changes/phase-15-spa-url.md` · `phase-14-spa-prod.md` (nested git docs; VitePress twin under workspace `docs/changes/`).
 
 ## Running unit tests
 

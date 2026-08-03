@@ -7,7 +7,17 @@
 ---
 ## Changes Review
 
-Latest: **Phase 14 Done (3 Aug 2026)** — gate closed; Bugbot high fixed; suite **462**. Detail: [phase-14-gate](changes/phase-14-gate.md). Prior tasks: [phase-14-migrate-smoke](changes/phase-14-migrate-smoke.md) · [phase-14-planned](changes/phase-14-planned.md). Phase 13 Done (suite **438**) — [phase-13-tests-gate](changes/phase-13-tests-gate.md).
+Latest: **Phase 15 Done (3 Aug 2026)** — Task 5 gate closed. Detail: [phase-15-gate](changes/phase-15-gate.md). Tasks 1–4: [spa-url](changes/phase-15-spa-url.md) · [deploy](changes/phase-15-deploy.md) · [migrate-smoke](changes/phase-15-migrate-smoke.md) · [data-hygiene](changes/phase-15-data-hygiene.md). Phase 14 Done (suite **462**) — [phase-14-gate](changes/phase-14-gate.md).
+
+> **Success:** **Phase 15 Done — Production Ship & Ops Hygiene.** Tasks 1–5 complete (local rehearsal ship + wipe hygiene); gate **Closed**; Bugbot no high/critical (medium README `REPLACE_ME` fixed); Python wipe-guard **2** OK; `dotnet test` N/A (no C# / SPA logic). Checklist: [Phase 15](roadmap.md#phase-15) · detail: [phase-15-gate](changes/phase-15-gate.md).
+
+> **Success:** **Phase 15 Task 4 Done.** Wipe importer requires `--i-understand-this-wipes-wc2026`; prefer `add_sf2_and_final.py`; group seed year/cup-scoped; inventory. Checklist: [Phase 15](roadmap.md#phase-15) · detail: [phase-15-data-hygiene](changes/phase-15-data-hygiene.md).
+
+> **Success:** **Phase 15 Task 3 Done.** Compose `MigrateAsync` + history (**28**); smoke health/company/leaderboard/CORS/fixtures green; no wipe. Checklist: [Phase 15](roadmap.md#phase-15) · detail: [phase-15-migrate-smoke](changes/phase-15-migrate-smoke.md).
+
+> **Success:** **Phase 15 Task 2 Done.** Local Production Compose with session `PROD_*`; api + db healthy; `/health` 200. Checklist: [Phase 15](roadmap.md#phase-15) · detail: [phase-15-deploy](changes/phase-15-deploy.md).
+
+> **Success:** **Phase 15 Task 1 Done.** Production `environment.ts` → `http://localhost:5055` (local rehearsal; public host later); Dev unchanged. Checklist: [Phase 15](roadmap.md#phase-15) · detail: [phase-15-spa-url](changes/phase-15-spa-url.md).
 
 > **Success:** **Phase 14 Done — Deploy Readiness.** Tasks 1–7 complete; consented suite **462**; prod secrets / CORS / Compose / SPA / migrate-smoke packaged. Checklist: [Phase 14](roadmap.md#phase-14) · detail: [phase-14-gate](changes/phase-14-gate.md).
 
@@ -85,6 +95,14 @@ Latest: **Phase 14 Done (3 Aug 2026)** — gate closed; Bugbot high fixed; suite
 
 ### Summary stats
 
+- **Phase 15 Done (3 Aug 2026):** Tasks 1–5; gate closed — [phase-15-gate](changes/phase-15-gate.md)
+- **Phase 15 Task 5 (docs opened):** dual-docs + Review gate; `dotnet test` **N/A** (no C# / SPA logic); Python wipe-guard available — [phase-15-gate](changes/phase-15-gate.md)
+- **Phase 15 working tree (Tasks 1–5 uncommitted):** SPA `environment.ts` `apiUrl`; wipe importer confirm flag + `test_import_wc2026_wipe_guard.py`; `seed-wc2026-groups.sql` year/cup-scoped; 2030 wipe banners; `docs/changes/phase-15-*.md`
+- **Phase 15 Task 4 (Done):** WC 2026 wipe hygiene — [phase-15-data-hygiene](changes/phase-15-data-hygiene.md)
+- **Phase 15 Task 3 (Done):** local migrate + smoke — [phase-15-migrate-smoke](changes/phase-15-migrate-smoke.md)
+- **Phase 15 Task 2 (Done):** local Production Compose deploy — [phase-15-deploy](changes/phase-15-deploy.md)
+- **Phase 15 Task 1 (Done):** SPA production `apiUrl` local rehearsal — [phase-15-spa-url](changes/phase-15-spa-url.md)
+- **Phase 15 (Done):** Production ship & ops hygiene — Tasks 1–5 — [phase-15-gate](changes/phase-15-gate.md) · [phase-15-planned](changes/phase-15-planned.md)
 - **Phase 14 Done (gate closed 3 Aug 2026):** Bugbot high fixed; suite **462** — [phase-14-gate](changes/phase-14-gate.md)
 - **Phase 14 Task 7 (Done):** dual-docs + Bugbot + consented tests — [phase-14-gate](changes/phase-14-gate.md)
 - **Phase 14 working tree (Tasks 2–7 still uncommitted):** `CorsOriginsResolver.cs` + CORS tests; `Program.cs` / `appsettings.json`; `docker-compose.prod.yml` + healthcheck fix; SPA `environment.ts` + README; `.env.example`; `docs/changes/phase-14-*.md`
@@ -99,7 +117,7 @@ Latest: **Phase 14 Done (3 Aug 2026)** — gate closed; Bugbot high fixed; suite
 - **Phase 14 Task 2 (Done):** prod secrets inventory — placeholders only; README + `.env.example` — [phase-14-secrets](changes/phase-14-secrets.md)
 - **Phase 14 Task 2 git:** **New** `docs/changes/phase-14-secrets.md` (+ `phase-14-planned.md` if untracked); **Modified** `.env.example`, roadmap/index/changes-review/upload-gate/workflow/VitePress; **Outside git** workspace `README.md`
 - **Phase 14 (Done):** Deploy readiness — Tasks 1–7 Done — [phase-14-gate](changes/phase-14-gate.md) · [phase-14-planned](changes/phase-14-planned.md)
-- **Upload inventory (historical):** Phases 9–12 packaging committed (`ac0608e`); Phase 13 on origin (`5fdd1c4`); Phase 14 Tasks 2–7 still local/uncommitted — [whole-project-upload-gate](changes/whole-project-upload-gate.md)
+- **Upload inventory (historical):** Phases 9–12 packaging committed (`ac0608e`); Phase 13 on origin (`5fdd1c4`); Phase 14–15 still local/uncommitted — [whole-project-upload-gate](changes/whole-project-upload-gate.md)
 - **Phase 13 Task 6 (tests cleared):** isolation integration **3** + unit **2**; suite **419**; Bugbot still open — [phase-13-tests-gate](changes/phase-13-tests-gate.md)
 - **Phase 13 Task 6 git:** **New** `LeaderboardIsolationIntegrationTests.cs`; **Modified** `LeaderboardServiceTests.cs`, `CompanyServiceTests.cs`; docs `phase-13-tests-gate.md` + roadmap/planned/index/changes-review
 - **Phase 13 Task 5 (implemented; interim gate pending):** SPA `/company` join + CompanyAdmin; leaderboard auth + join CTA; Admin create — [phase-13-spa](changes/phase-13-spa.md)
@@ -129,7 +147,59 @@ Latest: **Phase 14 Done (3 Aug 2026)** — gate closed; Bugbot high fixed; suite
 - **Phase 10 Task 2 (gate closed):** `fixture-sections.ts` + 12 Jasmine specs, fixtures component — Action default, chips, sections, jump CTA
 - **Phase 10 Task 1 committed** (`dcb322b`): MatchSync services, `ExternalMatchId` migration, Admin sync endpoints, client API, tests
 - **Phase 10 checklist:** Tasks 1–4 complete
-- **Tests:** Jasmine **25** / 25; API `dotnet test` **382** / 382 (Phase 11 Done)
+- **Tests:** Jasmine **25** / 25; API `dotnet test` **382** / 382 (Phase 11 Done); Phase 14 suite **462**; Phase 15 `dotnet test` N/A
+
+### Phase 15 Roadmap Mapping
+
+| Roadmap item | Status | Detail |
+| --- | --- | --- |
+| Docs / planned backlog | **Done** | [phase-15-planned](changes/phase-15-planned.md) |
+| `p15-spa-url` — SPA production `apiUrl` | **Done** | [phase-15-spa-url](changes/phase-15-spa-url.md) — local rehearsal `http://localhost:5055` |
+| `p15-deploy` — Production Compose deploy | **Done** | [phase-15-deploy](changes/phase-15-deploy.md) — `/health` 200 |
+| `p15-migrate-smoke` — target migrate + smoke | **Done** | [phase-15-migrate-smoke](changes/phase-15-migrate-smoke.md) — history **28**; smoke green |
+| `p15-data-hygiene` — WC 2026 wipe guards | **Done** | [phase-15-data-hygiene](changes/phase-15-data-hygiene.md) — confirm flag + multi-cup seed |
+| `p15-gate` — formal close | **Done** (docs; Bugbot pending) | [phase-15-gate](changes/phase-15-gate.md) — `dotnet test` N/A |
+
+#### Phase 15 Task 5 — Gate (docs opened; Bugbot pending)
+
+| Field | Value |
+| --- | --- |
+| New (git) | `docs/changes/phase-15-gate.md` |
+| Docs (dual) | roadmap Task 5 `[x]`; Phase 15 **[Done]**; index 15/15; planned Status Done |
+| Outside nested git | workspace `docs/` (VitePress source) mirror |
+| Runtime / C# | **None** — SPA `apiUrl` string + Python/SQL scripts only |
+| Secrets check | Expect Cleared — public `apiUrl`; no new JWT/DB secrets |
+| Tests | `dotnet test` **N/A**; Python `test_import_wc2026_wipe_guard.py` available |
+| Detail | [phase-15-gate](changes/phase-15-gate.md) |
+
+##### Git status (Task 5 snapshot — Phase 15 tree)
+
+From nested git repo (`WorldCup-System/`):
+
+```
+ M README.md
+ M docs/.vitepress/config.mts
+ M docs/changes-review.md
+ M docs/changes/phase-9-ops-closeout.md
+ M docs/changes/wc2026-live-data.md
+ M docs/index.md
+ M docs/roadmap.md
+ M scripts/import_wc2026_finished_matches.py
+ M scripts/seed-wc2026-groups.sql
+ M scripts/simulate_betting_demo.py
+ M scripts/simulate_wc2030.py
+ M worldcup-client/README.md
+ M worldcup-client/src/environments/environment.ts
+?? docs/changes/phase-15-data-hygiene.md
+?? docs/changes/phase-15-deploy.md
+?? docs/changes/phase-15-migrate-smoke.md
+?? docs/changes/phase-15-planned.md
+?? docs/changes/phase-15-spa-url.md
+?? docs/changes/phase-15-gate.md
+?? scripts/test_import_wc2026_wipe_guard.py
+```
+
+Plus dual-docs under workspace-root `docs/` and nested `WorldCup-System/docs/`.
 
 ### Phase 9 Roadmap Mapping
 
@@ -670,13 +740,19 @@ Accepted / medium (non-blocking):
 
 | Risk | Severity | Details | Action |
 | --- | --- | --- | --- |
-| Phase 14 Task 7 Bugbot / formal gate | High (gate) | Tasks 1–6 impl Done; phase not Done until Bugbot + consented tests | **Open — review running** — [phase-14-gate](changes/phase-14-gate.md#review-gate) |
-| Phase 14 Task 7 secrets in uncommitted tree | Critical | Real passwords / JWT / connection strings must not land in git | **Open (check)** — placeholders + Dev defaults only |
-| Phase 14 Task 7 `dotnet test` without consent | High | CORS API + tests changed; user rule ask-before test/build | **Blocked on consent** |
+| Phase 15 Task 5 Bugbot / formal gate | High (gate) | Tasks 1–5 Done; gate Closed; no high/critical Bugbot | **Cleared** — [phase-15-gate](changes/phase-15-gate.md#review-gate) |
+| Phase 15 Task 5 secrets in uncommitted tree | Critical | Real passwords / JWT / connection strings must not land in git | **Expect Cleared** — SPA origin only; session `PROD_*` never committed |
+| Phase 15 `dotnet test` without consent | High | No C# API / SPA logic change — suite not warranted | **N/A (documented)** — skip unless consented reopen |
+| Accidental WC 2026 wipe via importer | High | Bare wipe historically deleted Match/Bet rows | **Cleared Task 4** — confirm flag required — [phase-15-data-hygiene](changes/phase-15-data-hygiene.md) |
+| Multi-cup group seed pulls 2030 teams | High | CountryId-only Team UPDATE | **Cleared Task 4** — year/cup-scoped SQL |
+| Localhost `apiUrl` shipped as “public” | Medium (ops) | Task 1 is local rehearsal | Documented — swap before real public ship — [phase-15-spa-url](changes/phase-15-spa-url.md) |
+| Phase 14 Task 7 Bugbot / formal gate | High (gate) | Tasks 1–6 impl Done; phase not Done until Bugbot + consented tests | **Cleared** — suite **462** — [phase-14-gate](changes/phase-14-gate.md#review-gate) |
+| Phase 14 Task 7 secrets in uncommitted tree | Critical | Real passwords / JWT / connection strings must not land in git | **Cleared** — placeholders + Dev defaults only |
+| Phase 14 Task 7 `dotnet test` without consent | High | CORS API + tests changed; user rule ask-before test/build | **Cleared** — consented **3 Aug 2026**; suite **462** |
 | Phase 14 Task 3 `AllowAnyOrigin` / `*` | Critical | Credentialed CORS must stay allow-list only | **Cleared** — [phase-14-cors](changes/phase-14-cors.md#review-gate) |
 | Phase 14 Task 3 policy name mismatch | High | `AddPolicy` vs `UseCors` | **Cleared** — shared `CorsOriginsResolver.PolicyName` |
 | Phase 14 Task 4 still ships Dev Compose defaults | High (ops) | Base Compose stays Development; prod override sets Production + required secrets | **Cleared** — [phase-14-compose](changes/phase-14-compose.md#review-gate) |
-| Phase 14 Task 5 prod SPA silent localhost `apiUrl` | Critical | Default prod env pointed at Dev API | **Cleared** — `REPLACE_ME` placeholder — [phase-14-spa-prod](changes/phase-14-spa-prod.md#review-gate) |
+| Phase 14 Task 5 prod SPA silent localhost `apiUrl` | Critical | Default prod env pointed at Dev API | **Cleared** (Phase 14) — `REPLACE_ME`; Phase 15 sets rehearsal localhost deliberately — [phase-15-spa-url](changes/phase-15-spa-url.md) |
 | Phase 13 Task 6 Bugbot formal gate | High (gate) | Isolation tests green; phase not Done until Bugbot | **Cleared** — suite **438**; [tests gate](changes/phase-13-tests-gate.md#review-gate) |
 | Phase 13 Task 5 interim Bugbot / Jasmine | High (interim) | SPA `/company` + leaderboard auth | **Pending** — Markdown cleared; [SPA](changes/phase-13-spa.md#review-gate) |
 | Cross-company leaderboard leak | High | Must filter by caller `CompanyId` | **Cleared (tests)** — integration bidirectional + unit; suite **419** |
@@ -720,10 +796,51 @@ Accepted / medium (non-blocking):
 | Outside-git deletes invisible in `git diff` | Low | Root client + dump never tracked | Documented in [phase-10-cleanup](changes/phase-10-cleanup.md) |
 | FIFA calendar/timeline ToS / season ids | Medium | Public JSON; config-driven | Monitor; paid provider fallback |
 | Final not yet finished in DB | Low | Kickoff 19 Jul | **Cleared** — Phase 9 Done; MatchId 116 FT recorded |
-| Accidental WC 2026 wipe via importer | High | `import_wc2026_finished_matches.py` deletes then reloads | Documented — prefer `add_sf2_and_final.py` |
 | Missing `ExternalStageId` blocks timeline URL | Medium | Timeline needs stage | Backfill via SetExternal or SyncResult |
 
 ### Per-File Summary
+
+#### `docs/changes/phase-15-gate.md` (NEW) — Phase 15 Task 5
+
+
+**[p15-gate · docs]**
+
+Formal gate page: Review gate table, Bugbot findings (no high/critical; medium README fixed), secrets check, tests decision (`dotnet test` N/A; Python wipe-guard **2** OK), Phase 15 working-tree git status, representative diffs, agent do/don't. Gate verdict **Closed**.
+
+#### Docs nav / roadmap / VitePress — Phase 15 Task 5
+
+
+**[p15-gate · docs]**
+
+Modified: `roadmap.md` — Task 5 `[x]`; Phase 15 **[Done]**; success banner phases 1–15; `index.md` — 15/15, Phase 15 Done table, Recommended = roadmap complete; `changes-review.md` — latest + mapping + gate + risks + per-file; `phase-15-planned.md` — Task 5 Done / Status Done; `.vitepress/config.mts` — sidebar `phase-15-gate`. Dual mirror VitePress ↔ nested git docs.
+
+#### `environment.ts` (MOD) — Phase 15 Task 1
+
+
+**[p15-spa-url]**
+
+Production `apiUrl` → `http://localhost:5055` (local ship rehearsal; replaces Phase 14 `REPLACE_ME`). Dev file untouched. Detail: [phase-15-spa-url](changes/phase-15-spa-url.md).
+
+#### `import_wc2026_finished_matches.py` (MOD) — Phase 15 Task 4
+
+
+**[p15-data-hygiene]**
+
+Requires `--i-understand-this-wipes-wc2026`; refuse message prefers `add_sf2_and_final.py`. Detail: [phase-15-data-hygiene](changes/phase-15-data-hygiene.md).
+
+#### `seed-wc2026-groups.sql` (MOD) — Phase 15 Task 4
+
+
+**[p15-data-hygiene]**
+
+Year-scoped WC 2026 resolve; Team UPDATE cup-scoped (no CountryId-only pull of 2030 teams).
+
+#### `test_import_wc2026_wipe_guard.py` (NEW) — Phase 15 Task 4 / 5
+
+
+**[p15-data-hygiene · p15-gate]**
+
+Unittest: refuse without confirm flag; accept with flag.
 
 #### `docs/changes/phase-14-gate.md` (NEW) — Phase 14 Task 7
 
@@ -1246,17 +1363,22 @@ WC 2026 group/results import scripts (through Final; prefer `add_sf2_and_final.p
 | Phase 11 — Real Goalscorers (FIFA Timeline) | **Done** | [Task 8 gate](changes/phase-11-tests-gate.md) · [Task 1](changes/phase-11-external-stage.md) · [Task 2](changes/phase-11-timeline-provider.md) · [Task 3](changes/phase-11-player-resolve.md) · [Task 4](changes/phase-11-scorer-apply.md) · [Task 5](changes/phase-11-sync-wire.md) · [Task 6](changes/phase-11-backfill.md) · [Task 7](changes/phase-11-recent-events-honesty.md) · [plan](changes/phase-11-planned.md) |
 | Phase 12 — 2030 World Cup Simulation | **Done** | [plan](changes/phase-12-planned.md) · [draw](changes/phase-12-draw.md) · [group sim](changes/phase-12-group-sim.md) · [bracket](changes/phase-12-bracket.md) · [tests gate](changes/phase-12-tests-gate.md) |
 | Phase 13 — Company-Scoped Competitions | **Done** (suite **438**) | [plan](changes/phase-13-planned.md) · [tests gate](changes/phase-13-tests-gate.md) · [SPA](changes/phase-13-spa.md) · [company API](changes/phase-13-company-api.md) |
-| Phase 14 — Deploy Readiness | **In progress** (Tasks 1–6 Done; next Task 7 gate) | [plan](changes/phase-14-planned.md) · [secrets](changes/phase-14-secrets.md) · [CORS](changes/phase-14-cors.md) · [Compose](changes/phase-14-compose.md) · [SPA prod](changes/phase-14-spa-prod.md) · [migrate/smoke](changes/phase-14-migrate-smoke.md) |
+| Phase 14 — Deploy Readiness | **Done** (suite **462**) | [plan](changes/phase-14-planned.md) · [gate](changes/phase-14-gate.md) · [secrets](changes/phase-14-secrets.md) · [CORS](changes/phase-14-cors.md) · [Compose](changes/phase-14-compose.md) · [SPA prod](changes/phase-14-spa-prod.md) · [migrate/smoke](changes/phase-14-migrate-smoke.md) |
+| Phase 15 — Production Ship & Ops Hygiene | **Done** | [plan](changes/phase-15-planned.md) · [gate](changes/phase-15-gate.md) · [spa-url](changes/phase-15-spa-url.md) · [deploy](changes/phase-15-deploy.md) · [migrate/smoke](changes/phase-15-migrate-smoke.md) · [data-hygiene](changes/phase-15-data-hygiene.md) |
 
 ### Suggested Next Steps
 
+#### Phase 15 — Gate finalize
+
+**Docs Done** — [phase-15-gate](changes/phase-15-gate.md). **Remaining:** fill Bugbot findings; set gate verdict **Closed** when high/critical clear; optional `python scripts/test_import_wc2026_wipe_guard.py`. Do **not** run `dotnet test` unless consented (N/A for this tree).
+
 #### Phase 14 — Deploy readiness
 
-**Task 6 Done** (migrate + smoke checklist) — [phase-14-migrate-smoke](changes/phase-14-migrate-smoke.md). **Next:** Task 7 gate (`p14-gate`) — [phase-14-planned](changes/phase-14-planned.md) · [Roadmap Phase 14](roadmap.md#phase-14).
+**Done** (suite **462**) — [phase-14-gate](changes/phase-14-gate.md).
 
 #### Upload packaging (historical)
 
-Phases 9–12 packaging committed (`ac0608e`); Phase 13 on origin (`5fdd1c4`). Phase 14 Tasks 2–6 still uncommitted locally — commit only when asked — [whole-project-upload-gate](changes/whole-project-upload-gate.md).
+Phases 9–12 packaging committed (`ac0608e`); Phase 13 on origin (`5fdd1c4`). Phase 14–15 still uncommitted locally — commit only when asked — [whole-project-upload-gate](changes/whole-project-upload-gate.md).
 
 #### Phase 13 — Company-scoped competitions
 

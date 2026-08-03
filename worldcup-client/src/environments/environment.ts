@@ -1,15 +1,17 @@
 /**
  * Production environment (default `ng build` / `npm run build`).
  *
- * Before a real deploy, set `apiUrl` to the public API base (no trailing slash),
- * e.g. `https://api.example.com`. Do not leave REPLACE_ME in a shipped bundle.
+ * Phase 15 Task 1 (`p15-spa-url`): local ship rehearsal uses the same API origin
+ * as Dev (`http://localhost:5055`) so a production build can be exercised without
+ * a public domain. When you have a real host, replace `apiUrl` with that origin
+ * (scheme + host [+ port], no trailing slash) and rebuild.
  *
- * Local Dev uses `environment.development.ts` via angular.json fileReplacements
- * (`ng serve` / `build:development`) — leave that file on localhost.
+ * Local Dev (`ng serve`) still uses `environment.development.ts` via
+ * angular.json fileReplacements — leave that file on localhost.
  *
- * Detail: docs/changes/phase-14-spa-prod.md
+ * Detail: docs/changes/phase-15-spa-url.md · phase-14-spa-prod.md
  */
 export const environment = {
   production: true,
-  apiUrl: 'https://api.REPLACE_ME.example',
+  apiUrl: 'http://localhost:5055',
 };

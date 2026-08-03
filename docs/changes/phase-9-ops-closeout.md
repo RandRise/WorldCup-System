@@ -27,7 +27,7 @@ High/critical risks that must be clear **before** treating close-out as verified
 | Script writes C# / migrations | Critical | **N/A** | Close-out is Python + local DB only — no API schema change |
 | Open high/critical Bugbot on scripts | High (gate) | **Cleared** | Two highs fixed 21 Jul; jersey-99 filter accepted (Tournament Scorer #99) |
 
-**Gate verdict:** no open high/critical blockers for Phase 9 close-out. Ops caution remains: do not re-run the wipe importer unless a full 2026 reload is intended.
+**Gate verdict:** no open high/critical blockers for Phase 9 close-out. Ops caution: do not re-run the wipe importer unless a full 2026 reload is intended — Phase 15 requires `--i-understand-this-wipes-wc2026` ([phase-15-data-hygiene](phase-15-data-hygiene.md)).
 
 ### Tests
 
@@ -114,7 +114,7 @@ Full finished schedule through Final; **wipes WC 2026 matches then reloads**.
 
 1. Prefer: `python scripts/add_sf2_and_final.py` (idempotent `apply_final_ft`)
 2. If bets still open: Admin `POST Bet/ResolveBetsForMatch/{matchId}` for MatchId **116**, or SyncResult
-3. Avoid: `import_wc2026_finished_matches.py` unless a full 2026 wipe/reload is intended (Final scorer is still Torres @ 106' after Bugbot fix, but wipe destroys bets)
+3. Avoid: `import_wc2026_finished_matches.py --i-understand-this-wipes-wc2026` unless a full 2026 wipe/reload is intended (Final scorer is still Torres @ 106' after Bugbot fix, but wipe destroys bets). See [phase-15-data-hygiene](phase-15-data-hygiene.md).
 
 ### Explicit non-goals (followed)
 

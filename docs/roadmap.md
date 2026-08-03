@@ -7,9 +7,9 @@
 ---
 ## Completion Roadmap
 
-Fourteen phases. Checkboxes below reflect status as of **3 Aug 2026** — checkboxes use Markdown task lists (`[x]` / `[ ]`).
+Fifteen phases. Checkboxes below reflect status as of **3 Aug 2026** — checkboxes use Markdown task lists (`[x]` / `[ ]`).
 
-> **Success:** **Where you are:** Phases **1–14 complete.** Phase 14 gate closed (Bugbot high fixed; suite **462**). Deploy readiness packaged — [phase-14-gate](changes/phase-14-gate.md) · [phase-14-planned](changes/phase-14-planned.md). Upload packaging for 9–12 **closed** locally — [whole-project-upload-gate](changes/whole-project-upload-gate.md). See [Changes Review](changes-review.md).
+> **Success:** **Phases 1–15 complete.** Phase 15 Production Ship & Ops Hygiene **[Done]** — local rehearsal ship + WC 2026 wipe hygiene; Task 5 gate closed — [phase-15-gate](changes/phase-15-gate.md). See [Changes Review](changes-review.md).
 
 <a id="phase-1"></a>
 
@@ -295,3 +295,30 @@ Ops packaging so a real host can run API + SPA safely. **Not** new product featu
 **Task 7 — Gate (`p14-gate`) (done)**
 
 - [x] Dual-docs close + review; `dotnet test` with consent — *Bugbot high fixed (prod DB healthcheck `$$POSTGRES_*`); suite **462**; [detail](changes/phase-14-gate.md); [plan](changes/phase-14-planned.md#task-7--gate-p14-gate)*
+
+<a id="phase-15"></a>
+<a id="whats-left"></a>
+
+### Phase 15 — Production Ship & Ops Hygiene **[Done]**
+
+Execute the Phase 14 packaging on a real host and harden day-2 ops. **Not** new product features. Detail: [phase-15-planned](changes/phase-15-planned.md) · [phase-15-gate](changes/phase-15-gate.md).
+
+**Task 1 — SPA production `apiUrl` (`p15-spa-url`) (done)**
+
+- [x] Replace SPA `REPLACE_ME` with a ship-ready API origin before production `ng build` — *local rehearsal `http://localhost:5055`; [detail](changes/phase-15-spa-url.md); [phase-14-spa-prod](changes/phase-14-spa-prod.md); [plan](changes/phase-15-planned.md#task-1--spa-production-apiurl-p15-spa-url)*
+
+**Task 2 — Production deploy (`p15-deploy`) (done)**
+
+- [x] Deploy API + Postgres with Production Compose and real `PROD_*` secrets — *local rehearsal; `/health` 200; [detail](changes/phase-15-deploy.md); [phase-14-compose](changes/phase-14-compose.md) · [phase-14-secrets](changes/phase-14-secrets.md); [plan](changes/phase-15-planned.md#task-2--production-deploy-p15-deploy)*
+
+**Task 3 — Migrate + smoke on target (`p15-migrate-smoke`) (done)**
+
+- [x] Run `ef database update` on the target DB and complete the health/company/CORS/fixtures smoke table — *Compose `MigrateAsync` + history verify (28); smoke table green; [detail](changes/phase-15-migrate-smoke.md); [phase-14-migrate-smoke](changes/phase-14-migrate-smoke.md); [plan](changes/phase-15-planned.md#task-3--migrate--smoke-on-target-p15-migrate-smoke)*
+
+**Task 4 — WC 2026 data hygiene (`p15-data-hygiene`) (done)**
+
+- [x] Ops hygiene so wipe/re-import scripts cannot accidentally destroy WC 2026 tournament data — *confirm flag on wipe importer; multi-cup group seed; inventory; [detail](changes/phase-15-data-hygiene.md); [phase-9-ops-closeout](changes/phase-9-ops-closeout.md); [plan](changes/phase-15-planned.md#task-4--wc-2026-data-hygiene-p15-data-hygiene)*
+
+**Task 5 — Gate (`p15-gate`) (done)**
+
+- [x] Dual-docs close + review; `dotnet test` only if API/SPA code changed (with consent) — *no C# / SPA logic; `dotnet test` N/A; wipe-guard Python **2** OK; Bugbot clean (medium README fixed); [detail](changes/phase-15-gate.md); [plan](changes/phase-15-planned.md#task-5--gate-p15-gate)*

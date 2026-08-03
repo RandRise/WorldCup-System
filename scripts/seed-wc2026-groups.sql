@@ -13,17 +13,27 @@ CREATE INDEX IF NOT EXISTS "IX_Match_FeederMatchOneId" ON "Match" ("FeederMatchO
 CREATE INDEX IF NOT EXISTS "IX_Match_FeederMatchTwoId" ON "Match" ("FeederMatchTwoId");
 CREATE INDEX IF NOT EXISTS "IX_Match_Stage" ON "Match" ("Stage");
 
--- Ensure World Cup 2026 row exists (reuse Id 1 when present).
+-- Ensure World Cup 2026 row exists (year-scoped; safe with WC 2030 present).
 INSERT INTO "WorldCups" ("Year")
 SELECT TIMESTAMPTZ '2026-06-11 00:00:00+00'
-WHERE NOT EXISTS (SELECT 1 FROM "WorldCups");
+WHERE NOT EXISTS (
+    SELECT 1 FROM "WorldCups"
+    WHERE EXTRACT(YEAR FROM "Year" AT TIME ZONE 'UTC') = 2026
+);
 
--- Resolve tournament id used for groups.
+-- Resolve tournament id used for groups (must be 2026 — not ORDER BY Id).
 DO $$
 DECLARE
     wc_id integer;
 BEGIN
-    SELECT "Id" INTO wc_id FROM "WorldCups" ORDER BY "Id" LIMIT 1;
+    SELECT "Id" INTO wc_id FROM "WorldCups"
+    WHERE EXTRACT(YEAR FROM "Year" AT TIME ZONE 'UTC') = 2026
+    ORDER BY "Id"
+    LIMIT 1;
+
+    IF wc_id IS NULL THEN
+        RAISE EXCEPTION 'World Cup 2026 row missing after ensure insert';
+    END IF;
 
     -- Create groups A-L if missing.
     INSERT INTO "Group" ("Name", "WorldCupId")
@@ -49,7 +59,14 @@ DECLARE
     country_name text;
     aliases text[];
 BEGIN
-    SELECT "Id" INTO wc_id FROM "WorldCups" ORDER BY "Id" LIMIT 1;
+    SELECT "Id" INTO wc_id FROM "WorldCups"
+    WHERE EXTRACT(YEAR FROM "Year" AT TIME ZONE 'UTC') = 2026
+    ORDER BY "Id"
+    LIMIT 1;
+
+    IF wc_id IS NULL THEN
+        RAISE EXCEPTION 'World Cup 2026 row missing';
+    END IF;
 
     -- Each entry: group letter, then preferred country names (first match wins).
     FOREACH country_name IN ARRAY ARRAY[
@@ -128,10 +145,21 @@ BEGIN
             RAISE EXCEPTION 'Missing country for aliases: %', country_name;
         END IF;
 
-        IF EXISTS (SELECT 1 FROM "Team" t WHERE t."CountryId" = country_id) THEN
-            UPDATE "Team"
+        -- Multi-cup safe: only move teams already in WC 2026 groups.
+        -- Never UPDATE by CountryId alone (would pull 2030 teams into 2026).
+        IF EXISTS (
+            SELECT 1
+            FROM "Team" t
+            JOIN "Group" g ON g."Id" = t."GroupId"
+            WHERE t."CountryId" = country_id
+              AND g."WorldCupId" = wc_id
+        ) THEN
+            UPDATE "Team" t
             SET "GroupId" = group_id
-            WHERE "CountryId" = country_id;
+            FROM "Group" g
+            WHERE t."GroupId" = g."Id"
+              AND g."WorldCupId" = wc_id
+              AND t."CountryId" = country_id;
         ELSE
             INSERT INTO "Team" ("CountryId", "GroupId")
             VALUES (country_id, group_id);

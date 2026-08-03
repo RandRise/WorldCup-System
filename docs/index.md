@@ -9,11 +9,11 @@
 
 FIFA World Cup management platform — status as of **3 Aug 2026**.
 
-> **Success:** **Phases 1–14 complete.** Phase 14 gate closed (Bugbot high fixed; suite **462**) — [phase-14-gate](changes/phase-14-gate.md) · [phase-14-planned](changes/phase-14-planned.md). See [Changes Review](changes-review.md).
+> **Success:** **Phases 1–15 complete.** Phase 15 Production Ship & Ops Hygiene **[Done]** — local rehearsal ship + WC 2026 wipe hygiene; Task 5 gate closed — [phase-15-gate](changes/phase-15-gate.md). See [Changes Review](changes-review.md).
 
 > **Info:** Browse these docs with VitePress (`npm run docs:dev` from the workspace root) or open any `.md` file in Cursor preview. Checklists use `[x]` / `[ ]` task items.
 
-- **Overall Plan Progress:** 14 / 14 phases done — product + deploy readiness complete — [Phase 14](roadmap.md#phase-14)
+- **Overall Plan Progress:** 15 / 15 phases done — [Phase 15](roadmap.md#phase-15) · [gate](changes/phase-15-gate.md)
 - **Backend API Complete:** 100% Phases 1–8 + Phase 10 Task 1 sync + Phase 11 (stage / timeline / resolve / apply / sync wire / scorers backfill / honesty; suite **382**)
 - **Frontend SPA:** 100% Phases 1–8 + Phase 10 Tasks 2–3 (fixtures UX + WC styling); canonical path `WorldCup-System/worldcup-client`
 
@@ -138,12 +138,25 @@ Full checklist: [Roadmap Phase 14](roadmap.md#phase-14) · agent rules in [phase
 | 12 | [2030 World Cup Simulation](roadmap.md#phase-12) | Done |
 | 13 | [Company-Scoped Competitions](roadmap.md#phase-13) | Done |
 | 14 | [Deploy Readiness](roadmap.md#phase-14) | Done (suite **462**) |
+| 15 | [Production Ship & Ops Hygiene](roadmap.md#phase-15) | Done |
+
+### ✅ Phase 15 — Production Ship & Ops Hygiene (Done)
+
+| # | Item | Status | Doc |
+| --- | --- | --- | --- |
+| 1 | SPA production `apiUrl` (local rehearsal) | **Done** | [phase-15-spa-url](changes/phase-15-spa-url.md) |
+| 2 | Production deploy (Compose + real `PROD_*`) | **Done** | [phase-15-deploy](changes/phase-15-deploy.md) |
+| 3 | Migrate + smoke on target | **Done** | [phase-15-migrate-smoke](changes/phase-15-migrate-smoke.md) |
+| 4 | WC 2026 data hygiene | **Done** | [phase-15-data-hygiene](changes/phase-15-data-hygiene.md) |
+| 5 | Gate | **Done** | [phase-15-gate](changes/phase-15-gate.md) |
+
+Full checklist: [Roadmap Phase 15](roadmap.md#phase-15) · agent rules in [phase-15-planned](changes/phase-15-planned.md).
 
 ### Quick Navigation
 
 #### 🗺️ Completion Roadmap
 
-14 phases with checklists reflecting the latest code review.
+15 phases with checklists reflecting the latest code review.
 
 #### ⚙️ Dev Workflow
 
@@ -163,17 +176,13 @@ Tech stack, folder structure, and architecture.
 
 #### 🔍 Changes Review
 
-Phases **1–14** Done. See [Changes Review](changes-review.md) · [phase-14-gate](changes/phase-14-gate.md).
+Phases **1–15** Done. See [Changes Review](changes-review.md) · [phase-15-gate](changes/phase-15-gate.md).
 
 ### Recommended next work
 
-#### Ship / ops
+#### Roadmap complete
 
-Commit and push Phase 14 working tree when ready (ask before commit/push). Deploy with [phase-14-secrets](changes/phase-14-secrets.md) · [phase-14-compose](changes/phase-14-compose.md) · [phase-14-migrate-smoke](changes/phase-14-migrate-smoke.md). Replace SPA `REPLACE_ME` before production `ng build`.
-
-#### Maintenance / polish
-
-Prefer ops hygiene (avoid accidental wipe re-import of WC 2026) — [Changes Review](changes-review.md) · [Phase 9 detail](changes/phase-9-ops-closeout.md).
+Phases **1–15** checklists closed. Remaining ops: finalize Phase 15 gate after Bugbot — [phase-15-gate](changes/phase-15-gate.md#review-gate). Public ship later: replace SPA `apiUrl` + host `PROD_*` — [phase-15-spa-url](changes/phase-15-spa-url.md) · [phase-15-deploy](changes/phase-15-deploy.md).
 
 ### Local Dev URLs
 

@@ -742,7 +742,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--wipe-bets",
         action="store_true",
-        help="Delete existing bets for WC 2030 before seeding",
+        help=(
+            "Delete existing bets for WC 2030 before seeding "
+            "(2030-scoped only; does not touch WC 2026 bets)"
+        ),
     )
     parser.add_argument(
         "--group-matches",

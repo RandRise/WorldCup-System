@@ -14,6 +14,9 @@ Usage:
   python simulate_wc2030.py --seed 2030 --dry-run
   python simulate_wc2030.py --seed 2030 --reset-draw
 
+--wipe-matches deletes Match/Goal/Bet for World Cup 2030 only (not WC 2026).
+Do not confuse with import_wc2026_finished_matches.py (separate cup + confirm flag).
+
 Requires Team.CountryId non-unique (migration AllowMultipleTeamsPerCountry).
 
 Optional:
@@ -1378,6 +1381,10 @@ def run(
         )
 
         if wipe_matches and world_cup_id > 0:
+            print(
+                "WARNING: --wipe-matches scopes to World Cup 2030 only "
+                f"(WorldCupId={world_cup_id}); WC 2026 is untouched."
+            )
             wiped = wipe_world_cup_matches(cur, world_cup_id, dry_run)
             print(f"Wiped {wiped} prior 2030 match(es)")
 
@@ -1532,7 +1539,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--wipe-matches",
         action="store_true",
-        help="Delete existing 2030 matches/goals/stats/bets before group simulation",
+        help=(
+            "Delete existing 2030 matches/goals/stats/bets before group simulation "
+            "(2030-scoped only; does not touch WC 2026)"
+        ),
     )
     parser.add_argument(
         "--skip-group-sim",
