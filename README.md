@@ -1,6 +1,9 @@
 # WorldCup System
 
-Full-stack FIFA World Cup management platform — tournament setup, live match ops, knockout bracket, user betting, and company-scoped prediction pools.
+Full-stack FIFA World Cup management platform — tournament setup, live match ops, knockout bracket, user predictions, and company-scoped prediction pools.
+
+> [!IMPORTANT]
+> **This is a points-only social prediction game, not a gambling or real-money betting platform.** It is designed for private, local use inside organizations—such as friendly World Cup competitions between coworkers. Predictions earn leaderboard points only. The system does not accept payments, wagers, deposits, withdrawals, cash prizes, or anything of monetary value. This boundary is intentional, particularly for contexts such as the UAE, where unlicensed commercial gaming and sports wagering are prohibited. This project description is not legal advice; organizations should confirm their own compliance requirements before use.
 
 **Status:** Complete (Phases **1–15**). Product, deploy packaging, local production rehearsal, and WC 2026 ops hygiene are done.
 
@@ -13,7 +16,7 @@ Full-stack FIFA World Cup management platform — tournament setup, live match o
 | Tournament | Countries, cities, stadiums, World Cups, groups, teams, coaches, squads |
 | Matches | Schedule, goals/cards/stats, group standings, knockout bracket + feeder advance |
 | Live ops | Admin live console, live snapshot polling, FIFA calendar/timeline result + scorer sync |
-| Betting | Place predictions, 3/0 scoring, auto-resolve at FT, leaderboard |
+| Predictions | Submit match predictions, earn points for correct picks, auto-resolve at FT, leaderboard—no money or prizes |
 | Companies | Soft multi-tenancy — invite join, company-scoped leaderboards |
 | Data | Offline WC 2026 import through Final; WC 2030 simulation scripts |
 | Ops | Docker Compose (Dev + Production override), health checks, CI, wipe-guard hygiene |
@@ -48,9 +51,10 @@ Sensitive values are **not** in `appsettings.json`. Use [User Secrets](https://l
 ```powershell
 # From the repo root (siblings Data/ and WorldCup-System/)
 cd WorldCup-System
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Database=WorldCupDb;Username=postgres;Password=YOUR_PASSWORD"
-dotnet user-secrets set "JWT:Secret" "YOUR_JWT_SIGNING_KEY_AT_LEAST_32_CHARS"
-dotnet user-secrets set "DevAdmin:Password" "Admin123!"
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "YOUR_LOCAL_DATABASE_CONNECTION_STRING"
+dotnet user-secrets set "JWT:Secret" "YOUR_LOCAL_JWT_SIGNING_KEY_AT_LEAST_32_CHARS"
+dotnet user-secrets set "DevAdmin:Password" "YOUR_LOCAL_ADMIN_PASSWORD"
+dotnet user-secrets set "DevUser:Password" "YOUR_LOCAL_USER_PASSWORD"
 cd ..
 ```
 
@@ -75,12 +79,12 @@ npm start
 
 ### Dev accounts (Development seed)
 
-| Role | Email | Password (local default) | SPA |
-| --- | --- | --- | --- |
-| Admin | `admin@localhost` | `Admin123!` | `/admin` |
-| User | `user@localhost` | `User123!` | `/dashboard`, bets |
+| Role | Email | SPA |
+| --- | --- | --- |
+| Admin | `admin@localhost` | `/admin` |
+| User | `user@localhost` | `/dashboard`, predictions |
 
-Passwords come from User Secrets / env; see `.env.example`.
+Set your own local passwords through User Secrets or environment variables; see `.env.example`. Never reuse development credentials in production or commit real credentials to the repository.
 
 ## Docker
 
